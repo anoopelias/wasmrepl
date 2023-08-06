@@ -48,7 +48,6 @@ fn parse_and_execute(stack: &mut Stack, str: &str) -> String {
                     format!("{}", stack.to_string())
                 },
                 Err(err) => {
-                    stack.rollback();
                     format!("Error: {}", err.to_string())
                 }
             }
@@ -61,20 +60,32 @@ fn parse_and_execute(stack: &mut Stack, str: &str) -> String {
 
 fn execute(stack: &mut Stack, expr: Expression) -> Result<()> {
     for instr in expr.instrs.iter() {
-        match instr {
-            Instruction::I32Const(value) => {
-                stack.push(*value);
-            },
-            Instruction::Drop => {
-                stack.pop()?;
-            },
-            _ => {
-                return Err(Error::msg("Unknown instruction"));
+        match execute_instruction(stack, instr) {
+            Ok(_) => {},
+            Err(err) => {
+                stack.rollback();
+                return Err(err);
             }
         }
     }
     stack.commit().unwrap();
     Ok(())
+}
+
+fn execute_instruction(stack: &mut Stack, instr: &Instruction) -> Result<()> {
+    match instr {
+        Instruction::I32Const(value) => {
+            stack.push(*value);
+            Ok(())
+        },
+        Instruction::Drop => {
+            stack.pop()?;
+            Ok(())
+        },
+        _ => {
+            Err(Error::msg("Unknown instruction"))
+        }
+    }
 }
 
 fn parse<'a>(buf: &'a ParseBuffer) -> wast::parser::Result<Expression<'a>> {
