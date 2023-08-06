@@ -65,7 +65,7 @@ impl Stack {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::stack::Stack;
 
     #[test]
     fn test_stack() {
