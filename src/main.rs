@@ -57,16 +57,18 @@ fn parse_and_execute(stack: &mut Vec<i32>, str: &str) -> String {
 }
 
 fn execute(stack: &mut Vec<i32>, expr: Expression) -> Result<()> {
+    let mut values = vec![];
     for instr in expr.instrs.iter() {
         match instr {
             Instruction::I32Const(value) => {
-                stack.push(*value);
+                values.push(*value);
             },
             _ => {
                 return Err(Error::msg("Unknown instruction"));
             }
         }
     }
+    stack.append(&mut values);
     Ok(())
 }
 
@@ -99,6 +101,13 @@ mod test {
         let buf = ParseBuffer::new(&str).unwrap();
         let expr = parse(&buf).unwrap();
         assert!(execute(&mut stack, expr).is_err());
+    }
+
+    #[test]
+    fn test_execute_preserve_stack_on_error() {
+        let mut stack = vec![];
+        parse_and_execute(&mut stack, "(i32.const 42) (f32.const 35.0)");
+        assert_eq!(stack.len(), 0);
     }
 
 }
