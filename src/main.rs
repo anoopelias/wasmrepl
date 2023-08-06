@@ -82,6 +82,12 @@ fn execute_instruction(stack: &mut Stack, instr: &Instruction) -> Result<()> {
             stack.pop()?;
             Ok(())
         },
+        Instruction::I32Add => {
+            let a = stack.pop()?;
+            let b = stack.pop()?;
+            stack.push(a + b);
+            Ok(())
+        },
         _ => {
             Err(Error::msg("Unknown instruction"))
         }
@@ -131,6 +137,12 @@ mod tests {
         let mut stack = Stack::new();
         assert_eq!(parse_and_execute(&mut stack, "(i32.const 42) (drop)"), "[]");
         assert_eq!(parse_and_execute(&mut stack, "(i32.const 42) (i32.const 45) (drop)"), "[42]");
+    }
+
+    #[test]
+    fn test_add() {
+        let mut stack = Stack::new();
+        assert_eq!(parse_and_execute(&mut stack, "(i32.const 42) (i32.const 45) (i32.add)"), "[87]");
     }
 
 }
