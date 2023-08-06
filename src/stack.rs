@@ -1,14 +1,14 @@
 use anyhow::{Ok, Result, Error};
 
 /// Stack with commit and rollback in constant time.
-struct Stack {
+pub struct Stack {
     values: Vec<i32>,
     shrink_by: usize,
     temp_values: Vec<i32>,
 }
 
 impl Stack {
-    fn new() -> Stack {
+    pub fn new() -> Stack {
         Stack {
             values: vec![],
             shrink_by: 0,
@@ -16,11 +16,11 @@ impl Stack {
         }
     }
 
-    fn push(&mut self, value: i32) {
+    pub fn push(&mut self, value: i32) {
         self.temp_values.push(value);
     }
 
-    fn pop(&mut self) -> Result<i32> {
+    pub fn pop(&mut self) -> Result<i32> {
         if self.temp_values.len() == 0 {
            
             self.shrink_by += 1;
@@ -38,7 +38,7 @@ impl Stack {
         self.values.len() < self.shrink_by
     }
 
-    fn commit(&mut self) -> Result<()> {
+    pub fn commit(&mut self) -> Result<()> {
 
         if self.is_underflow() {
             return Err(Error::msg("Stack underflow"));
@@ -52,12 +52,12 @@ impl Stack {
         Ok(())
     }
 
-    fn rollback(&mut self) {
+    pub fn rollback(&mut self) {
         self.shrink_by = 0;
         self.temp_values.clear();
     }
 
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         format!("{:?}", self.values)
     }
 }

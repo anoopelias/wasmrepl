@@ -5,13 +5,14 @@ use anyhow::{Result, Error};
 
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
+use stack::Stack;
 use wast::core::{Expression, Instruction};
 use wast::parser::{ParseBuffer, self};
 
 
 fn main() -> rustyline::Result<()> {
     let mut rl = DefaultEditor::new()?;
-    let mut stack = vec![];
+    let mut stack = Stack::new();
     loop {
         let readline = rl.readline(">> ");
         match readline {
@@ -36,7 +37,7 @@ fn main() -> rustyline::Result<()> {
     Ok(())
 }
 
-fn parse_and_execute(stack: &mut Vec<i32>, str: &str) -> String {
+fn parse_and_execute(stack: &mut Stack, str: &str) -> String {
     let buf = ParseBuffer::new(str).unwrap();
     let expr = parse(&buf);
 
@@ -44,7 +45,7 @@ fn parse_and_execute(stack: &mut Vec<i32>, str: &str) -> String {
         Ok(expr) => {
             match execute(stack, expr) {
                 Ok(_) => {
-                    format!("{:?}", stack)
+                    format!("{}", stack.to_string())
                 },
                 Err(err) => {
                     format!("Error: {}", err.to_string())
@@ -57,19 +58,19 @@ fn parse_and_execute(stack: &mut Vec<i32>, str: &str) -> String {
     }
 }
 
-fn execute(stack: &mut Vec<i32>, expr: Expression) -> Result<()> {
-    let mut values = vec![];
+fn execute(stack: &mut Stack, expr: Expression) -> Result<()> {
     for instr in expr.instrs.iter() {
         match instr {
             Instruction::I32Const(value) => {
-                values.push(*value);
+                stack.push(*value);
             },
             _ => {
+                stack.rollback();
                 return Err(Error::msg("Unknown instruction"));
             }
         }
     }
-    stack.append(&mut values);
+    stack.commit().unwrap();
     Ok(())
 }
 
@@ -83,7 +84,7 @@ mod tests {
 
     #[test]
     fn test_parse_and_execute() {
-        let mut stack = vec![];
+        let mut stack = Stack::new();
         assert_eq!(parse_and_execute(&mut stack, "(i32.const 42)"), "[42]");
         assert_eq!(parse_and_execute(&mut stack, "(i32.const 1)"), "[42, 1]");
     }
@@ -97,7 +98,7 @@ mod tests {
 
     #[test]
     fn test_execute_unknown_error() {
-        let mut stack = vec![];
+        let mut stack = Stack::new();
         let str = "(f32.const 32.0)";
         let buf = ParseBuffer::new(&str).unwrap();
         let expr = parse(&buf).unwrap();
@@ -106,9 +107,9 @@ mod tests {
 
     #[test]
     fn test_execute_preserve_stack_on_error() {
-        let mut stack = vec![];
+        let mut stack = Stack::new();
         parse_and_execute(&mut stack, "(i32.const 42) (f32.const 35.0)");
-        assert_eq!(stack.len(), 0);
+        assert!(stack.pop().is_err());
     }
 
 }
