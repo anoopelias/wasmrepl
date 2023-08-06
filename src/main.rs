@@ -1,4 +1,6 @@
 
+mod stack;
+
 use anyhow::{Result, Error};
 
 use rustyline::error::ReadlineError;
@@ -33,7 +35,6 @@ fn main() -> rustyline::Result<()> {
     }
     Ok(())
 }
-
 
 fn parse_and_execute(stack: &mut Vec<i32>, str: &str) -> String {
     let buf = ParseBuffer::new(str).unwrap();
@@ -77,7 +78,7 @@ fn parse<'a>(buf: &'a ParseBuffer) -> wast::parser::Result<Expression<'a>> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
