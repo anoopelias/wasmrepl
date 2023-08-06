@@ -56,6 +56,10 @@ impl Stack {
         self.shrink_by = 0;
         self.temp_values.clear();
     }
+
+    fn to_string(&self) -> String {
+        format!("{:?}", self.values)
+    }
 }
 
 
@@ -176,4 +180,24 @@ mod tests {
 
         assert!(stack.commit().is_err());
     }
+
+    #[test]
+    fn test_stack_to_string() {
+        let mut stack = Stack::new();
+        stack.push(1);
+        stack.push(2);
+        stack.commit().unwrap();
+        assert_eq!(stack.to_string(), "[1, 2]");
+    }
+
+    #[test]
+    fn test_stack_uncommited_to_string() {
+        let mut stack = Stack::new();
+        stack.push(1);
+        stack.push(2);
+        stack.commit().unwrap();
+        stack.push(3);
+        assert_eq!(stack.to_string(), "[1, 2]");
+    }
+
 }
