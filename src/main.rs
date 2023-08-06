@@ -48,6 +48,7 @@ fn parse_and_execute(stack: &mut Stack, str: &str) -> String {
                     format!("{}", stack.to_string())
                 },
                 Err(err) => {
+                    stack.rollback();
                     format!("Error: {}", err.to_string())
                 }
             }
@@ -64,8 +65,10 @@ fn execute(stack: &mut Stack, expr: Expression) -> Result<()> {
             Instruction::I32Const(value) => {
                 stack.push(*value);
             },
+            Instruction::Drop => {
+                stack.pop()?;
+            },
             _ => {
-                stack.rollback();
                 return Err(Error::msg("Unknown instruction"));
             }
         }
@@ -110,6 +113,13 @@ mod tests {
         let mut stack = Stack::new();
         parse_and_execute(&mut stack, "(i32.const 42) (f32.const 35.0)");
         assert!(stack.pop().is_err());
+    }
+
+    #[test]
+    fn test_drop() {
+        let mut stack = Stack::new();
+        assert_eq!(parse_and_execute(&mut stack, "(i32.const 42) (drop)"), "[]");
+        assert_eq!(parse_and_execute(&mut stack, "(i32.const 42) (i32.const 45) (drop)"), "[42]");
     }
 
 }
