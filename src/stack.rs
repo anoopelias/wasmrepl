@@ -57,6 +57,17 @@ impl Stack {
         self.temp_values.clear();
     }
 
+    pub fn to_soft_string(&self) -> Result<String> {
+        if self.is_underflow() {
+            return Err(Error::msg("Stack underflow"));
+        }
+
+        let mut values = self.values.clone();
+        values.truncate(values.len() - self.shrink_by);
+        values.extend(self.temp_values.clone());
+        Ok(format!("{:?}", values))
+    }
+
     pub fn to_string(&self) -> String {
         format!("{:?}", self.values)
     }
@@ -75,6 +86,7 @@ mod tests {
         assert_eq!(stack.pop().unwrap(), 2);
         assert_eq!(stack.pop().unwrap(), 1);
         assert!(stack.pop().is_err());
+        assert!(stack.to_soft_string().is_err());
     }
 
     #[test]
@@ -198,6 +210,7 @@ mod tests {
         stack.commit().unwrap();
         stack.push(3);
         assert_eq!(stack.to_string(), "[1, 2]");
+        assert_eq!(stack.to_soft_string().unwrap(), "[1, 2, 3]");
     }
 
 }
