@@ -48,6 +48,11 @@ impl Executor {
                 self.stack.push(n.try_into()?);
                 Ok(())
             },
+            Instruction::I32Ctz => {
+                let n = self.stack.pop()?.trailing_zeros();
+                self.stack.push(n.try_into()?);
+                Ok(())
+            },
             Instruction::I32Add => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
@@ -140,11 +145,44 @@ mod tests {
     }
 
     #[test]
+    fn test_clz() {
+        let mut executor = Executor::new();
+        let expr = test_expression![
+            Instruction::I32Const(1023),
+            Instruction::I32Clz
+        ];
+        executor.execute(&expr).unwrap();
+        assert_eq!(executor.to_state(), "[22]");
+    }
+
+    #[test]
     fn test_clz_max() {
         let mut executor = Executor::new();
         let expr = test_expression![
             Instruction::I32Const(0),
             Instruction::I32Clz
+        ];
+        executor.execute(&expr).unwrap();
+        assert_eq!(executor.to_state(), "[32]");
+    }
+
+    #[test]
+    fn test_ctz() {
+        let mut executor = Executor::new();
+        let expr = test_expression![
+            Instruction::I32Const(1024),
+            Instruction::I32Ctz
+        ];
+        executor.execute(&expr).unwrap();
+        assert_eq!(executor.to_state(), "[10]");
+    }
+
+    #[test]
+    fn test_ctz_max() {
+        let mut executor = Executor::new();
+        let expr = test_expression![
+            Instruction::I32Const(0),
+            Instruction::I32Ctz
         ];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[32]");
