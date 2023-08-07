@@ -62,15 +62,23 @@ mod tests {
 
     use crate::executor::Executor;
 
+    macro_rules! test_expression {
+        ($( $x:expr ),*) => {
+            Expression{
+                instrs: Box::new([
+                    $( $x ),*
+                ])
+            }
+        };
+    }
+
     #[test]
     fn test_execute_i32_const() {
         let mut executor = Executor::new();
-        let expr = Expression{
-            instrs: Box::new([
-                Instruction::I32Const(42),
-                Instruction::I32Const(58),
-            ])
-        };
+        let expr = test_expression![
+            Instruction::I32Const(42),
+            Instruction::I32Const(58)
+        ];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[42, 58]");
     }
@@ -78,13 +86,11 @@ mod tests {
     #[test]
     fn test_execute_drop() {
         let mut executor = Executor::new();
-        let expr = Expression{
-            instrs: Box::new([
-                Instruction::I32Const(42),
-                Instruction::I32Const(58),
-                Instruction::Drop,
-            ])
-        };
+        let expr = test_expression![
+            Instruction::I32Const(42),
+            Instruction::I32Const(58),
+            Instruction::Drop
+        ];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
@@ -92,13 +98,11 @@ mod tests {
     #[test]
     fn test_execute_add() {
         let mut executor = Executor::new();
-        let expr = Expression{
-            instrs: Box::new([
-                Instruction::I32Const(42),
-                Instruction::I32Const(58),
-                Instruction::I32Add,
-            ])
-        };
+        let expr = test_expression![
+            Instruction::I32Const(42),
+            Instruction::I32Const(58),
+            Instruction::I32Add
+        ];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[100]");
     }
@@ -106,17 +110,16 @@ mod tests {
     #[test]
     fn test_execute_error_rollback() {
         let mut executor = Executor::new();
-        let expr = Expression{
-            instrs: Box::new([Instruction::I32Const(55)])
-        };
+        let expr = test_expression![
+            Instruction::I32Const(55)
+        ];
         executor.execute(&expr).unwrap();
-        let expr = Expression{
-            instrs: Box::new([
-                Instruction::I32Const(42),
-                // Use an unimplimented instruction to force an error
-                Instruction::F32Copysign,
-            ])
-        };
+
+        let expr = test_expression![
+            Instruction::I32Const(42),
+            // Use an unimplimented instruction to force an error
+            Instruction::F32Copysign
+        ];
         assert!(executor.execute(&expr).is_err());
         // Ensure rollback
         assert_eq!(executor
