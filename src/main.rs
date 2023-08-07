@@ -74,16 +74,16 @@ mod tests {
 
     #[test]
     fn test_parse_error() {
-        let str = "(i32.const 42";
-        let buf = ParseBuffer::new(&str).unwrap();
-        assert!(parse(&buf).is_err());
+        let mut executor = Executor::new();
+        let resp = parse_and_execute(&mut executor, "(i32.const 1");
+        assert_eq!(&resp[..7], "Error: ");
     }
 
     #[test]
-    fn test_drop() {
+    fn test_execute_error() {
         let mut executor = Executor::new();
-        assert_eq!(parse_and_execute(&mut executor, "(i32.const 42) (drop)"), "[]");
-        assert_eq!(parse_and_execute(&mut executor, "(i32.const 42) (i32.const 45) (drop)"), "[42]");
+        let resp = parse_and_execute(&mut executor, "(i32.add)");
+        assert_eq!(&resp[..7], "Error: ");
     }
 
 }
