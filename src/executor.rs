@@ -49,6 +49,12 @@ impl Executor {
                 self.stack.push(a + b);
                 Ok(())
             },
+            Instruction::I32Sub => {
+                let a = self.stack.pop()?;
+                let b = self.stack.pop()?;
+                self.stack.push(b - a);
+                Ok(())
+            },
             _ => {
                 Err(Error::msg("Unknown instruction"))
             }
@@ -126,5 +132,17 @@ mod tests {
             .stack
             .to_soft_string()
             .unwrap(), "[55]");
+    }
+
+    #[test]
+    fn test_sub() {
+        let mut executor = Executor::new();
+        let expr = test_expression![
+            Instruction::I32Const(78),
+            Instruction::I32Const(58),
+            Instruction::I32Sub
+        ];
+        executor.execute(&expr).unwrap();
+        assert_eq!(executor.to_state(), "[20]");
     }
 }
