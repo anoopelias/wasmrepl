@@ -80,6 +80,9 @@ impl Executor {
             Instruction::I32DivS => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
+                if a == 0 {
+                    return Err(Error::msg("Division by zero"));
+                }
                 self.stack.push(b / a);
                 Ok(())
             },
@@ -240,5 +243,16 @@ mod tests {
         ];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[5]");
+    }
+
+    #[test]
+    fn test_div_s_by_zero() {
+        let mut executor = Executor::new();
+        let expr = test_expression![
+            Instruction::I32Const(16),
+            Instruction::I32Const(0),
+            Instruction::I32DivS
+        ];
+        assert!(executor.execute(&expr).is_err());
     }
 }
