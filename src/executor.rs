@@ -44,13 +44,19 @@ impl Executor {
                 Ok(())
             },
             Instruction::I32Clz => {
-                let n = self.stack.pop()?.leading_zeros();
-                self.stack.push(n.try_into()?);
+                let n = self.stack
+                    .pop()?
+                    .leading_zeros()
+                    .try_into()?;
+                self.stack.push(n);
                 Ok(())
             },
             Instruction::I32Ctz => {
-                let n = self.stack.pop()?.trailing_zeros();
-                self.stack.push(n.try_into()?);
+                let n = self.stack
+                    .pop()?
+                    .trailing_zeros()
+                    .try_into()?;
+                self.stack.push(n);
                 Ok(())
             },
             Instruction::I32Add => {
