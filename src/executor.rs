@@ -1,5 +1,5 @@
+use anyhow::{Error, Result};
 use wast::core::{Expression, Instruction};
-use anyhow::{Result, Error};
 
 use crate::stack::Stack;
 
@@ -8,7 +8,6 @@ pub struct Executor {
 }
 
 impl Executor {
-
     pub fn new() -> Executor {
         Executor {
             stack: Stack::new(),
@@ -18,7 +17,7 @@ impl Executor {
     pub fn execute(&mut self, expr: &Expression) -> Result<()> {
         for instr in expr.instrs.iter() {
             match self.execute_instruction(instr) {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(err) => {
                     self.stack.rollback();
                     return Err(err);
@@ -38,45 +37,39 @@ impl Executor {
             Instruction::I32Const(value) => {
                 self.stack.push(*value);
                 Ok(())
-            },
+            }
             Instruction::Drop => {
                 self.stack.pop()?;
                 Ok(())
-            },
+            }
             Instruction::I32Clz => {
-                let n = self.stack
-                    .pop()?
-                    .leading_zeros()
-                    .try_into()?;
+                let n = self.stack.pop()?.leading_zeros().try_into()?;
                 self.stack.push(n);
                 Ok(())
-            },
+            }
             Instruction::I32Ctz => {
-                let n = self.stack
-                    .pop()?
-                    .trailing_zeros()
-                    .try_into()?;
+                let n = self.stack.pop()?.trailing_zeros().try_into()?;
                 self.stack.push(n);
                 Ok(())
-            },
+            }
             Instruction::I32Add => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 self.stack.push(a + b);
                 Ok(())
-            },
+            }
             Instruction::I32Sub => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 self.stack.push(b - a);
                 Ok(())
-            },
+            }
             Instruction::I32Mul => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
                 self.stack.push(a * b);
                 Ok(())
-            },
+            }
             Instruction::I32DivS => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
@@ -85,10 +78,8 @@ impl Executor {
                 }
                 self.stack.push(b / a);
                 Ok(())
-            },
-            _ => {
-                Err(Error::msg("Unknown instruction"))
             }
+            _ => Err(Error::msg("Unknown instruction")),
         }
     }
 }
@@ -112,10 +103,7 @@ mod tests {
     #[test]
     fn test_execute_i32_const() {
         let mut executor = Executor::new();
-        let expr = test_expression![
-            Instruction::I32Const(42),
-            Instruction::I32Const(58)
-        ];
+        let expr = test_expression![Instruction::I32Const(42), Instruction::I32Const(58)];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[42, 58]");
     }
@@ -135,9 +123,7 @@ mod tests {
     #[test]
     fn test_execute_error_rollback() {
         let mut executor = Executor::new();
-        let expr = test_expression![
-            Instruction::I32Const(55)
-        ];
+        let expr = test_expression![Instruction::I32Const(55)];
         executor.execute(&expr).unwrap();
 
         let expr = test_expression![
@@ -147,19 +133,13 @@ mod tests {
         ];
         assert!(executor.execute(&expr).is_err());
         // Ensure rollback
-        assert_eq!(executor
-            .stack
-            .to_soft_string()
-            .unwrap(), "[55]");
+        assert_eq!(executor.stack.to_soft_string().unwrap(), "[55]");
     }
 
     #[test]
     fn test_clz() {
         let mut executor = Executor::new();
-        let expr = test_expression![
-            Instruction::I32Const(1023),
-            Instruction::I32Clz
-        ];
+        let expr = test_expression![Instruction::I32Const(1023), Instruction::I32Clz];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[22]");
     }
@@ -167,10 +147,7 @@ mod tests {
     #[test]
     fn test_clz_max() {
         let mut executor = Executor::new();
-        let expr = test_expression![
-            Instruction::I32Const(0),
-            Instruction::I32Clz
-        ];
+        let expr = test_expression![Instruction::I32Const(0), Instruction::I32Clz];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[32]");
     }
@@ -178,10 +155,7 @@ mod tests {
     #[test]
     fn test_ctz() {
         let mut executor = Executor::new();
-        let expr = test_expression![
-            Instruction::I32Const(1024),
-            Instruction::I32Ctz
-        ];
+        let expr = test_expression![Instruction::I32Const(1024), Instruction::I32Ctz];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[10]");
     }
@@ -189,10 +163,7 @@ mod tests {
     #[test]
     fn test_ctz_max() {
         let mut executor = Executor::new();
-        let expr = test_expression![
-            Instruction::I32Const(0),
-            Instruction::I32Ctz
-        ];
+        let expr = test_expression![Instruction::I32Const(0), Instruction::I32Ctz];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[32]");
     }

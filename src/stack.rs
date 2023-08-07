@@ -1,4 +1,4 @@
-use anyhow::{Ok, Result, Error};
+use anyhow::{Error, Ok, Result};
 
 /// Stack with commit and rollback in constant time.
 pub struct Stack {
@@ -22,7 +22,6 @@ impl Stack {
 
     pub fn pop(&mut self) -> Result<i32> {
         if self.temp_values.len() == 0 {
-           
             self.shrink_by += 1;
             if self.is_underflow() {
                 return Err(Error::msg("Stack underflow"));
@@ -39,7 +38,6 @@ impl Stack {
     }
 
     pub fn commit(&mut self) -> Result<()> {
-
         if self.is_underflow() {
             return Err(Error::msg("Stack underflow"));
         }
@@ -73,7 +71,6 @@ impl Stack {
         format!("{:?}", self.values)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -125,7 +122,6 @@ mod tests {
         assert_eq!(stack.pop().unwrap(), 1);
         assert!(stack.pop().is_err());
     }
-
 
     #[test]
     fn test_stack_grow_and_commit() {
@@ -213,5 +209,4 @@ mod tests {
         assert_eq!(stack.to_string(), "[1, 2]");
         assert_eq!(stack.to_soft_string().unwrap(), "[1, 2, 3]");
     }
-
 }

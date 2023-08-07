@@ -1,13 +1,11 @@
-
-mod stack;
 mod executor;
+mod stack;
 
 use executor::Executor;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 use wast::core::Expression;
-use wast::parser::{ParseBuffer, self};
-
+use wast::parser::{self, ParseBuffer};
 
 fn main() -> rustyline::Result<()> {
     let mut rl = DefaultEditor::new()?;
@@ -18,18 +16,18 @@ fn main() -> rustyline::Result<()> {
             Ok(line) => {
                 rl.add_history_entry(line.as_str())?;
                 println!("{}", parse_and_execute(&mut executor, line.as_str()));
-            },
+            }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
-                break
-            },
+                break;
+            }
             Err(ReadlineError::Eof) => {
                 println!("CTRL-D");
-                break
-            },
+                break;
+            }
             Err(err) => {
                 println!("Error: {:?}", err);
-                break
+                break;
             }
         }
     }
@@ -41,14 +39,12 @@ fn parse_and_execute(executor: &mut Executor, str: &str) -> String {
     let expr = parse(&buf);
 
     match expr {
-        Ok(expr) => {
-            match executor.execute(&expr) {
-                Ok(_) => {
-                    format!("{}", executor.to_state())
-                },
-                Err(err) => {
-                    format!("Error: {}", err.to_string())
-                }
+        Ok(expr) => match executor.execute(&expr) {
+            Ok(_) => {
+                format!("{}", executor.to_state())
+            }
+            Err(err) => {
+                format!("Error: {}", err.to_string())
             }
         },
         Err(err) => {
@@ -85,5 +81,4 @@ mod tests {
         let resp = parse_and_execute(&mut executor, "(i32.add)");
         assert_eq!(&resp[..7], "Error: ");
     }
-
 }
