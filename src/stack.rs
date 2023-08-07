@@ -57,6 +57,7 @@ impl Stack {
         self.temp_values.clear();
     }
 
+    #[allow(dead_code)]
     pub fn to_soft_string(&self) -> Result<String> {
         if self.is_underflow() {
             return Err(Error::msg("Stack underflow"));
