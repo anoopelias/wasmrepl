@@ -43,6 +43,11 @@ impl Executor {
                 self.stack.pop()?;
                 Ok(())
             },
+            Instruction::I32Clz => {
+                let n = self.stack.pop()?.leading_zeros();
+                self.stack.push(n.try_into()?);
+                Ok(())
+            },
             Instruction::I32Add => {
                 let a = self.stack.pop()?;
                 let b = self.stack.pop()?;
@@ -133,7 +138,18 @@ mod tests {
             .to_soft_string()
             .unwrap(), "[55]");
     }
-    
+
+    #[test]
+    fn test_clz_max() {
+        let mut executor = Executor::new();
+        let expr = test_expression![
+            Instruction::I32Const(0),
+            Instruction::I32Clz
+        ];
+        executor.execute(&expr).unwrap();
+        assert_eq!(executor.to_state(), "[32]");
+    }
+
     #[test]
     fn test_execute_add() {
         let mut executor = Executor::new();
