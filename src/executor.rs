@@ -61,6 +61,12 @@ impl Executor {
                 self.stack.push(a * b);
                 Ok(())
             },
+            Instruction::I32DivS => {
+                let a = self.stack.pop()?;
+                let b = self.stack.pop()?;
+                self.stack.push(b / a);
+                Ok(())
+            },
             _ => {
                 Err(Error::msg("Unknown instruction"))
             }
@@ -162,5 +168,17 @@ mod tests {
         ];
         executor.execute(&expr).unwrap();
         assert_eq!(executor.to_state(), "[4524]");
+    }
+
+    #[test]
+    fn test_div_s() {
+        let mut executor = Executor::new();
+        let expr = test_expression![
+            Instruction::I32Const(16),
+            Instruction::I32Const(3),
+            Instruction::I32DivS
+        ];
+        executor.execute(&expr).unwrap();
+        assert_eq!(executor.to_state(), "[5]");
     }
 }
