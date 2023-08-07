@@ -114,18 +114,6 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_add() {
-        let mut executor = Executor::new();
-        let expr = test_expression![
-            Instruction::I32Const(42),
-            Instruction::I32Const(58),
-            Instruction::I32Add
-        ];
-        executor.execute(&expr).unwrap();
-        assert_eq!(executor.to_state(), "[100]");
-    }
-
-    #[test]
     fn test_execute_error_rollback() {
         let mut executor = Executor::new();
         let expr = test_expression![
@@ -144,6 +132,18 @@ mod tests {
             .stack
             .to_soft_string()
             .unwrap(), "[55]");
+    }
+    
+    #[test]
+    fn test_execute_add() {
+        let mut executor = Executor::new();
+        let expr = test_expression![
+            Instruction::I32Const(42),
+            Instruction::I32Const(58),
+            Instruction::I32Add
+        ];
+        executor.execute(&expr).unwrap();
+        assert_eq!(executor.to_state(), "[100]");
     }
 
     #[test]
