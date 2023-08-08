@@ -109,6 +109,16 @@ mod tests {
         };
     }
 
+    macro_rules! test_local {
+        ($id:expr, $ty:expr) => {
+            Local {
+                id: $id,
+                name: None,
+                ty: $ty,
+            }
+        };
+    }
+
     #[test]
     fn test_execute_i32_const() {
         let mut executor = Executor::new();
@@ -240,11 +250,7 @@ mod tests {
     fn test_local_error() {
         let mut executor = Executor::new();
 
-        let line = test_line![(Local {
-            id: None,
-            name: None,
-            ty: ValType::I32,
-        })(
+        let line = test_line![(test_local![None, ValType::I32])(
             Instruction::I32Const(16),
             Instruction::I32Const(0),
             Instruction::I32DivS
