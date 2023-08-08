@@ -4,7 +4,7 @@ mod parser;
 mod stack;
 
 use executor::Executor;
-use parser::LineParser;
+use parser::Line;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 use wast::parser::{self as wastparser, ParseBuffer};
@@ -38,7 +38,7 @@ fn main() -> rustyline::Result<()> {
 
 fn parse_and_execute(executor: &mut Executor, str: &str) -> String {
     let buf = ParseBuffer::new(str).unwrap();
-    let lp = wastparser::parse::<LineParser>(&buf);
+    let lp = wastparser::parse::<Line>(&buf);
 
     match lp {
         Ok(line) => match executor.execute(&line) {

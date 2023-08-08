@@ -1,7 +1,7 @@
 use anyhow::{Error, Result};
 use wast::core::Instruction;
 
-use crate::{parser::LineParser, stack::Stack};
+use crate::{parser::Line, stack::Stack};
 
 pub struct Executor {
     stack: Stack,
@@ -14,7 +14,7 @@ impl Executor {
         }
     }
 
-    pub fn execute(&mut self, line: &LineParser) -> Result<()> {
+    pub fn execute(&mut self, line: &Line) -> Result<()> {
         for instr in line.expr.instrs.iter() {
             match self.execute_instruction(instr) {
                 Ok(_) => {}
@@ -89,11 +89,11 @@ mod tests {
     use wast::core::{Expression, Instruction};
 
     use crate::executor::Executor;
-    use crate::parser::LineParser;
+    use crate::parser::Line;
 
     macro_rules! test_line {
         ($( $x:expr ),*) => {
-            LineParser {
+            Line {
                 locals:  Vec::new(),
                 expr: Expression{
                     instrs: Box::new([
@@ -107,35 +107,35 @@ mod tests {
     #[test]
     fn test_execute_i32_const() {
         let mut executor = Executor::new();
-        let expr = test_line![Instruction::I32Const(42), Instruction::I32Const(58)];
-        executor.execute(&expr).unwrap();
+        let line = test_line![Instruction::I32Const(42), Instruction::I32Const(58)];
+        executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42, 58]");
     }
 
     #[test]
     fn test_execute_drop() {
         let mut executor = Executor::new();
-        let expr = test_line![
+        let line = test_line![
             Instruction::I32Const(42),
             Instruction::I32Const(58),
             Instruction::Drop
         ];
-        executor.execute(&expr).unwrap();
+        executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
     #[test]
     fn test_execute_error_rollback() {
         let mut executor = Executor::new();
-        let expr = test_line![Instruction::I32Const(55)];
-        executor.execute(&expr).unwrap();
+        let line = test_line![Instruction::I32Const(55)];
+        executor.execute(&line).unwrap();
 
-        let expr = test_line![
+        let line = test_line![
             Instruction::I32Const(42),
             // Use an unimplimented instruction to force an error
             Instruction::F32Copysign
         ];
-        assert!(executor.execute(&expr).is_err());
+        assert!(executor.execute(&line).is_err());
         // Ensure rollback
         assert_eq!(executor.stack.to_soft_string().unwrap(), "[55]");
     }
@@ -143,91 +143,91 @@ mod tests {
     #[test]
     fn test_clz() {
         let mut executor = Executor::new();
-        let expr = test_line![Instruction::I32Const(1023), Instruction::I32Clz];
-        executor.execute(&expr).unwrap();
+        let line = test_line![Instruction::I32Const(1023), Instruction::I32Clz];
+        executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[22]");
     }
 
     #[test]
     fn test_clz_max() {
         let mut executor = Executor::new();
-        let expr = test_line![Instruction::I32Const(0), Instruction::I32Clz];
-        executor.execute(&expr).unwrap();
+        let line = test_line![Instruction::I32Const(0), Instruction::I32Clz];
+        executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[32]");
     }
 
     #[test]
     fn test_ctz() {
         let mut executor = Executor::new();
-        let expr = test_line![Instruction::I32Const(1024), Instruction::I32Ctz];
-        executor.execute(&expr).unwrap();
+        let line = test_line![Instruction::I32Const(1024), Instruction::I32Ctz];
+        executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[10]");
     }
 
     #[test]
     fn test_ctz_max() {
         let mut executor = Executor::new();
-        let expr = test_line![Instruction::I32Const(0), Instruction::I32Ctz];
-        executor.execute(&expr).unwrap();
+        let line = test_line![Instruction::I32Const(0), Instruction::I32Ctz];
+        executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[32]");
     }
 
     #[test]
     fn test_execute_add() {
         let mut executor = Executor::new();
-        let expr = test_line![
+        let line = test_line![
             Instruction::I32Const(42),
             Instruction::I32Const(58),
             Instruction::I32Add
         ];
-        executor.execute(&expr).unwrap();
+        executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[100]");
     }
 
     #[test]
     fn test_sub() {
         let mut executor = Executor::new();
-        let expr = test_line![
+        let line = test_line![
             Instruction::I32Const(78),
             Instruction::I32Const(58),
             Instruction::I32Sub
         ];
-        executor.execute(&expr).unwrap();
+        executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[20]");
     }
 
     #[test]
     fn test_mul() {
         let mut executor = Executor::new();
-        let expr = test_line![
+        let line = test_line![
             Instruction::I32Const(78),
             Instruction::I32Const(58),
             Instruction::I32Mul
         ];
-        executor.execute(&expr).unwrap();
+        executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[4524]");
     }
 
     #[test]
     fn test_div_s() {
         let mut executor = Executor::new();
-        let expr = test_line![
+        let line = test_line![
             Instruction::I32Const(16),
             Instruction::I32Const(3),
             Instruction::I32DivS
         ];
-        executor.execute(&expr).unwrap();
+        executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[5]");
     }
 
     #[test]
     fn test_div_s_by_zero() {
         let mut executor = Executor::new();
-        let expr = test_line![
+        let line = test_line![
             Instruction::I32Const(16),
             Instruction::I32Const(0),
             Instruction::I32DivS
         ];
-        assert!(executor.execute(&expr).is_err());
+        assert!(executor.execute(&line).is_err());
     }
 }

@@ -35,12 +35,12 @@ impl<'a> Parse<'a> for LocalParser<'a> {
     }
 }
 
-pub struct LineParser<'a> {
+pub struct Line<'a> {
     pub locals: Vec<Local<'a>>,
     pub expr: Expression<'a>,
 }
 
-impl<'a> Parse<'a> for LineParser<'a> {
+impl<'a> Parse<'a> for Line<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         // We need to parse locals explicitly because of this issue:
         // https://github.com/bytecodealliance/wasm-tools/issues/1156
@@ -52,7 +52,7 @@ impl<'a> Parse<'a> for LineParser<'a> {
             })?;
         }
 
-        Ok(LineParser {
+        Ok(Line {
             locals,
             expr: parser.parse()?,
         })
