@@ -1,22 +1,25 @@
 use anyhow::{Error, Result};
-use wast::core::Instruction;
+use wast::core::{Instruction, Local};
+use wast::token::Index;
 
-use crate::{parser::Line, stack::Stack};
+use crate::{locals::Locals, parser::Line, stack::Stack};
 
 pub struct Executor {
     stack: Stack,
+    locals: Locals,
 }
 
 impl Executor {
     pub fn new() -> Executor {
         Executor {
             stack: Stack::new(),
+            locals: Locals::new(),
         }
     }
 
     pub fn execute(&mut self, line: &Line) -> Result<()> {
-        if line.locals.len() > 0 {
-            return Err(Error::msg("Locals not supported"));
+        for lc in line.locals.iter() {
+            self.execute_local(lc)?
         }
 
         for instr in line.expr.instrs.iter() {
@@ -35,6 +38,16 @@ impl Executor {
 
     pub fn to_state(&self) -> String {
         self.stack.to_string()
+    }
+
+    fn execute_local(&mut self, lc: &Local) -> Result<()> {
+        match lc.id {
+            Some(id) => self.locals.grow_by_id(id.name()),
+            None => {
+                self.locals.grow();
+                Ok(())
+            }
+        }
     }
 
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<()> {
@@ -84,6 +97,11 @@ impl Executor {
                 self.stack.push(b / a);
                 Ok(())
             }
+            Instruction::LocalGet(Index::Num(i, _)) => {
+                let value = self.locals.get(*i as usize)?;
+                self.stack.push(value);
+                Ok(())
+            }
             _ => Err(Error::msg("Unknown instruction")),
         }
     }
@@ -92,6 +110,7 @@ impl Executor {
 #[cfg(test)]
 mod tests {
     use wast::core::{Expression, Instruction, Local, ValType};
+    use wast::token::{Index, Span};
 
     use crate::executor::Executor;
     use crate::parser::Line;
@@ -116,6 +135,12 @@ mod tests {
                 name: None,
                 ty: $ty,
             }
+        };
+    }
+
+    macro_rules! test_index {
+        ($n:expr) => {
+            Index::Num($n, Span::from_offset(0))
         };
     }
 
@@ -249,12 +274,10 @@ mod tests {
     #[test]
     fn test_local_error() {
         let mut executor = Executor::new();
-
-        let line = test_line![(test_local![None, ValType::I32])(
-            Instruction::I32Const(16),
-            Instruction::I32Const(0),
-            Instruction::I32DivS
-        )];
-        assert!(executor.execute(&line).is_err());
+        let line = test_line![(test_local![None, ValType::I32])(Instruction::LocalGet(
+            test_index!(0)
+        ))];
+        executor.execute(&line).unwrap();
+        assert_eq!(executor.to_state(), "[0]");
     }
 }
