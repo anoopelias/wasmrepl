@@ -15,6 +15,10 @@ impl Executor {
     }
 
     pub fn execute(&mut self, line: &Line) -> Result<()> {
+        if line.locals.len() > 0 {
+            return Err(Error::msg("Locals not supported"));
+        }
+
         for instr in line.expr.instrs.iter() {
             match self.execute_instruction(instr) {
                 Ok(_) => {}
@@ -24,6 +28,7 @@ impl Executor {
                 }
             }
         }
+
         self.stack.commit().unwrap();
         Ok(())
     }
@@ -86,7 +91,7 @@ impl Executor {
 
 #[cfg(test)]
 mod tests {
-    use wast::core::{Expression, Instruction};
+    use wast::core::{Expression, Instruction, Local, ValType};
 
     use crate::executor::Executor;
     use crate::parser::Line;
@@ -228,6 +233,22 @@ mod tests {
             Instruction::I32Const(0),
             Instruction::I32DivS
         ];
+        assert!(executor.execute(&line).is_err());
+    }
+
+    #[test]
+    fn test_local_error() {
+        let mut executor = Executor::new();
+        let line = Line {
+            locals: vec![Local {
+                id: None,
+                name: None,
+                ty: ValType::I32,
+            }],
+            expr: Expression {
+                instrs: Box::new([]),
+            },
+        };
         assert!(executor.execute(&line).is_err());
     }
 }
