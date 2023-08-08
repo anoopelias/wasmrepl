@@ -1,4 +1,3 @@
-#![allow(unused)]
 use anyhow::{Error, Result};
 use std::collections::HashMap;
 

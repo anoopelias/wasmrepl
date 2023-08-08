@@ -1,5 +1,4 @@
-#![allow(unused)]
-use std::{collections::HashMap, mem::take};
+use std::collections::HashMap;
 
 use anyhow::{Error, Result};
 pub struct List {
@@ -45,7 +44,7 @@ impl List {
     }
 
     pub fn commit(&mut self) {
-        for i in 0..self.soft_len {
+        for _ in 0..self.soft_len {
             self.values.push(0);
         }
 
