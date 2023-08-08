@@ -97,9 +97,9 @@ mod tests {
     use crate::parser::Line;
 
     macro_rules! test_line {
-        ($( $x:expr ),*) => {
+        (($( $y:expr ),*)($( $x:expr ),*)) => {
             Line {
-                locals:  Vec::new(),
+                locals:  vec![$( $y ),*],
                 expr: Expression{
                     instrs: Box::new([
                         $( $x ),*
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn test_execute_i32_const() {
         let mut executor = Executor::new();
-        let line = test_line![Instruction::I32Const(42), Instruction::I32Const(58)];
+        let line = test_line![()(Instruction::I32Const(42), Instruction::I32Const(58))];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42, 58]");
     }
@@ -120,11 +120,11 @@ mod tests {
     #[test]
     fn test_execute_drop() {
         let mut executor = Executor::new();
-        let line = test_line![
+        let line = test_line![()(
             Instruction::I32Const(42),
             Instruction::I32Const(58),
             Instruction::Drop
-        ];
+        )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
@@ -132,14 +132,14 @@ mod tests {
     #[test]
     fn test_execute_error_rollback() {
         let mut executor = Executor::new();
-        let line = test_line![Instruction::I32Const(55)];
+        let line = test_line![()(Instruction::I32Const(55))];
         executor.execute(&line).unwrap();
 
-        let line = test_line![
+        let line = test_line![()(
             Instruction::I32Const(42),
             // Use an unimplimented instruction to force an error
             Instruction::F32Copysign
-        ];
+        )];
         assert!(executor.execute(&line).is_err());
         // Ensure rollback
         assert_eq!(executor.stack.to_soft_string().unwrap(), "[55]");
@@ -148,7 +148,7 @@ mod tests {
     #[test]
     fn test_clz() {
         let mut executor = Executor::new();
-        let line = test_line![Instruction::I32Const(1023), Instruction::I32Clz];
+        let line = test_line![()(Instruction::I32Const(1023), Instruction::I32Clz)];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[22]");
     }
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn test_clz_max() {
         let mut executor = Executor::new();
-        let line = test_line![Instruction::I32Const(0), Instruction::I32Clz];
+        let line = test_line![()(Instruction::I32Const(0), Instruction::I32Clz)];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[32]");
     }
@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn test_ctz() {
         let mut executor = Executor::new();
-        let line = test_line![Instruction::I32Const(1024), Instruction::I32Ctz];
+        let line = test_line![()(Instruction::I32Const(1024), Instruction::I32Ctz)];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[10]");
     }
@@ -172,7 +172,7 @@ mod tests {
     #[test]
     fn test_ctz_max() {
         let mut executor = Executor::new();
-        let line = test_line![Instruction::I32Const(0), Instruction::I32Ctz];
+        let line = test_line![()(Instruction::I32Const(0), Instruction::I32Ctz)];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[32]");
     }
@@ -180,11 +180,11 @@ mod tests {
     #[test]
     fn test_execute_add() {
         let mut executor = Executor::new();
-        let line = test_line![
+        let line = test_line![()(
             Instruction::I32Const(42),
             Instruction::I32Const(58),
             Instruction::I32Add
-        ];
+        )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[100]");
     }
@@ -192,11 +192,11 @@ mod tests {
     #[test]
     fn test_sub() {
         let mut executor = Executor::new();
-        let line = test_line![
+        let line = test_line![()(
             Instruction::I32Const(78),
             Instruction::I32Const(58),
             Instruction::I32Sub
-        ];
+        )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[20]");
     }
@@ -204,11 +204,11 @@ mod tests {
     #[test]
     fn test_mul() {
         let mut executor = Executor::new();
-        let line = test_line![
+        let line = test_line![()(
             Instruction::I32Const(78),
             Instruction::I32Const(58),
             Instruction::I32Mul
-        ];
+        )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[4524]");
     }
@@ -216,11 +216,11 @@ mod tests {
     #[test]
     fn test_div_s() {
         let mut executor = Executor::new();
-        let line = test_line![
+        let line = test_line![()(
             Instruction::I32Const(16),
             Instruction::I32Const(3),
             Instruction::I32DivS
-        ];
+        )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[5]");
     }
@@ -228,27 +228,27 @@ mod tests {
     #[test]
     fn test_div_s_by_zero() {
         let mut executor = Executor::new();
-        let line = test_line![
+        let line = test_line![()(
             Instruction::I32Const(16),
             Instruction::I32Const(0),
             Instruction::I32DivS
-        ];
+        )];
         assert!(executor.execute(&line).is_err());
     }
 
     #[test]
     fn test_local_error() {
         let mut executor = Executor::new();
-        let line = Line {
-            locals: vec![Local {
-                id: None,
-                name: None,
-                ty: ValType::I32,
-            }],
-            expr: Expression {
-                instrs: Box::new([]),
-            },
-        };
+
+        let line = test_line![(Local {
+            id: None,
+            name: None,
+            ty: ValType::I32,
+        })(
+            Instruction::I32Const(16),
+            Instruction::I32Const(0),
+            Instruction::I32DivS
+        )];
         assert!(executor.execute(&line).is_err());
     }
 }
