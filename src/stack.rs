@@ -4,7 +4,7 @@ use anyhow::{Error, Ok, Result};
 pub struct Stack {
     values: Vec<i32>,
     shrink_by: usize,
-    temp_values: Vec<i32>,
+    soft_values: Vec<i32>,
 }
 
 impl Stack {
@@ -12,22 +12,22 @@ impl Stack {
         Stack {
             values: vec![],
             shrink_by: 0,
-            temp_values: vec![],
+            soft_values: vec![],
         }
     }
 
     pub fn push(&mut self, value: i32) {
-        self.temp_values.push(value);
+        self.soft_values.push(value);
     }
 
     pub fn pop(&mut self) -> Result<i32> {
-        if self.temp_values.len() == 0 {
+        if self.soft_values.len() == 0 {
             self.shrink_by += 1;
             self.check_underflow()?;
             let idx = self.values.len() - self.shrink_by;
             Ok(self.values.get(idx).unwrap().clone())
         } else {
-            Ok(self.temp_values.pop().unwrap())
+            Ok(self.soft_values.pop().unwrap())
         }
     }
 
@@ -42,16 +42,16 @@ impl Stack {
         self.check_underflow()?;
 
         self.values.truncate(self.values.len() - self.shrink_by);
-        self.values.append(&mut self.temp_values);
+        self.values.append(&mut self.soft_values);
         self.shrink_by = 0;
-        self.temp_values.clear();
+        self.soft_values.clear();
 
         Ok(())
     }
 
     pub fn rollback(&mut self) {
         self.shrink_by = 0;
-        self.temp_values.clear();
+        self.soft_values.clear();
     }
 
     #[allow(dead_code)]
@@ -60,7 +60,7 @@ impl Stack {
 
         let mut values = self.values.clone();
         values.truncate(values.len() - self.shrink_by);
-        values.extend(self.temp_values.clone());
+        values.extend(self.soft_values.clone());
         Ok(format!("{:?}", values))
     }
 
