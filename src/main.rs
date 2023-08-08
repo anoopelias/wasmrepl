@@ -41,19 +41,14 @@ fn parse_and_execute(executor: &mut Executor, str: &str) -> String {
     let lp = wastparser::parse::<LineParser>(&buf);
 
     match lp {
-        Ok(line) => {
-            if line.locals.len() != 0 {
-                return format!("Error: {}", "local not supported");
+        Ok(line) => match executor.execute(&line) {
+            Ok(_) => {
+                format!("{}", executor.to_state())
             }
-            match executor.execute(&line.expr) {
-                Ok(_) => {
-                    format!("{}", executor.to_state())
-                }
-                Err(err) => {
-                    format!("Error: {}", err.to_string())
-                }
+            Err(err) => {
+                format!("Error: {}", err.to_string())
             }
-        }
+        },
         Err(err) => {
             format!("Error: {}", err.message())
         }
