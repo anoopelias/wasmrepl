@@ -1,11 +1,12 @@
 mod executor;
+mod parser;
 mod stack;
 
 use executor::Executor;
+use parser::LineParser;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
-use wast::core::Expression;
-use wast::parser::{self, ParseBuffer};
+use wast::parser::{self as wastparser, ParseBuffer};
 
 fn main() -> rustyline::Result<()> {
     let mut rl = DefaultEditor::new()?;
@@ -36,25 +37,26 @@ fn main() -> rustyline::Result<()> {
 
 fn parse_and_execute(executor: &mut Executor, str: &str) -> String {
     let buf = ParseBuffer::new(str).unwrap();
-    let expr = parse(&buf);
+    let lp = wastparser::parse::<LineParser>(&buf);
 
-    match expr {
-        Ok(expr) => match executor.execute(&expr) {
-            Ok(_) => {
-                format!("{}", executor.to_state())
+    match lp {
+        Ok(line) => {
+            if line.locals.len() != 0 {
+                return format!("Error: {}", "local not supported");
             }
-            Err(err) => {
-                format!("Error: {}", err.to_string())
+            match executor.execute(&line.expr) {
+                Ok(_) => {
+                    format!("{}", executor.to_state())
+                }
+                Err(err) => {
+                    format!("Error: {}", err.to_string())
+                }
             }
-        },
+        }
         Err(err) => {
             format!("Error: {}", err.message())
         }
     }
-}
-
-fn parse<'a>(buf: &'a ParseBuffer) -> wast::parser::Result<Expression<'a>> {
-    parser::parse::<Expression>(&buf)
 }
 
 #[cfg(test)]
