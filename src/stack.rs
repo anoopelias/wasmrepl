@@ -23,9 +23,7 @@ impl Stack {
     pub fn pop(&mut self) -> Result<i32> {
         if self.temp_values.len() == 0 {
             self.shrink_by += 1;
-            if self.is_underflow() {
-                return Err(Error::msg("Stack underflow"));
-            }
+            self.check_underflow()?;
             let idx = self.values.len() - self.shrink_by;
             Ok(self.values.get(idx).unwrap().clone())
         } else {
@@ -33,14 +31,15 @@ impl Stack {
         }
     }
 
-    fn is_underflow(&self) -> bool {
-        self.values.len() < self.shrink_by
+    fn check_underflow(&self) -> Result<()> {
+        if self.values.len() < self.shrink_by {
+            return Err(Error::msg("Stack underflow"));
+        }
+        Ok(())
     }
 
     pub fn commit(&mut self) -> Result<()> {
-        if self.is_underflow() {
-            return Err(Error::msg("Stack underflow"));
-        }
+        self.check_underflow()?;
 
         self.values.truncate(self.values.len() - self.shrink_by);
         self.values.append(&mut self.temp_values);
@@ -57,9 +56,7 @@ impl Stack {
 
     #[allow(dead_code)]
     pub fn to_soft_string(&self) -> Result<String> {
-        if self.is_underflow() {
-            return Err(Error::msg("Stack underflow"));
-        }
+        self.check_underflow()?;
 
         let mut values = self.values.clone();
         values.truncate(values.len() - self.shrink_by);
