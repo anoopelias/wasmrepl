@@ -32,13 +32,10 @@ impl<T: Copy> Dict<T> {
         }
     }
 
-    /// Commit is transferring the ownership of values in `self.soft_values` to
-    /// `self.values`. Hence we need ownership of self.
-    /// TODO: What is idiomatic way of doing this?
-    pub fn commit(mut self) -> Self {
-        self.values.extend(self.soft_values);
-        self.soft_values = HashMap::new();
-        self
+    pub fn commit(&mut self) {
+        self.soft_values.drain().for_each(|(k, v)| {
+            self.values.insert(k, v);
+        });
     }
 
     pub fn rollback(&mut self) {
@@ -56,7 +53,7 @@ mod tests {
         dict.set("a", 1);
         dict.set("b", 2);
         dict.set("c", 3);
-        dict = dict.commit();
+        dict.commit();
         assert_eq!(dict.get("a").unwrap(), 1);
         assert_eq!(dict.get("b").unwrap(), 2);
         assert_eq!(dict.get("c").unwrap(), 3);
@@ -67,10 +64,10 @@ mod tests {
         let mut dict = Dict::new();
         dict.set("a", 1);
         dict.set("b", 2);
-        dict = dict.commit();
+        dict.commit();
 
         dict.set("c", 3);
-        dict = dict.commit();
+        dict.commit();
         assert_eq!(dict.get("a").unwrap(), 1);
         assert_eq!(dict.get("b").unwrap(), 2);
     }
@@ -80,7 +77,7 @@ mod tests {
         let mut dict = Dict::new();
         dict.set("a", 1);
         dict.set("b", 2);
-        dict = dict.commit();
+        dict.commit();
 
         dict.set("c", 3);
         dict.rollback();
