@@ -1,27 +1,28 @@
+#![allow(unused)]
 use anyhow::{Error, Result};
 use std::collections::HashMap;
 
-/// This dict is essentially a HashMap on which the changes can be commited or rolled back.
-///
+/// This dict is essentially a HashMap on which the changes can be
+/// commited or rolled back.
 
-pub struct Dict {
-    values: HashMap<String, i32>,
-    soft_values: HashMap<String, i32>,
+pub struct Dict<T: Copy> {
+    values: HashMap<String, T>,
+    soft_values: HashMap<String, T>,
 }
 
-impl Dict {
-    pub fn new() -> Dict {
+impl<T: Copy> Dict<T> {
+    pub fn new() -> Dict<T> {
         Dict {
             values: HashMap::new(),
             soft_values: HashMap::new(),
         }
     }
 
-    pub fn set(&mut self, key: &str, value: i32) {
+    pub fn set(&mut self, key: &str, value: T) {
         self.soft_values.insert(key.to_string(), value);
     }
 
-    pub fn get(&self, key: &str) -> Result<i32> {
+    pub fn get(&self, key: &str) -> Result<T> {
         match self.soft_values.get(key) {
             Some(value) => Ok(*value),
             None => match self.values.get(key) {
@@ -31,9 +32,13 @@ impl Dict {
         }
     }
 
-    pub fn commit(&mut self) {
-        self.values.extend(self.soft_values.clone());
-        self.soft_values.clear();
+    /// Commit is transferring the ownership of values in `self.soft_values` to
+    /// `self.values`. Hence we need ownership of self.
+    /// TODO: What is idiomatic way of doing this?
+    pub fn commit(mut self) -> Self {
+        self.values.extend(self.soft_values);
+        self.soft_values = HashMap::new();
+        self
     }
 
     pub fn rollback(&mut self) {
@@ -51,6 +56,7 @@ mod tests {
         dict.set("a", 1);
         dict.set("b", 2);
         dict.set("c", 3);
+        dict = dict.commit();
         assert_eq!(dict.get("a").unwrap(), 1);
         assert_eq!(dict.get("b").unwrap(), 2);
         assert_eq!(dict.get("c").unwrap(), 3);
@@ -61,10 +67,10 @@ mod tests {
         let mut dict = Dict::new();
         dict.set("a", 1);
         dict.set("b", 2);
-        dict.commit();
+        dict = dict.commit();
 
         dict.set("c", 3);
-        dict.commit();
+        dict = dict.commit();
         assert_eq!(dict.get("a").unwrap(), 1);
         assert_eq!(dict.get("b").unwrap(), 2);
     }
@@ -74,7 +80,7 @@ mod tests {
         let mut dict = Dict::new();
         dict.set("a", 1);
         dict.set("b", 2);
-        dict.commit();
+        dict = dict.commit();
 
         dict.set("c", 3);
         dict.rollback();
