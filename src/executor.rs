@@ -102,6 +102,11 @@ impl Executor {
                 self.stack.push(value);
                 Ok(())
             }
+            Instruction::LocalSet(Index::Num(i, _)) => {
+                let value = self.stack.pop()?;
+                self.locals.set(*i as usize, value)?;
+                Ok(())
+            }
             _ => Err(Error::msg("Unknown instruction")),
         }
     }
@@ -280,5 +285,17 @@ mod tests {
         ))];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[0]");
+    }
+
+    #[test]
+    fn test_local_set() {
+        let mut executor = Executor::new();
+        let line = test_line![(test_local![None, ValType::I32])(
+            Instruction::I32Const(42),
+            Instruction::LocalSet(test_index!(0)),
+            Instruction::LocalGet(test_index!(0))
+        )];
+        executor.execute(&line).unwrap();
+        assert_eq!(executor.to_state(), "[42]");
     }
 }
