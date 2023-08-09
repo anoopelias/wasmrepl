@@ -128,6 +128,7 @@ mod tests {
         };
     }
 
+    // TODO: Combine with the previous one
     macro_rules! test_local {
         ($id:expr, $ty:expr) => {
             Local {
