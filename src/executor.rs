@@ -273,7 +273,7 @@ mod tests {
     }
 
     #[test]
-    fn test_local_error() {
+    fn test_local_get() {
         let mut executor = Executor::new();
         let line = test_line![(test_local![None, ValType::I32])(Instruction::LocalGet(
             test_index!(0)
