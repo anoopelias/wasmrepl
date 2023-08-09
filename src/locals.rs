@@ -1,6 +1,5 @@
-#![allow(unused)]
 use crate::{dict::Dict, list::List};
-use anyhow::{Error, Result};
+use anyhow::Result;
 
 pub struct Locals {
     values: List,
@@ -30,6 +29,7 @@ impl Locals {
         self.values.set(index, value)
     }
 
+    #[allow(dead_code)]
     pub fn set_by_id(&mut self, id: &str, value: i32) -> Result<()> {
         let index = self.ids.get(id)?;
         self.set(index, value)
@@ -39,6 +39,7 @@ impl Locals {
         self.values.get(index)
     }
 
+    #[allow(dead_code)]
     pub fn get_by_id(&self, id: &str) -> Result<i32> {
         let index = self.ids.get(id)?;
         self.get(index)
