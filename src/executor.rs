@@ -27,12 +27,14 @@ impl Executor {
                 Ok(_) => {}
                 Err(err) => {
                     self.stack.rollback();
+                    self.locals.rollback();
                     return Err(err);
                 }
             }
         }
 
         self.stack.commit().unwrap();
+        self.locals.commit();
         Ok(())
     }
 
@@ -120,6 +122,10 @@ mod tests {
     use crate::executor::Executor;
     use crate::parser::Line;
 
+    // An instruction that is not implemented yet,
+    // to be used to force an error
+    const TODO_INSTRUCTION: Instruction = Instruction::F32Copysign;
+
     macro_rules! test_line {
         (($( $y:expr ),*)($( $x:expr ),*)) => {
             Line {
@@ -176,11 +182,7 @@ mod tests {
         let line = test_line![()(Instruction::I32Const(55))];
         executor.execute(&line).unwrap();
 
-        let line = test_line![()(
-            Instruction::I32Const(42),
-            // Use an unimplimented instruction to force an error
-            Instruction::F32Copysign
-        )];
+        let line = test_line![()(Instruction::I32Const(42), TODO_INSTRUCTION)];
         assert!(executor.execute(&line).is_err());
         // Ensure rollback
         assert_eq!(executor.stack.to_soft_string().unwrap(), "[55]");
@@ -295,6 +297,50 @@ mod tests {
             Instruction::LocalSet(test_index!(0)),
             Instruction::LocalGet(test_index!(0))
         )];
+        executor.execute(&line).unwrap();
+        assert_eq!(executor.to_state(), "[42]");
+    }
+
+    #[test]
+    fn test_local_set_commit() {
+        let mut executor = Executor::new();
+        let line = test_line![(test_local![None, ValType::I32])(
+            Instruction::I32Const(42),
+            Instruction::LocalSet(test_index!(0)),
+            Instruction::LocalGet(test_index!(0))
+        )];
+        executor.execute(&line).unwrap();
+        assert_eq!(executor.to_state(), "[42]");
+
+        let line = test_line![()(
+            Instruction::Drop,
+            Instruction::I32Const(55),
+            Instruction::LocalSet(test_index!(0)),
+            Instruction::LocalGet(test_index!(0))
+        )];
+        executor.execute(&line).unwrap();
+        assert_eq!(executor.to_state(), "[55]");
+    }
+
+    #[test]
+    fn test_local_set_local_rollback() {
+        let mut executor = Executor::new();
+        let line = test_line![(test_local![None, ValType::I32])(
+            Instruction::I32Const(42),
+            Instruction::LocalSet(test_index!(0))
+        )];
+        executor.execute(&line).unwrap();
+
+        let line = test_line![()(
+            Instruction::I32Const(55),
+            Instruction::LocalSet(test_index!(0)),
+            TODO_INSTRUCTION
+        )];
+        assert!(executor.execute(&line).is_err());
+
+        let line = test_line![(test_local![None, ValType::I32])(Instruction::LocalGet(
+            test_index!(0)
+        ))];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
