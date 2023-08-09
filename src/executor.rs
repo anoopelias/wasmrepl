@@ -5,15 +5,34 @@ use wast::token::Index;
 use crate::{locals::Locals, parser::Line, stack::Stack};
 
 pub struct Executor {
+    state: State,
+}
+
+pub struct State {
     stack: Stack,
     locals: Locals,
+}
+
+impl State {
+    fn commit(&mut self) -> Result<()> {
+        self.stack.commit()?;
+        self.locals.commit();
+        Ok(())
+    }
+
+    fn rollback(&mut self) {
+        self.stack.rollback();
+        self.locals.rollback();
+    }
 }
 
 impl Executor {
     pub fn new() -> Executor {
         Executor {
-            stack: Stack::new(),
-            locals: Locals::new(),
+            state: State {
+                stack: Stack::new(),
+                locals: Locals::new(),
+            },
         }
     }
 
@@ -26,27 +45,25 @@ impl Executor {
             match self.execute_instruction(instr) {
                 Ok(_) => {}
                 Err(err) => {
-                    self.stack.rollback();
-                    self.locals.rollback();
+                    self.state.rollback();
                     return Err(err);
                 }
             }
         }
 
-        self.stack.commit().unwrap();
-        self.locals.commit();
+        self.state.commit()?;
         Ok(())
     }
 
     pub fn to_state(&self) -> String {
-        self.stack.to_string()
+        self.state.stack.to_string()
     }
 
     fn execute_local(&mut self, lc: &Local) -> Result<()> {
         match lc.id {
-            Some(id) => self.locals.grow_by_id(id.name()),
+            Some(id) => self.state.locals.grow_by_id(id.name()),
             None => {
-                self.locals.grow();
+                self.state.locals.grow();
                 Ok(())
             }
         }
@@ -55,58 +72,58 @@ impl Executor {
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<()> {
         match instr {
             Instruction::I32Const(value) => {
-                self.stack.push(*value);
+                self.state.stack.push(*value);
                 Ok(())
             }
             Instruction::Drop => {
-                self.stack.pop()?;
+                self.state.stack.pop()?;
                 Ok(())
             }
             Instruction::I32Clz => {
-                let n = self.stack.pop()?.leading_zeros().try_into()?;
-                self.stack.push(n);
+                let n = self.state.stack.pop()?.leading_zeros().try_into()?;
+                self.state.stack.push(n);
                 Ok(())
             }
             Instruction::I32Ctz => {
-                let n = self.stack.pop()?.trailing_zeros().try_into()?;
-                self.stack.push(n);
+                let n = self.state.stack.pop()?.trailing_zeros().try_into()?;
+                self.state.stack.push(n);
                 Ok(())
             }
             Instruction::I32Add => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                self.stack.push(a + b);
+                let a = self.state.stack.pop()?;
+                let b = self.state.stack.pop()?;
+                self.state.stack.push(a + b);
                 Ok(())
             }
             Instruction::I32Sub => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                self.stack.push(b - a);
+                let a = self.state.stack.pop()?;
+                let b = self.state.stack.pop()?;
+                self.state.stack.push(b - a);
                 Ok(())
             }
             Instruction::I32Mul => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
-                self.stack.push(a * b);
+                let a = self.state.stack.pop()?;
+                let b = self.state.stack.pop()?;
+                self.state.stack.push(a * b);
                 Ok(())
             }
             Instruction::I32DivS => {
-                let a = self.stack.pop()?;
-                let b = self.stack.pop()?;
+                let a = self.state.stack.pop()?;
+                let b = self.state.stack.pop()?;
                 if a == 0 {
                     return Err(Error::msg("Division by zero"));
                 }
-                self.stack.push(b / a);
+                self.state.stack.push(b / a);
                 Ok(())
             }
             Instruction::LocalGet(Index::Num(i, _)) => {
-                let value = self.locals.get(*i as usize)?;
-                self.stack.push(value);
+                let value = self.state.locals.get(*i as usize)?;
+                self.state.stack.push(value);
                 Ok(())
             }
             Instruction::LocalSet(Index::Num(i, _)) => {
-                let value = self.stack.pop()?;
-                self.locals.set(*i as usize, value)?;
+                let value = self.state.stack.pop()?;
+                self.state.locals.set(*i as usize, value)?;
                 Ok(())
             }
             _ => Err(Error::msg("Unknown instruction")),
@@ -185,7 +202,7 @@ mod tests {
         let line = test_line![()(Instruction::I32Const(42), TODO_INSTRUCTION)];
         assert!(executor.execute(&line).is_err());
         // Ensure rollback
-        assert_eq!(executor.stack.to_soft_string().unwrap(), "[55]");
+        assert_eq!(executor.state.stack.to_soft_string().unwrap(), "[55]");
     }
 
     #[test]
