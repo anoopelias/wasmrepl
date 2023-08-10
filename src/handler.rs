@@ -34,18 +34,13 @@ mod tests {
     use crate::{
         executor::State,
         handler::{handler_for, Handler},
-        locals::Locals,
-        stack::Stack,
     };
 
     use wast::core::Instruction;
 
     #[test]
     fn test_i32_const() {
-        let mut state = State {
-            stack: Stack::new(),
-            locals: Locals::new(),
-        };
+        let mut state = State::new();
         let instr = Instruction::I32Const(42);
         {
             let mut handler = handler_for(&instr, &mut state).unwrap();

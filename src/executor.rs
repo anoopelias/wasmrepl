@@ -15,6 +15,13 @@ pub struct State {
 }
 
 impl State {
+    pub fn new() -> State {
+        State {
+            stack: Stack::new(),
+            locals: Locals::new(),
+        }
+    }
+
     fn commit(&mut self) -> Result<()> {
         self.stack.commit()?;
         self.locals.commit();
@@ -30,10 +37,7 @@ impl State {
 impl Executor {
     pub fn new() -> Executor {
         Executor {
-            state: State {
-                stack: Stack::new(),
-                locals: Locals::new(),
-            },
+            state: State::new(),
         }
     }
 
