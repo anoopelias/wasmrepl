@@ -2,6 +2,7 @@ use anyhow::{Error, Result};
 use wast::core::{Instruction, Local};
 use wast::token::Index;
 
+use crate::handler::{handler_for, Handler};
 use crate::{locals::Locals, parser::Line, stack::Stack};
 
 pub struct Executor {
@@ -9,8 +10,8 @@ pub struct Executor {
 }
 
 pub struct State {
-    stack: Stack,
-    locals: Locals,
+    pub stack: Stack,
+    pub locals: Locals,
 }
 
 impl State {
@@ -70,6 +71,11 @@ impl Executor {
     }
 
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<()> {
+        match handler_for(instr, &mut self.state) {
+            Ok(mut handler) => return handler.handle(),
+            Err(_) => {}
+        };
+
         match instr {
             Instruction::I32Const(value) => {
                 self.state.stack.push(*value);

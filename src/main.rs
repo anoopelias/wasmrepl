@@ -1,5 +1,6 @@
 mod dict;
 mod executor;
+mod handler;
 mod list;
 mod locals;
 mod parser;
