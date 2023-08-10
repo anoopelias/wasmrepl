@@ -81,14 +81,6 @@ impl Executor {
         };
 
         match instr {
-            Instruction::I32Const(value) => {
-                self.state.stack.push(*value);
-                Ok(())
-            }
-            Instruction::Drop => {
-                self.state.stack.pop()?;
-                Ok(())
-            }
             Instruction::I32Clz => {
                 let n = self.state.stack.pop()?.leading_zeros().try_into()?;
                 self.state.stack.push(n);
