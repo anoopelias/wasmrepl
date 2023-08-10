@@ -19,22 +19,22 @@ impl<'a> Handler<'a> for I32ConstInstr<'a> {
     }
 }
 
-pub fn handler_for<'a>(instr: &Instruction, state: &'a mut State) -> Result<impl Handler<'a>> {
+pub fn handler_for<'a>(
+    instr: &Instruction,
+    state: &'a mut State,
+) -> Result<Box<dyn Handler<'a> + 'a>> {
     match instr {
-        Instruction::I32Const(value) => Ok(I32ConstInstr {
+        Instruction::I32Const(value) => Ok(Box::new(I32ConstInstr {
             value: *value,
             state,
-        }),
+        })),
         _ => Err(Error::msg("Unknown instruction")),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        executor::State,
-        handler::{handler_for, Handler},
-    };
+    use crate::{executor::State, handler::handler_for};
 
     use wast::core::Instruction;
 

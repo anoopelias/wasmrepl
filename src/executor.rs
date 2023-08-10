@@ -2,7 +2,7 @@ use anyhow::{Error, Result};
 use wast::core::{Instruction, Local};
 use wast::token::Index;
 
-use crate::handler::{handler_for, Handler};
+use crate::handler::handler_for;
 use crate::{locals::Locals, parser::Line, stack::Stack};
 
 pub struct Executor {
