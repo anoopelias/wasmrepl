@@ -60,9 +60,9 @@ struct I32AddInstr<'a> {
 
 impl<'a> Handler<'a> for I32AddInstr<'a> {
     fn handle(&mut self) -> Result<()> {
-        let value1 = self.state.stack.pop()?;
-        let value2 = self.state.stack.pop()?;
-        self.state.stack.push(value1 + value2);
+        let a = self.state.stack.pop()?;
+        let b = self.state.stack.pop()?;
+        self.state.stack.push(a + b);
         Ok(())
     }
 }
@@ -73,9 +73,9 @@ struct I32SubInstr<'a> {
 
 impl<'a> Handler<'a> for I32SubInstr<'a> {
     fn handle(&mut self) -> Result<()> {
-        let value1 = self.state.stack.pop()?;
-        let value2 = self.state.stack.pop()?;
-        self.state.stack.push(value2 - value1);
+        let a = self.state.stack.pop()?;
+        let b = self.state.stack.pop()?;
+        self.state.stack.push(b - a);
         Ok(())
     }
 }
@@ -86,9 +86,9 @@ struct I32MulInstr<'a> {
 
 impl<'a> Handler<'a> for I32MulInstr<'a> {
     fn handle(&mut self) -> Result<()> {
-        let value1 = self.state.stack.pop()?;
-        let value2 = self.state.stack.pop()?;
-        self.state.stack.push(value1 * value2);
+        let a = self.state.stack.pop()?;
+        let b = self.state.stack.pop()?;
+        self.state.stack.push(a * b);
         Ok(())
     }
 }
