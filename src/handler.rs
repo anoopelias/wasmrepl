@@ -93,6 +93,22 @@ impl<'a> Handler<'a> for I32MulInstr<'a> {
     }
 }
 
+struct I32DivSInstr<'a> {
+    state: &'a mut State,
+}
+
+impl<'a> Handler<'a> for I32DivSInstr<'a> {
+    fn handle(&mut self) -> Result<()> {
+        let value1 = self.state.stack.pop()?;
+        let value2 = self.state.stack.pop()?;
+        if value1 == 0 {
+            return Err(Error::msg("Division by zero"));
+        }
+        self.state.stack.push(value2 / value1);
+        Ok(())
+    }
+}
+
 pub fn handler_for<'a>(
     instr: &Instruction,
     state: &'a mut State,
@@ -108,6 +124,7 @@ pub fn handler_for<'a>(
         Instruction::I32Add => Ok(Box::new(I32AddInstr { state })),
         Instruction::I32Sub => Ok(Box::new(I32SubInstr { state })),
         Instruction::I32Mul => Ok(Box::new(I32MulInstr { state })),
+        Instruction::I32DivS => Ok(Box::new(I32DivSInstr { state })),
         _ => Err(Error::msg("Unknown instruction")),
     }
 }
@@ -241,5 +258,29 @@ mod tests {
         let mut state = State::new();
         state.stack.push(1);
         assert!(exec_instr(&Instruction::I32Mul, &mut state).is_err());
+    }
+
+    #[test]
+    fn test_i32_div_s() {
+        let mut state = State::new();
+        state.stack.push(7);
+        state.stack.push(3);
+        exec_instr(&Instruction::I32DivS, &mut state).unwrap();
+        assert_eq!(state.stack.pop().unwrap(), 2);
+    }
+
+    #[test]
+    fn test_i32_div_s_error() {
+        let mut state = State::new();
+        state.stack.push(1);
+        assert!(exec_instr(&Instruction::I32DivS, &mut state).is_err());
+    }
+
+    #[test]
+    fn test_i32_div_s_div_by_zero() {
+        let mut state = State::new();
+        state.stack.push(1);
+        state.stack.push(0);
+        assert!(exec_instr(&Instruction::I32DivS, &mut state).is_err());
     }
 }
