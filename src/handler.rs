@@ -42,6 +42,18 @@ impl<'a> Handler<'a> for I32ClzInstr<'a> {
     }
 }
 
+struct I32CtzInstr<'a> {
+    state: &'a mut State,
+}
+
+impl<'a> Handler<'a> for I32CtzInstr<'a> {
+    fn handle(&mut self) -> Result<()> {
+        let value = self.state.stack.pop()?;
+        self.state.stack.push(value.trailing_zeros() as i32);
+        Ok(())
+    }
+}
+
 pub fn handler_for<'a>(
     instr: &Instruction,
     state: &'a mut State,
@@ -53,6 +65,7 @@ pub fn handler_for<'a>(
         })),
         Instruction::Drop => Ok(Box::new(DropInstr { state })),
         Instruction::I32Clz => Ok(Box::new(I32ClzInstr { state })),
+        Instruction::I32Ctz => Ok(Box::new(I32CtzInstr { state })),
         _ => Err(Error::msg("Unknown instruction")),
     }
 }
@@ -109,6 +122,22 @@ mod tests {
         let mut state = State::new();
         state.stack.push(0);
         exec_instr(&Instruction::I32Clz, &mut state).unwrap();
+        assert_eq!(state.stack.pop().unwrap(), 32);
+    }
+
+    #[test]
+    fn test_i32_ctz() {
+        let mut state = State::new();
+        state.stack.push(1024);
+        exec_instr(&Instruction::I32Ctz, &mut state).unwrap();
+        assert_eq!(state.stack.pop().unwrap(), 10);
+    }
+
+    #[test]
+    fn test_i32_ctz_max() {
+        let mut state = State::new();
+        state.stack.push(0);
+        exec_instr(&Instruction::I32Ctz, &mut state).unwrap();
         assert_eq!(state.stack.pop().unwrap(), 32);
     }
 }
