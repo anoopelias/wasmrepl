@@ -1,5 +1,5 @@
 use anyhow::{Error, Result};
-use wast::core::Instruction;
+use wast::{core::Instruction, token::Index};
 
 use crate::executor::State;
 
@@ -109,6 +109,19 @@ impl<'a> Handler<'a> for I32DivSInstr<'a> {
     }
 }
 
+struct LocalGetInstr<'a> {
+    index: u32,
+    state: &'a mut State,
+}
+
+impl<'a> Handler<'a> for LocalGetInstr<'a> {
+    fn handle(&mut self) -> Result<()> {
+        let value = self.state.locals.get(self.index as usize)?;
+        self.state.stack.push(value);
+        Ok(())
+    }
+}
+
 pub fn handler_for<'a>(
     instr: &Instruction,
     state: &'a mut State,
@@ -125,6 +138,10 @@ pub fn handler_for<'a>(
         Instruction::I32Sub => Ok(Box::new(I32SubInstr { state })),
         Instruction::I32Mul => Ok(Box::new(I32MulInstr { state })),
         Instruction::I32DivS => Ok(Box::new(I32DivSInstr { state })),
+        Instruction::LocalGet(Index::Num(index, _)) => Ok(Box::new(LocalGetInstr {
+            index: *index,
+            state,
+        })),
         _ => Err(Error::msg("Unknown instruction")),
     }
 }
@@ -134,7 +151,10 @@ mod tests {
     use crate::{executor::State, handler::handler_for};
     use anyhow::Result;
 
-    use wast::core::Instruction;
+    use wast::{
+        core::Instruction,
+        token::{Index, Span},
+    };
 
     fn exec_instr(instr: &Instruction, state: &mut State) -> Result<()> {
         let mut handler = handler_for(instr, state).unwrap();
@@ -282,5 +302,28 @@ mod tests {
         state.stack.push(1);
         state.stack.push(0);
         assert!(exec_instr(&Instruction::I32DivS, &mut state).is_err());
+    }
+
+    #[test]
+    fn test_local_get() {
+        let mut state = State::new();
+        state.locals.grow();
+        state.locals.set(0, 42).unwrap();
+        exec_instr(
+            &Instruction::LocalGet(Index::Num(0, Span::from_offset(0))),
+            &mut state,
+        )
+        .unwrap();
+        assert_eq!(state.stack.pop().unwrap(), 42);
+    }
+
+    #[test]
+    fn test_local_get_error() {
+        let mut state = State::new();
+        assert!(exec_instr(
+            &Instruction::LocalGet(Index::Num(0, Span::from_offset(0))),
+            &mut state,
+        )
+        .is_err());
     }
 }
