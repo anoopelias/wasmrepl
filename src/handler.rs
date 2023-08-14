@@ -54,6 +54,19 @@ impl<'a> Handler<'a> for I32CtzInstr<'a> {
     }
 }
 
+struct I32AddInstr<'a> {
+    state: &'a mut State,
+}
+
+impl<'a> Handler<'a> for I32AddInstr<'a> {
+    fn handle(&mut self) -> Result<()> {
+        let value1 = self.state.stack.pop()?;
+        let value2 = self.state.stack.pop()?;
+        self.state.stack.push(value1 + value2);
+        Ok(())
+    }
+}
+
 pub fn handler_for<'a>(
     instr: &Instruction,
     state: &'a mut State,
@@ -126,6 +139,12 @@ mod tests {
     }
 
     #[test]
+    fn test_i32_clz_error() {
+        let mut state = State::new();
+        assert!(exec_instr(&Instruction::I32Clz, &mut state).is_err());
+    }
+
+    #[test]
     fn test_i32_ctz() {
         let mut state = State::new();
         state.stack.push(1024);
@@ -139,5 +158,11 @@ mod tests {
         state.stack.push(0);
         exec_instr(&Instruction::I32Ctz, &mut state).unwrap();
         assert_eq!(state.stack.pop().unwrap(), 32);
+    }
+
+    #[test]
+    fn test_i32_ctz_error() {
+        let mut state = State::new();
+        assert!(exec_instr(&Instruction::I32Ctz, &mut state).is_err());
     }
 }
