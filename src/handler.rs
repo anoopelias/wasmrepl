@@ -57,6 +57,12 @@ mod tests {
     }
 
     #[test]
+    fn test_unknown_instr() {
+        let mut state = State::new();
+        assert!(handler_for(&Instruction::Nop, &mut state).is_err());
+    }
+
+    #[test]
     fn test_i32_const() {
         let mut state = State::new();
         exec_instr(&Instruction::I32Const(42), &mut state).unwrap();
