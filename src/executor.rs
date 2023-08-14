@@ -1,6 +1,5 @@
-use anyhow::{Error, Result};
+use anyhow::Result;
 use wast::core::{Instruction, Local};
-use wast::token::Index;
 
 use crate::handler::handler_for;
 use crate::{locals::Locals, parser::Line, stack::Stack};
@@ -75,61 +74,7 @@ impl Executor {
     }
 
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<()> {
-        match handler_for(instr, &mut self.state) {
-            Ok(mut handler) => return handler.handle(),
-            Err(_) => {}
-        };
-
-        match instr {
-            Instruction::I32Clz => {
-                let n = self.state.stack.pop()?.leading_zeros().try_into()?;
-                self.state.stack.push(n);
-                Ok(())
-            }
-            Instruction::I32Ctz => {
-                let n = self.state.stack.pop()?.trailing_zeros().try_into()?;
-                self.state.stack.push(n);
-                Ok(())
-            }
-            Instruction::I32Add => {
-                let a = self.state.stack.pop()?;
-                let b = self.state.stack.pop()?;
-                self.state.stack.push(a + b);
-                Ok(())
-            }
-            Instruction::I32Sub => {
-                let a = self.state.stack.pop()?;
-                let b = self.state.stack.pop()?;
-                self.state.stack.push(b - a);
-                Ok(())
-            }
-            Instruction::I32Mul => {
-                let a = self.state.stack.pop()?;
-                let b = self.state.stack.pop()?;
-                self.state.stack.push(a * b);
-                Ok(())
-            }
-            Instruction::I32DivS => {
-                let a = self.state.stack.pop()?;
-                let b = self.state.stack.pop()?;
-                if a == 0 {
-                    return Err(Error::msg("Division by zero"));
-                }
-                self.state.stack.push(b / a);
-                Ok(())
-            }
-            Instruction::LocalGet(Index::Num(i, _)) => {
-                let value = self.state.locals.get(*i as usize)?;
-                self.state.stack.push(value);
-                Ok(())
-            }
-            Instruction::LocalSet(Index::Num(i, _)) => {
-                let value = self.state.stack.pop()?;
-                self.state.locals.set(*i as usize, value)?;
-                Ok(())
-            }
-            _ => Err(Error::msg("Unknown instruction")),
-        }
+        handler_for(instr, &mut self.state)?.handle()
     }
 }
 
@@ -176,70 +121,6 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_i32_const() {
-        let mut executor = Executor::new();
-        let line = test_line![()(Instruction::I32Const(42), Instruction::I32Const(58))];
-        executor.execute(&line).unwrap();
-        assert_eq!(executor.to_state(), "[42, 58]");
-    }
-
-    #[test]
-    fn test_execute_drop() {
-        let mut executor = Executor::new();
-        let line = test_line![()(
-            Instruction::I32Const(42),
-            Instruction::I32Const(58),
-            Instruction::Drop
-        )];
-        executor.execute(&line).unwrap();
-        assert_eq!(executor.to_state(), "[42]");
-    }
-
-    #[test]
-    fn test_execute_error_rollback() {
-        let mut executor = Executor::new();
-        let line = test_line![()(Instruction::I32Const(55))];
-        executor.execute(&line).unwrap();
-
-        let line = test_line![()(Instruction::I32Const(42), TODO_INSTRUCTION)];
-        assert!(executor.execute(&line).is_err());
-        // Ensure rollback
-        assert_eq!(executor.state.stack.to_soft_string().unwrap(), "[55]");
-    }
-
-    #[test]
-    fn test_clz() {
-        let mut executor = Executor::new();
-        let line = test_line![()(Instruction::I32Const(1023), Instruction::I32Clz)];
-        executor.execute(&line).unwrap();
-        assert_eq!(executor.to_state(), "[22]");
-    }
-
-    #[test]
-    fn test_clz_max() {
-        let mut executor = Executor::new();
-        let line = test_line![()(Instruction::I32Const(0), Instruction::I32Clz)];
-        executor.execute(&line).unwrap();
-        assert_eq!(executor.to_state(), "[32]");
-    }
-
-    #[test]
-    fn test_ctz() {
-        let mut executor = Executor::new();
-        let line = test_line![()(Instruction::I32Const(1024), Instruction::I32Ctz)];
-        executor.execute(&line).unwrap();
-        assert_eq!(executor.to_state(), "[10]");
-    }
-
-    #[test]
-    fn test_ctz_max() {
-        let mut executor = Executor::new();
-        let line = test_line![()(Instruction::I32Const(0), Instruction::I32Ctz)];
-        executor.execute(&line).unwrap();
-        assert_eq!(executor.to_state(), "[32]");
-    }
-
-    #[test]
     fn test_execute_add() {
         let mut executor = Executor::new();
         let line = test_line![()(
@@ -252,60 +133,15 @@ mod tests {
     }
 
     #[test]
-    fn test_sub() {
+    fn test_execute_error_rollback() {
         let mut executor = Executor::new();
-        let line = test_line![()(
-            Instruction::I32Const(78),
-            Instruction::I32Const(58),
-            Instruction::I32Sub
-        )];
+        let line = test_line![()(Instruction::I32Const(55))];
         executor.execute(&line).unwrap();
-        assert_eq!(executor.to_state(), "[20]");
-    }
 
-    #[test]
-    fn test_mul() {
-        let mut executor = Executor::new();
-        let line = test_line![()(
-            Instruction::I32Const(78),
-            Instruction::I32Const(58),
-            Instruction::I32Mul
-        )];
-        executor.execute(&line).unwrap();
-        assert_eq!(executor.to_state(), "[4524]");
-    }
-
-    #[test]
-    fn test_div_s() {
-        let mut executor = Executor::new();
-        let line = test_line![()(
-            Instruction::I32Const(16),
-            Instruction::I32Const(3),
-            Instruction::I32DivS
-        )];
-        executor.execute(&line).unwrap();
-        assert_eq!(executor.to_state(), "[5]");
-    }
-
-    #[test]
-    fn test_div_s_by_zero() {
-        let mut executor = Executor::new();
-        let line = test_line![()(
-            Instruction::I32Const(16),
-            Instruction::I32Const(0),
-            Instruction::I32DivS
-        )];
+        let line = test_line![()(Instruction::I32Const(42), TODO_INSTRUCTION)];
         assert!(executor.execute(&line).is_err());
-    }
-
-    #[test]
-    fn test_local_get() {
-        let mut executor = Executor::new();
-        let line = test_line![(test_local![None, ValType::I32])(Instruction::LocalGet(
-            test_index!(0)
-        ))];
-        executor.execute(&line).unwrap();
-        assert_eq!(executor.to_state(), "[0]");
+        // Ensure rollback
+        assert_eq!(executor.state.stack.to_soft_string().unwrap(), "[55]");
     }
 
     #[test]
