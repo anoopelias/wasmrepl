@@ -122,6 +122,19 @@ impl<'a> Handler<'a> for LocalGetInstr<'a> {
     }
 }
 
+struct LocalSetInstr<'a> {
+    index: u32,
+    state: &'a mut State,
+}
+
+impl<'a> Handler<'a> for LocalSetInstr<'a> {
+    fn handle(&mut self) -> Result<()> {
+        let value = self.state.stack.pop()?;
+        self.state.locals.set(self.index as usize, value)?;
+        Ok(())
+    }
+}
+
 pub fn handler_for<'a>(
     instr: &Instruction,
     state: &'a mut State,
@@ -139,6 +152,10 @@ pub fn handler_for<'a>(
         Instruction::I32Mul => Ok(Box::new(I32MulInstr { state })),
         Instruction::I32DivS => Ok(Box::new(I32DivSInstr { state })),
         Instruction::LocalGet(Index::Num(index, _)) => Ok(Box::new(LocalGetInstr {
+            index: *index,
+            state,
+        })),
+        Instruction::LocalSet(Index::Num(index, _)) => Ok(Box::new(LocalSetInstr {
             index: *index,
             state,
         })),
@@ -322,6 +339,41 @@ mod tests {
         let mut state = State::new();
         assert!(exec_instr(
             &Instruction::LocalGet(Index::Num(0, Span::from_offset(0))),
+            &mut state,
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn test_local_set() {
+        let mut state = State::new();
+        state.stack.push(15);
+        state.locals.grow();
+        state.locals.grow();
+        exec_instr(
+            &Instruction::LocalSet(Index::Num(1, Span::from_offset(0))),
+            &mut state,
+        )
+        .unwrap();
+        assert_eq!(state.locals.get(1).unwrap(), 15);
+    }
+
+    #[test]
+    fn test_local_set_locals_error() {
+        let mut state = State::new();
+        state.stack.push(15);
+        assert!(exec_instr(
+            &Instruction::LocalSet(Index::Num(0, Span::from_offset(0))),
+            &mut state,
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn test_local_set_stack_error() {
+        let mut state = State::new();
+        assert!(exec_instr(
+            &Instruction::LocalSet(Index::Num(0, Span::from_offset(0))),
             &mut state,
         )
         .is_err());
