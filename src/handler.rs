@@ -67,6 +67,19 @@ impl<'a> Handler<'a> for I32AddInstr<'a> {
     }
 }
 
+struct I32SubInstr<'a> {
+    state: &'a mut State,
+}
+
+impl<'a> Handler<'a> for I32SubInstr<'a> {
+    fn handle(&mut self) -> Result<()> {
+        let value1 = self.state.stack.pop()?;
+        let value2 = self.state.stack.pop()?;
+        self.state.stack.push(value2 - value1);
+        Ok(())
+    }
+}
+
 pub fn handler_for<'a>(
     instr: &Instruction,
     state: &'a mut State,
@@ -79,6 +92,8 @@ pub fn handler_for<'a>(
         Instruction::Drop => Ok(Box::new(DropInstr { state })),
         Instruction::I32Clz => Ok(Box::new(I32ClzInstr { state })),
         Instruction::I32Ctz => Ok(Box::new(I32CtzInstr { state })),
+        Instruction::I32Add => Ok(Box::new(I32AddInstr { state })),
+        Instruction::I32Sub => Ok(Box::new(I32SubInstr { state })),
         _ => Err(Error::msg("Unknown instruction")),
     }
 }
@@ -164,5 +179,37 @@ mod tests {
     fn test_i32_ctz_error() {
         let mut state = State::new();
         assert!(exec_instr(&Instruction::I32Ctz, &mut state).is_err());
+    }
+
+    #[test]
+    fn test_i32_add() {
+        let mut state = State::new();
+        state.stack.push(1);
+        state.stack.push(2);
+        exec_instr(&Instruction::I32Add, &mut state).unwrap();
+        assert_eq!(state.stack.pop().unwrap(), 3);
+    }
+
+    #[test]
+    fn test_i32_add_error() {
+        let mut state = State::new();
+        state.stack.push(1);
+        assert!(exec_instr(&Instruction::I32Add, &mut state).is_err());
+    }
+
+    #[test]
+    fn test_i32_sub() {
+        let mut state = State::new();
+        state.stack.push(2);
+        state.stack.push(1);
+        exec_instr(&Instruction::I32Sub, &mut state).unwrap();
+        assert_eq!(state.stack.pop().unwrap(), 1);
+    }
+
+    #[test]
+    fn test_i32_sub_error() {
+        let mut state = State::new();
+        state.stack.push(1);
+        assert!(exec_instr(&Instruction::I32Sub, &mut state).is_err());
     }
 }
