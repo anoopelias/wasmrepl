@@ -103,21 +103,16 @@ mod tests {
         };
     }
 
-    // TODO: Combine with the previous one
-    macro_rules! test_local {
-        ($id:expr, $ty:expr) => {
-            Local {
-                id: $id,
-                name: None,
-                ty: $ty,
-            }
-        };
+    fn test_new_index<'a>(n: u32) -> Index<'a> {
+        Index::Num(n, Span::from_offset(0))
     }
 
-    macro_rules! test_index {
-        ($n:expr) => {
-            Index::Num($n, Span::from_offset(0))
-        };
+    fn test_new_local<'a>() -> Local<'a> {
+        Local {
+            id: None,
+            name: None,
+            ty: ValType::I32,
+        }
     }
 
     #[test]
@@ -147,10 +142,10 @@ mod tests {
     #[test]
     fn test_local_set() {
         let mut executor = Executor::new();
-        let line = test_line![(test_local![None, ValType::I32])(
+        let line = test_line![(test_new_local())(
             Instruction::I32Const(42),
-            Instruction::LocalSet(test_index!(0)),
-            Instruction::LocalGet(test_index!(0))
+            Instruction::LocalSet(test_new_index(0)),
+            Instruction::LocalGet(test_new_index(0))
         )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
@@ -159,10 +154,10 @@ mod tests {
     #[test]
     fn test_local_set_commit() {
         let mut executor = Executor::new();
-        let line = test_line![(test_local![None, ValType::I32])(
+        let line = test_line![(test_new_local())(
             Instruction::I32Const(42),
-            Instruction::LocalSet(test_index!(0)),
-            Instruction::LocalGet(test_index!(0))
+            Instruction::LocalSet(test_new_index(0)),
+            Instruction::LocalGet(test_new_index(0))
         )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
@@ -170,8 +165,8 @@ mod tests {
         let line = test_line![()(
             Instruction::Drop,
             Instruction::I32Const(55),
-            Instruction::LocalSet(test_index!(0)),
-            Instruction::LocalGet(test_index!(0))
+            Instruction::LocalSet(test_new_index(0)),
+            Instruction::LocalGet(test_new_index(0))
         )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[55]");
@@ -180,22 +175,20 @@ mod tests {
     #[test]
     fn test_local_set_local_rollback() {
         let mut executor = Executor::new();
-        let line = test_line![(test_local![None, ValType::I32])(
+        let line = test_line![(test_new_local())(
             Instruction::I32Const(42),
-            Instruction::LocalSet(test_index!(0))
+            Instruction::LocalSet(test_new_index(0))
         )];
         executor.execute(&line).unwrap();
 
         let line = test_line![()(
             Instruction::I32Const(55),
-            Instruction::LocalSet(test_index!(0)),
+            Instruction::LocalSet(test_new_index(0)),
             TODO_INSTRUCTION
         )];
         assert!(executor.execute(&line).is_err());
 
-        let line = test_line![(test_local![None, ValType::I32])(Instruction::LocalGet(
-            test_index!(0)
-        ))];
+        let line = test_line![(test_new_local())(Instruction::LocalGet(test_new_index(0)))];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
