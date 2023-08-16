@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] Nested instructions
+- [x] Nested instructions
 - [ ] Local by id
 - [ ] I32 instructions
 - [ ] I64 instructions
