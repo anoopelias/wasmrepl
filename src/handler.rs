@@ -110,33 +110,48 @@ impl<'a> Handler<'a> for I32DivSInstr<'a> {
 }
 
 struct LocalGetInstr<'a> {
-    index: u32,
+    id: Option<&'a str>,
+    index: Option<u32>,
     state: &'a mut State,
 }
 
 impl<'a> Handler<'a> for LocalGetInstr<'a> {
     fn handle(&mut self) -> Result<()> {
-        let value = self.state.locals.get(self.index as usize)?;
-        self.state.stack.push(value);
+        match self.id {
+            Some(id) => {
+                let val = self.state.locals.get_by_id(id)?;
+                self.state.stack.push(val);
+            }
+            None => {
+                let value = self.state.locals.get(self.index.unwrap() as usize)?;
+                self.state.stack.push(value);
+            }
+        }
         Ok(())
     }
 }
 
 struct LocalSetInstr<'a> {
-    index: u32,
+    id: Option<&'a str>,
+    index: Option<u32>,
     state: &'a mut State,
 }
 
 impl<'a> Handler<'a> for LocalSetInstr<'a> {
     fn handle(&mut self) -> Result<()> {
         let value = self.state.stack.pop()?;
-        self.state.locals.set(self.index as usize, value)?;
+        match self.id {
+            Some(id) => {
+                self.state.locals.set_by_id(id, value)?;
+            }
+            None => self.state.locals.set(self.index.unwrap() as usize, value)?,
+        }
         Ok(())
     }
 }
 
 pub fn handler_for<'a>(
-    instr: &Instruction,
+    instr: &'a Instruction,
     state: &'a mut State,
 ) -> Result<Box<dyn Handler<'a> + 'a>> {
     match instr {
@@ -152,11 +167,23 @@ pub fn handler_for<'a>(
         Instruction::I32Mul => Ok(Box::new(I32MulInstr { state })),
         Instruction::I32DivS => Ok(Box::new(I32DivSInstr { state })),
         Instruction::LocalGet(Index::Num(index, _)) => Ok(Box::new(LocalGetInstr {
-            index: *index,
+            id: None,
+            index: Some(*index),
             state,
         })),
         Instruction::LocalSet(Index::Num(index, _)) => Ok(Box::new(LocalSetInstr {
-            index: *index,
+            id: None,
+            index: Some(*index),
+            state,
+        })),
+        Instruction::LocalGet(Index::Id(id)) => Ok(Box::new(LocalGetInstr {
+            id: Some(id.name()),
+            index: None,
+            state,
+        })),
+        Instruction::LocalSet(Index::Id(id)) => Ok(Box::new(LocalSetInstr {
+            id: Some(id.name()),
+            index: None,
             state,
         })),
         _ => Err(Error::msg("Unknown instruction")),
@@ -170,8 +197,14 @@ mod tests {
 
     use wast::{
         core::Instruction,
-        token::{Index, Span},
+        parser::{self as wastparser, ParseBuffer},
+        token::{Id, Index, Span},
     };
+
+    fn test_new_index_id<'a>(buf: &'a ParseBuffer) -> Index<'a> {
+        let id = wastparser::parse::<Id>(buf).unwrap();
+        Index::Id(id)
+    }
 
     fn exec_instr(instr: &Instruction, state: &mut State) -> Result<()> {
         let mut handler = handler_for(instr, state).unwrap();
@@ -377,5 +410,60 @@ mod tests {
             &mut state,
         )
         .is_err());
+    }
+
+    #[test]
+    fn test_local_get_by_id() {
+        let mut state = State::new();
+        state.locals.grow_by_id("num").unwrap();
+        state.locals.set(0, 42).unwrap();
+
+        let str_id = String::from("$num");
+        let buf_id = ParseBuffer::new(&str_id).unwrap();
+        let id = test_new_index_id(&buf_id);
+
+        exec_instr(&Instruction::LocalGet(id), &mut state).unwrap();
+        assert_eq!(state.stack.pop().unwrap(), 42);
+    }
+
+    #[test]
+    fn test_local_get_by_id_error() {
+        let mut state = State::new();
+        state.locals.grow_by_id("num").unwrap();
+        state.locals.set(0, 42).unwrap();
+
+        let str_id = String::from("$num_other");
+        let buf_id = ParseBuffer::new(&str_id).unwrap();
+        let id = test_new_index_id(&buf_id);
+
+        assert!(exec_instr(&Instruction::LocalGet(id), &mut state).is_err());
+    }
+
+    #[test]
+    fn test_local_set_by_id() {
+        let mut state = State::new();
+        state.stack.push(15);
+        state.locals.grow_by_id("num").unwrap();
+        state.locals.grow_by_id("num_other").unwrap();
+
+        let str_id = String::from("$num_other");
+        let buf_id = ParseBuffer::new(&str_id).unwrap();
+        let id = test_new_index_id(&buf_id);
+
+        exec_instr(&Instruction::LocalSet(id), &mut state).unwrap();
+        assert_eq!(state.locals.get(1).unwrap(), 15);
+    }
+
+    #[test]
+    fn test_local_set_by_id_error() {
+        let mut state = State::new();
+        state.stack.push(15);
+        state.locals.grow_by_id("num").unwrap();
+
+        let str_id = String::from("$num_other");
+        let buf_id = ParseBuffer::new(&str_id).unwrap();
+        let id = test_new_index_id(&buf_id);
+
+        assert!(exec_instr(&Instruction::LocalSet(id), &mut state).is_err());
     }
 }

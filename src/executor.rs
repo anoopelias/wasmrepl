@@ -81,10 +81,11 @@ impl Executor {
 #[cfg(test)]
 mod tests {
     use wast::core::{Expression, Instruction, Local, ValType};
-    use wast::token::{Index, Span};
+    use wast::parser::{self as wastparser, ParseBuffer};
+    use wast::token::{Id, Index, Span};
 
     use crate::executor::Executor;
-    use crate::parser::Line;
+    use crate::parser::{Line, LocalParser};
 
     // An instruction that is not implemented yet,
     // to be used to force an error
@@ -103,8 +104,28 @@ mod tests {
         };
     }
 
+    fn test_local_command_for(id: &String) -> String {
+        let mut command = String::from("local ");
+        command.push_str(id);
+        command.push_str(" i32");
+        command
+    }
+
+    fn test_new_local_id<'a>(buf: &'a ParseBuffer) -> Local<'a> {
+        wastparser::parse::<LocalParser>(buf)
+            .unwrap()
+            .locals
+            .pop()
+            .unwrap()
+    }
+
     fn test_new_index<'a>(n: u32) -> Index<'a> {
         Index::Num(n, Span::from_offset(0))
+    }
+
+    fn test_new_index_id<'a>(buf: &'a ParseBuffer) -> Index<'a> {
+        let id = wastparser::parse::<Id>(buf).unwrap();
+        Index::Id(id)
     }
 
     fn test_new_local<'a>() -> Local<'a> {
@@ -189,6 +210,50 @@ mod tests {
         assert!(executor.execute(&line).is_err());
 
         let line = test_line![(test_new_local())(Instruction::LocalGet(test_new_index(0)))];
+        executor.execute(&line).unwrap();
+        assert_eq!(executor.to_state(), "[42]");
+    }
+
+    #[test]
+    fn test_local_by_id() {
+        let mut executor = Executor::new();
+
+        let id = String::from("$num");
+        let command = test_local_command_for(&id);
+
+        let buf_command = ParseBuffer::new(&command).unwrap();
+        let local = test_new_local_id(&buf_command);
+
+        let buf_id = ParseBuffer::new(&id).unwrap();
+        let id = test_new_index_id(&buf_id);
+
+        let line = test_line![(local)(
+            Instruction::I32Const(42),
+            Instruction::LocalSet(id),
+            Instruction::LocalGet(id)
+        )];
+        executor.execute(&line).unwrap();
+        assert_eq!(executor.to_state(), "[42]");
+    }
+
+    #[test]
+    fn test_local_by_id_mix() {
+        let mut executor = Executor::new();
+
+        let id = String::from("$num");
+
+        let command = test_local_command_for(&id);
+        let buf_command = ParseBuffer::new(&command).unwrap();
+        let local = test_new_local_id(&buf_command);
+
+        let buf_id = ParseBuffer::new(&id).unwrap();
+        let id = test_new_index_id(&buf_id);
+
+        let line = test_line![(test_new_local(), local)(
+            Instruction::I32Const(42),
+            Instruction::LocalSet(id),
+            Instruction::LocalGet(test_new_index(1))
+        )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }

@@ -1,7 +1,7 @@
 # TODO
 
 - [x] Nested instructions
-- [ ] Local by id
+- [x] Local by id
 - [ ] I32 instructions
 - [ ] I64 instructions
 - [ ] Print locals
