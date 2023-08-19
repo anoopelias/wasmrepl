@@ -1,7 +1,7 @@
 use anyhow::Result;
 use wast::core::{Instruction, Local};
 
-use crate::handler::{handler_for, InstructionHandler};
+use crate::handler::Handler;
 use crate::{locals::Locals, parser::Line, stack::Stack};
 
 pub struct Executor {
@@ -74,11 +74,8 @@ impl Executor {
     }
 
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<()> {
-        let mut handler = InstructionHandler::new(&mut self.state);
-        match handler.handle(instr) {
-            Ok(()) => Ok(()),
-            Err(_) => handler_for(instr, &mut self.state)?.handle(),
-        }
+        let mut handler = Handler::new(&mut self.state);
+        handler.handle(instr)
     }
 }
 
