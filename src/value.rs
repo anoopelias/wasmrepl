@@ -35,11 +35,18 @@ impl TryInto<i32> for Value {
     }
 }
 
-impl From<i32> for Value {
-    fn from(n: i32) -> Self {
-        Value::I32(n)
-    }
+macro_rules! value_from {
+    ($type:ty, $e:path) => {
+        impl From<$type> for Value {
+            fn from(n: $type) -> Self {
+                $e(n)
+            }
+        }
+    };
 }
+
+value_from!(i64, Value::I64);
+value_from!(i32, Value::I32);
 
 #[cfg(test)]
 mod tests {
@@ -68,5 +75,6 @@ mod tests {
     #[test]
     fn test_value_from() {
         assert_eq!(Value::from(1), Value::I32(1));
+        assert_eq!(Value::from(2i64), Value::I64(2));
     }
 }

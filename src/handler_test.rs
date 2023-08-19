@@ -34,6 +34,13 @@ fn test_i32_const() {
 }
 
 #[test]
+fn test_i64_const() {
+    let mut state = State::new();
+    exec_instr_handler(&Instruction::I64Const(52), &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 52i64.into());
+}
+
+#[test]
 fn test_drop() {
     let mut state = State::new();
     state.stack.push(42.into());

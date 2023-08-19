@@ -4,7 +4,7 @@ use wast::{
     token::{Id, Index},
 };
 
-use crate::executor::State;
+use crate::{executor::State, value::Value};
 
 pub struct Handler<'a> {
     state: &'a mut State,
@@ -15,9 +15,17 @@ impl<'a> Handler<'a> {
         Handler { state }
     }
 
-    fn i32_const(&mut self, value: i32) -> Result<()> {
-        self.state.stack.push(value.into());
+    fn constant(&mut self, value: Value) -> Result<()> {
+        self.state.stack.push(value);
         Ok(())
+    }
+
+    fn i32_const(&mut self, value: i32) -> Result<()> {
+        self.constant(value.into())
+    }
+
+    fn i64_const(&mut self, value: i64) -> Result<()> {
+        self.constant(value.into())
     }
 
     fn drop(&mut self) -> Result<()> {
@@ -94,6 +102,7 @@ impl<'a> Handler<'a> {
     pub fn handle(&mut self, instr: &Instruction) -> Result<()> {
         match instr {
             Instruction::I32Const(value) => self.i32_const(*value),
+            Instruction::I64Const(value) => self.i64_const(*value),
             Instruction::Drop => self.drop(),
             Instruction::I32Clz => self.i32_clz(),
             Instruction::I32Ctz => self.i32_ctz(),
