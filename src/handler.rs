@@ -62,7 +62,7 @@ impl<'a> Handler<'a> for I32AddInstr<'a> {
     fn handle(&mut self) -> Result<()> {
         let a = self.state.stack.pop()?;
         let b = self.state.stack.pop()?;
-        self.state.stack.push(a + b);
+        self.state.stack.push(a.wrapping_add(b));
         Ok(())
     }
 }
@@ -289,6 +289,15 @@ mod tests {
         state.stack.push(2);
         exec_instr(&Instruction::I32Add, &mut state).unwrap();
         assert_eq!(state.stack.pop().unwrap(), 3);
+    }
+
+    #[test]
+    fn test_i32_add_overflow() {
+        let mut state = State::new();
+        state.stack.push(i32::MAX);
+        state.stack.push(1);
+        exec_instr(&Instruction::I32Add, &mut state).unwrap();
+        assert_eq!(state.stack.pop().unwrap(), -2147483648);
     }
 
     #[test]
