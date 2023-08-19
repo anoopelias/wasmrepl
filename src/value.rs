@@ -40,3 +40,33 @@ impl From<i32> for Value {
         Value::I32(n)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::value::Value;
+
+    #[test]
+    fn test_value_display() {
+        assert_eq!(Value::I32(1).to_string(), "1");
+        assert_eq!(Value::I64(1).to_string(), "1");
+    }
+
+    #[test]
+    fn test_value_try_into() {
+        let i32val = Value::I32(4);
+
+        let num: i32 = i32val.try_into().unwrap();
+        assert_eq!(num, 4);
+    }
+
+    #[test]
+    fn test_value_try_into_error() {
+        let i64val = Value::I64(4);
+        assert!(<Value as TryInto<i32>>::try_into(i64val).is_err());
+    }
+
+    #[test]
+    fn test_value_from() {
+        assert_eq!(Value::from(1), Value::I32(1));
+    }
+}
