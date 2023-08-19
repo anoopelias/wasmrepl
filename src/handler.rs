@@ -150,15 +150,33 @@ impl<'a> Handler<'a> for LocalSetInstr<'a> {
     }
 }
 
+pub struct InstructionHandler<'a> {
+    state: &'a mut State,
+}
+
+impl<'a> InstructionHandler<'a> {
+    pub fn new(state: &'a mut State) -> Self {
+        InstructionHandler { state }
+    }
+
+    fn i32_const(&mut self, value: i32) -> Result<()> {
+        self.state.stack.push(value);
+        Ok(())
+    }
+
+    pub fn handle(&mut self, instr: &Instruction) -> Result<()> {
+        match instr {
+            Instruction::I32Const(value) => self.i32_const(*value),
+            _ => Err(Error::msg("Unknown instruction")),
+        }
+    }
+}
+
 pub fn handler_for<'a>(
     instr: &'a Instruction,
     state: &'a mut State,
 ) -> Result<Box<dyn Handler<'a> + 'a>> {
     match instr {
-        Instruction::I32Const(value) => Ok(Box::new(I32ConstInstr {
-            value: *value,
-            state,
-        })),
         Instruction::Drop => Ok(Box::new(DropInstr { state })),
         Instruction::I32Clz => Ok(Box::new(I32ClzInstr { state })),
         Instruction::I32Ctz => Ok(Box::new(I32CtzInstr { state })),

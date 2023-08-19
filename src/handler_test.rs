@@ -7,6 +7,8 @@ use wast::{
     token::{Id, Index, Span},
 };
 
+use super::InstructionHandler;
+
 fn test_new_index_id<'a>(buf: &'a ParseBuffer) -> Index<'a> {
     let id = wastparser::parse::<Id>(buf).unwrap();
     Index::Id(id)
@@ -15,6 +17,11 @@ fn test_new_index_id<'a>(buf: &'a ParseBuffer) -> Index<'a> {
 fn exec_instr(instr: &Instruction, state: &mut State) -> Result<()> {
     let mut handler = handler_for(instr, state).unwrap();
     handler.handle()
+}
+
+fn exec_instr_handler(instr: &Instruction, state: &mut State) -> Result<()> {
+    let mut handler = InstructionHandler::new(state);
+    handler.handle(instr)
 }
 
 #[test]
@@ -26,7 +33,7 @@ fn test_unknown_instr() {
 #[test]
 fn test_i32_const() {
     let mut state = State::new();
-    exec_instr(&Instruction::I32Const(42), &mut state).unwrap();
+    exec_instr_handler(&Instruction::I32Const(42), &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 42);
 }
 
