@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
 use anyhow::{Error, Result};
+
+use crate::value::Value;
 pub struct List {
-    values: Vec<i32>,
+    values: Vec<Value>,
     soft_len: usize,
-    soft_values: HashMap<usize, i32>,
+    soft_values: HashMap<usize, Value>,
 }
 
 impl List {
@@ -29,23 +31,24 @@ impl List {
         }
     }
 
-    pub fn set(&mut self, index: usize, value: i32) -> Result<()> {
+    pub fn set(&mut self, index: usize, value: Value) -> Result<()> {
         self.has_index(index)?;
         self.soft_values.insert(index, value);
         Ok(())
     }
 
-    pub fn get(&self, index: usize) -> Result<i32> {
+    pub fn get(&self, index: usize) -> Result<&Value> {
         self.has_index(index)?;
         match self.soft_values.get(&index) {
-            Some(value) => Ok(*value),
-            None => Ok(*self.values.get(index).unwrap_or(&0)),
+            Some(value) => Ok(value),
+            // TODO: This needs to be based on the request
+            None => Ok(self.values.get(index).unwrap_or(&Value::I32(0))),
         }
     }
 
     pub fn commit(&mut self) {
         for _ in 0..self.soft_len {
-            self.values.push(0);
+            self.values.push(0.into());
         }
 
         self.soft_values.drain().for_each(|(k, v)| {
@@ -69,11 +72,11 @@ mod tests {
         let mut list = List::new();
         assert_eq!(list.grow(), 0);
         assert_eq!(list.grow(), 1);
-        list.set(0, 1).unwrap();
-        list.set(1, 2).unwrap();
+        list.set(0, 1.into()).unwrap();
+        list.set(1, 2.into()).unwrap();
 
-        assert_eq!(list.get(0).unwrap(), 1);
-        assert_eq!(list.get(1).unwrap(), 2);
+        assert_eq!(list.get(0).unwrap().clone(), 1.into());
+        assert_eq!(list.get(1).unwrap().clone(), 2.into());
         assert!(list.get(2).is_err());
     }
 
@@ -82,12 +85,12 @@ mod tests {
         let mut list = List::new();
         list.grow();
         list.grow();
-        list.set(0, 1).unwrap();
-        list.set(1, 2).unwrap();
+        list.set(0, 1.into()).unwrap();
+        list.set(1, 2.into()).unwrap();
         list.commit();
 
-        assert_eq!(list.get(0).unwrap(), 1);
-        assert_eq!(list.get(1).unwrap(), 2);
+        assert_eq!(list.get(0).unwrap().clone(), 1.into());
+        assert_eq!(list.get(1).unwrap().clone(), 2.into());
     }
 
     #[test]
@@ -95,16 +98,16 @@ mod tests {
         let mut list = List::new();
         list.grow();
         list.grow();
-        list.set(0, 1).unwrap();
-        list.set(1, 2).unwrap();
+        list.set(0, 1.into()).unwrap();
+        list.set(1, 2.into()).unwrap();
         list.commit();
 
         assert_eq!(list.grow(), 2);
-        assert_eq!(list.get(2).unwrap(), 0);
-        list.set(2, 3).unwrap();
-        list.set(0, 4).unwrap();
-        assert_eq!(list.get(2).unwrap(), 3);
-        assert_eq!(list.get(0).unwrap(), 4);
+        assert_eq!(list.get(2).unwrap().clone(), 0.into());
+        list.set(2, 3.into()).unwrap();
+        list.set(0, 4.into()).unwrap();
+        assert_eq!(list.get(2).unwrap().clone(), 3.into());
+        assert_eq!(list.get(0).unwrap().clone(), 4.into());
         assert!(list.get(3).is_err());
     }
 
@@ -113,17 +116,17 @@ mod tests {
         let mut list = List::new();
         list.grow();
         list.grow();
-        list.set(0, 1).unwrap();
-        list.set(1, 2).unwrap();
+        list.set(0, 1.into()).unwrap();
+        list.set(1, 2.into()).unwrap();
         list.commit();
 
         list.grow();
-        list.set(2, 3).unwrap();
-        list.set(0, 4).unwrap();
+        list.set(2, 3.into()).unwrap();
+        list.set(0, 4.into()).unwrap();
         list.rollback();
 
-        assert_eq!(list.get(0).unwrap(), 1);
-        assert_eq!(list.get(1).unwrap(), 2);
+        assert_eq!(list.get(0).unwrap().clone(), 1.into());
+        assert_eq!(list.get(1).unwrap().clone(), 2.into());
         assert!(list.get(2).is_err());
     }
 
@@ -132,20 +135,20 @@ mod tests {
         let mut list = List::new();
         list.grow();
         list.grow();
-        list.set(0, 1).unwrap();
-        list.set(1, 2).unwrap();
+        list.set(0, 1.into()).unwrap();
+        list.set(1, 2.into()).unwrap();
         list.commit();
 
         list.grow();
-        list.set(2, 3).unwrap();
-        list.set(0, 4).unwrap();
+        list.set(2, 3.into()).unwrap();
+        list.set(0, 4.into()).unwrap();
         list.rollback();
 
         assert_eq!(list.grow(), 2);
-        list.set(2, 5).unwrap();
-        list.set(0, 6).unwrap();
-        assert_eq!(list.get(2).unwrap(), 5);
-        assert_eq!(list.get(0).unwrap(), 6);
+        list.set(2, 5.into()).unwrap();
+        list.set(0, 6.into()).unwrap();
+        assert_eq!(list.get(2).unwrap().clone(), 5.into());
+        assert_eq!(list.get(0).unwrap().clone(), 6.into());
         assert!(list.get(3).is_err());
     }
 }

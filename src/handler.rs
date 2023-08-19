@@ -16,7 +16,7 @@ impl<'a> Handler<'a> {
     }
 
     fn i32_const(&mut self, value: i32) -> Result<()> {
-        self.state.stack.push(value);
+        self.state.stack.push(value.into());
         Ok(())
     }
 
@@ -26,57 +26,58 @@ impl<'a> Handler<'a> {
     }
 
     fn i32_clz(&mut self) -> Result<()> {
-        let value = self.state.stack.pop()?;
-        self.state.stack.push(value.leading_zeros() as i32);
+        let value: i32 = self.state.stack.pop()?.try_into()?;
+        self.state.stack.push((value.leading_zeros() as i32).into());
         Ok(())
     }
 
     fn i32_ctz(&mut self) -> Result<()> {
-        let value = self.state.stack.pop()?;
-        self.state.stack.push(value.trailing_zeros() as i32);
+        let value: i32 = self.state.stack.pop()?.try_into()?;
+        let value = (value.trailing_zeros() as i32).into();
+        self.state.stack.push(value);
         Ok(())
     }
 
     fn i32_add(&mut self) -> Result<()> {
-        let a = self.state.stack.pop()?;
-        let b = self.state.stack.pop()?;
-        self.state.stack.push(a.wrapping_add(b));
+        let a: i32 = self.state.stack.pop()?.try_into()?;
+        let b: i32 = self.state.stack.pop()?.try_into()?;
+        self.state.stack.push(a.wrapping_add(b).into());
         Ok(())
     }
 
     fn i32_sub(&mut self) -> Result<()> {
-        let a = self.state.stack.pop()?;
-        let b = self.state.stack.pop()?;
-        self.state.stack.push(b.wrapping_sub(a));
+        let a: i32 = self.state.stack.pop()?.try_into()?;
+        let b: i32 = self.state.stack.pop()?.try_into()?;
+        self.state.stack.push(b.wrapping_sub(a).into());
         Ok(())
     }
 
     fn i32_mul(&mut self) -> Result<()> {
-        let a = self.state.stack.pop()?;
-        let b = self.state.stack.pop()?;
-        self.state.stack.push(a.wrapping_mul(b));
+        let a: i32 = self.state.stack.pop()?.try_into()?;
+        let b: i32 = self.state.stack.pop()?.try_into()?;
+        self.state.stack.push(a.wrapping_mul(b).into());
         Ok(())
     }
 
     fn i32_div_s(&mut self) -> Result<()> {
-        let value1 = self.state.stack.pop()?;
-        let value2 = self.state.stack.pop()?;
-        if value1 == 0 {
+        let a: i32 = self.state.stack.pop()?.try_into()?;
+        let b: i32 = self.state.stack.pop()?.try_into()?;
+        if a == 0 {
             return Err(Error::msg("Division by zero"));
         }
-        self.state.stack.push(value2 / value1);
+        self.state.stack.push((b / a).into());
         Ok(())
     }
 
     fn local_get(&mut self, index: u32) -> Result<()> {
         let value = self.state.locals.get(index as usize)?;
-        self.state.stack.push(value);
+        self.state.stack.push(value.clone());
         Ok(())
     }
 
     fn local_get_by_id(&mut self, id: &Id) -> Result<()> {
         let val = self.state.locals.get_by_id(id.name())?;
-        self.state.stack.push(val);
+        self.state.stack.push(val.clone());
         Ok(())
     }
 

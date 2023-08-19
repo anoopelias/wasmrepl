@@ -5,6 +5,7 @@ mod list;
 mod locals;
 mod parser;
 mod stack;
+mod value;
 
 use executor::Executor;
 use parser::Line;
