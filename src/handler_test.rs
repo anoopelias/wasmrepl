@@ -63,16 +63,15 @@ fn test_i32_clz() {
 }
 
 #[test]
-fn test_i32_clz_max() {
+fn test_i32_clz_error() {
     let mut state = State::new();
-    state.stack.push(0.into());
-    exec_instr_handler(&Instruction::I32Clz, &mut state).unwrap();
-    assert_eq!(state.stack.pop().unwrap(), 32.into());
+    assert!(exec_instr_handler(&Instruction::I32Clz, &mut state).is_err());
 }
 
 #[test]
-fn test_i32_clz_error() {
+fn test_i32_clz_type_error() {
     let mut state = State::new();
+    state.stack.push(1023i64.into());
     assert!(exec_instr_handler(&Instruction::I32Clz, &mut state).is_err());
 }
 
@@ -82,6 +81,13 @@ fn test_i64_clz() {
     state.stack.push(1023i64.into());
     exec_instr_handler(&Instruction::I64Clz, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 54i64.into());
+}
+
+#[test]
+fn test_i64_clz_type_error() {
+    let mut state = State::new();
+    state.stack.push(1023.into());
+    assert!(exec_instr_handler(&Instruction::I64Clz, &mut state).is_err());
 }
 
 #[test]

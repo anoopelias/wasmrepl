@@ -4,7 +4,10 @@ use wast::{
     token::{Id, Index},
 };
 
-use crate::{executor::State, value::Value};
+use crate::{
+    executor::State,
+    value::{match_type, Value},
+};
 
 pub struct Handler<'a> {
     state: &'a mut State,
@@ -33,16 +36,21 @@ impl<'a> Handler<'a> {
         Ok(())
     }
 
-    fn i32_clz(&mut self) -> Result<()> {
-        let value: i32 = self.state.stack.pop()?.try_into()?;
-        self.state.stack.push((value.leading_zeros() as i32).into());
+    fn clz(&mut self, val: Value) -> Result<()> {
+        self.state.stack.push(val.leading_zeros());
         Ok(())
     }
 
+    fn i32_clz(&mut self) -> Result<()> {
+        let val = self.state.stack.pop()?;
+        match_type!(val, Value::I32)?;
+        self.clz(val)
+    }
+
     fn i64_clz(&mut self) -> Result<()> {
-        let value: i64 = self.state.stack.pop()?.try_into()?;
-        self.state.stack.push((value.leading_zeros() as i64).into());
-        Ok(())
+        let val = self.state.stack.pop()?;
+        match_type!(val, Value::I64)?;
+        self.clz(val)
     }
 
     fn i32_ctz(&mut self) -> Result<()> {
