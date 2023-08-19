@@ -39,6 +39,12 @@ impl<'a> Handler<'a> {
         Ok(())
     }
 
+    fn i64_clz(&mut self) -> Result<()> {
+        let value: i64 = self.state.stack.pop()?.try_into()?;
+        self.state.stack.push((value.leading_zeros() as i64).into());
+        Ok(())
+    }
+
     fn i32_ctz(&mut self) -> Result<()> {
         let value: i32 = self.state.stack.pop()?.try_into()?;
         let value = (value.trailing_zeros() as i32).into();
@@ -105,6 +111,7 @@ impl<'a> Handler<'a> {
             Instruction::I64Const(value) => self.i64_const(*value),
             Instruction::Drop => self.drop(),
             Instruction::I32Clz => self.i32_clz(),
+            Instruction::I64Clz => self.i64_clz(),
             Instruction::I32Ctz => self.i32_ctz(),
             Instruction::I32Add => self.i32_add(),
             Instruction::I32Sub => self.i32_sub(),

@@ -24,29 +24,28 @@ impl Clone for Value {
     }
 }
 
-impl TryInto<i32> for Value {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> Result<i32, Self::Error> {
-        match self {
-            Value::I32(n) => Ok(n),
-            _ => Err(anyhow::Error::msg("Not an i32")),
-        }
-    }
-}
-
-macro_rules! value_from {
+macro_rules! map_types {
     ($type:ty, $e:path) => {
         impl From<$type> for Value {
             fn from(n: $type) -> Self {
                 $e(n)
             }
         }
+        impl TryInto<$type> for Value {
+            type Error = anyhow::Error;
+
+            fn try_into(self) -> Result<$type, Self::Error> {
+                match self {
+                    $e(n) => Ok(n),
+                    _ => Err(anyhow::Error::msg("Type mismatch")),
+                }
+            }
+        }
     };
 }
 
-value_from!(i64, Value::I64);
-value_from!(i32, Value::I32);
+map_types!(i64, Value::I64);
+map_types!(i32, Value::I32);
 
 #[cfg(test)]
 mod tests {
@@ -59,7 +58,7 @@ mod tests {
     }
 
     #[test]
-    fn test_value_try_into() {
+    fn test_i32_value_try_into() {
         let i32val = Value::I32(4);
 
         let num: i32 = i32val.try_into().unwrap();

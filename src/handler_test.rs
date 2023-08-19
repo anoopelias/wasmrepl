@@ -77,6 +77,14 @@ fn test_i32_clz_error() {
 }
 
 #[test]
+fn test_i64_clz() {
+    let mut state = State::new();
+    state.stack.push(1023i64.into());
+    exec_instr_handler(&Instruction::I64Clz, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 54i64.into());
+}
+
+#[test]
 fn test_i32_ctz() {
     let mut state = State::new();
     state.stack.push(1024.into());
