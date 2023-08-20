@@ -288,7 +288,7 @@ fn test_i64_div_s_type_error() {
 #[test]
 fn test_local_get() {
     let mut state = State::new();
-    state.locals.grow();
+    state.locals.grow(Value::I32(0));
     state.locals.set(0, 42.into()).unwrap();
     exec_instr_handler(
         &Instruction::LocalGet(Index::Num(0, Span::from_offset(0))),
@@ -312,8 +312,8 @@ fn test_local_get_error() {
 fn test_local_set() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow();
-    state.locals.grow();
+    state.locals.grow(Value::I32(0));
+    state.locals.grow(Value::I32(0));
     exec_instr_handler(
         &Instruction::LocalSet(Index::Num(1, Span::from_offset(0))),
         &mut state,
@@ -346,7 +346,7 @@ fn test_local_set_stack_error() {
 #[test]
 fn test_local_get_by_id() {
     let mut state = State::new();
-    state.locals.grow_by_id("num").unwrap();
+    state.locals.grow_by_id("num", Value::I32(0)).unwrap();
     state.locals.set(0, 42.into()).unwrap();
 
     let str_id = String::from("$num");
@@ -360,7 +360,7 @@ fn test_local_get_by_id() {
 #[test]
 fn test_local_get_by_id_error() {
     let mut state = State::new();
-    state.locals.grow_by_id("num").unwrap();
+    state.locals.grow_by_id("num", Value::I32(0)).unwrap();
     state.locals.set(0, 42.into()).unwrap();
 
     let str_id = String::from("$num_other");
@@ -374,8 +374,8 @@ fn test_local_get_by_id_error() {
 fn test_local_set_by_id() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow_by_id("num").unwrap();
-    state.locals.grow_by_id("num_other").unwrap();
+    state.locals.grow_by_id("num", Value::I32(0)).unwrap();
+    state.locals.grow_by_id("num_other", Value::I32(0)).unwrap();
 
     let str_id = String::from("$num_other");
     let buf_id = ParseBuffer::new(&str_id).unwrap();
@@ -389,7 +389,7 @@ fn test_local_set_by_id() {
 fn test_local_set_by_id_error() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow_by_id("num").unwrap();
+    state.locals.grow_by_id("num", Value::I32(0)).unwrap();
 
     let str_id = String::from("$num_other");
     let buf_id = ParseBuffer::new(&str_id).unwrap();

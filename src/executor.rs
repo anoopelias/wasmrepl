@@ -1,7 +1,8 @@
-use anyhow::Result;
-use wast::core::{Instruction, Local};
+use anyhow::{Error, Result};
+use wast::core::{Instruction, Local, ValType};
 
 use crate::handler::Handler;
+use crate::value::Value;
 use crate::{locals::Locals, parser::Line, stack::Stack};
 
 pub struct Executor {
@@ -65,9 +66,9 @@ impl Executor {
 
     fn execute_local(&mut self, lc: &Local) -> Result<()> {
         match lc.id {
-            Some(id) => self.state.locals.grow_by_id(id.name()),
+            Some(id) => self.state.locals.grow_by_id(id.name(), default_value(lc)?),
             None => {
-                self.state.locals.grow();
+                self.state.locals.grow(default_value(lc)?);
                 Ok(())
             }
         }
@@ -76,6 +77,14 @@ impl Executor {
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<()> {
         let mut handler = Handler::new(&mut self.state);
         handler.handle(instr)
+    }
+}
+
+fn default_value(lc: &Local) -> Result<Value> {
+    match lc.ty {
+        ValType::I32 => Ok(Value::default_i32()),
+        ValType::I64 => Ok(Value::default_i64()),
+        _ => Err(Error::msg("Unsupported type")),
     }
 }
 
@@ -129,7 +138,15 @@ mod tests {
         Index::Id(id)
     }
 
-    fn test_new_local<'a>() -> Local<'a> {
+    fn test_new_local_i32<'a>() -> Local<'a> {
+        Local {
+            id: None,
+            name: None,
+            ty: ValType::I32,
+        }
+    }
+
+    fn test_new_local_i64<'a>() -> Local<'a> {
         Local {
             id: None,
             name: None,
@@ -162,9 +179,9 @@ mod tests {
     }
 
     #[test]
-    fn test_local_set() {
+    fn test_local_set_get() {
         let mut executor = Executor::new();
-        let line = test_line![(test_new_local())(
+        let line = test_line![(test_new_local_i32())(
             Instruction::I32Const(42),
             Instruction::LocalSet(test_new_index(0)),
             Instruction::LocalGet(test_new_index(0))
@@ -176,7 +193,7 @@ mod tests {
     #[test]
     fn test_local_set_commit() {
         let mut executor = Executor::new();
-        let line = test_line![(test_new_local())(
+        let line = test_line![(test_new_local_i32())(
             Instruction::I32Const(42),
             Instruction::LocalSet(test_new_index(0)),
             Instruction::LocalGet(test_new_index(0))
@@ -197,7 +214,7 @@ mod tests {
     #[test]
     fn test_local_set_local_rollback() {
         let mut executor = Executor::new();
-        let line = test_line![(test_new_local())(
+        let line = test_line![(test_new_local_i32())(
             Instruction::I32Const(42),
             Instruction::LocalSet(test_new_index(0))
         )];
@@ -210,7 +227,9 @@ mod tests {
         )];
         assert!(executor.execute(&line).is_err());
 
-        let line = test_line![(test_new_local())(Instruction::LocalGet(test_new_index(0)))];
+        let line = test_line![(test_new_local_i32())(Instruction::LocalGet(
+            test_new_index(0)
+        ))];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
@@ -250,10 +269,22 @@ mod tests {
         let buf_id = ParseBuffer::new(&id).unwrap();
         let id = test_new_index_id(&buf_id);
 
-        let line = test_line![(test_new_local(), local)(
+        let line = test_line![(test_new_local_i32(), local)(
             Instruction::I32Const(42),
             Instruction::LocalSet(id),
             Instruction::LocalGet(test_new_index(1))
+        )];
+        executor.execute(&line).unwrap();
+        assert_eq!(executor.to_state(), "[42]");
+    }
+
+    #[test]
+    fn test_local_set_get_i64() {
+        let mut executor = Executor::new();
+        let line = test_line![(test_new_local_i64())(
+            Instruction::I32Const(42),
+            Instruction::LocalSet(test_new_index(0)),
+            Instruction::LocalGet(test_new_index(0))
         )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");

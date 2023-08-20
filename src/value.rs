@@ -61,6 +61,14 @@ macro_rules! match_type {
 pub(crate) use match_type;
 
 impl Value {
+    pub fn default_i32() -> Value {
+        Value::I32(0)
+    }
+
+    pub fn default_i64() -> Value {
+        Value::I64(0)
+    }
+
     pub fn leading_zeros(&self) -> Self {
         match self {
             Self::I32(n) => Self::I32(n.leading_zeros() as i32),
