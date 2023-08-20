@@ -66,7 +66,7 @@ impl<'a> Handler<'a> {
     }
 
     fn div_s(&mut self, a: Value, b: Value) -> Result<()> {
-        self.state.stack.push(b.div_s(&a)?);
+        self.state.stack.push(b.div(&a)?);
         Ok(())
     }
 
