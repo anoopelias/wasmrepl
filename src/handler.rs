@@ -148,6 +148,10 @@ impl<'a> Handler<'a> {
         self.div_s(a, b)
     }
 
+    fn f32_const(&mut self, bits: u32) -> Result<()> {
+        self.constant(f32::from_bits(bits).into())
+    }
+
     fn local_get(&mut self, index: u32) -> Result<()> {
         let value = self.state.locals.get(index as usize)?;
         self.state.stack.push(value.clone());
@@ -187,6 +191,7 @@ impl<'a> Handler<'a> {
             Instruction::I64Sub => self.i64_sub(),
             Instruction::I64Mul => self.i64_mul(),
             Instruction::I64DivS => self.i64_div_s(),
+            Instruction::F32Const(value) => self.f32_const(value.bits),
             Instruction::LocalGet(Index::Num(index, _)) => self.local_get(*index),
             Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
             Instruction::LocalSet(Index::Num(index, _)) => self.local_set(*index),

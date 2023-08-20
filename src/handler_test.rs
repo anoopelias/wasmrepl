@@ -4,7 +4,7 @@ use anyhow::Result;
 use wast::{
     core::Instruction,
     parser::{self as wastparser, ParseBuffer},
-    token::{Id, Index, Span},
+    token::{Float32, Id, Index, Span},
 };
 
 use super::Handler;
@@ -17,6 +17,10 @@ fn test_new_index_id<'a>(buf: &'a ParseBuffer) -> Index<'a> {
 fn exec_instr_handler(instr: &Instruction, state: &mut State) -> Result<()> {
     let mut handler = Handler::new(state);
     handler.handle(instr)
+}
+
+fn float32_for(buf: &ParseBuffer) -> Float32 {
+    wastparser::parse::<Float32>(&buf).unwrap()
 }
 
 #[test]
@@ -283,6 +287,15 @@ fn test_i64_div_s_type_error() {
     state.stack.push(1.into());
     state.stack.push(2.into());
     assert!(exec_instr_handler(&Instruction::I64DivS, &mut state).is_err());
+}
+
+#[test]
+fn test_f32_const() {
+    let mut state = State::new();
+    let wat = "3.14";
+    let buf = ParseBuffer::new(wat).unwrap();
+    exec_instr_handler(&Instruction::F32Const(float32_for(&buf)), &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 3.14.into());
 }
 
 #[test]
