@@ -89,18 +89,42 @@ impl<'a> Handler<'a> {
         self.add(a, b)
     }
 
+    fn sub(&mut self, a: Value, b: Value) -> Result<()> {
+        self.state.stack.push(a.sub(&b)?);
+        Ok(())
+    }
+
     fn i32_sub(&mut self) -> Result<()> {
-        let a: i32 = self.state.stack.pop()?.try_into()?;
-        let b: i32 = self.state.stack.pop()?.try_into()?;
-        self.state.stack.push(b.wrapping_sub(a).into());
+        let a = self.state.stack.pop()?;
+        let b = self.state.stack.pop()?;
+        match_type!(a, Value::I32)?;
+        self.sub(a, b)
+    }
+
+    fn i64_sub(&mut self) -> Result<()> {
+        let a = self.state.stack.pop()?;
+        let b = self.state.stack.pop()?;
+        match_type!(a, Value::I64)?;
+        self.sub(a, b)
+    }
+
+    fn mul(&mut self, a: Value, b: Value) -> Result<()> {
+        self.state.stack.push(a.mul(&b)?);
         Ok(())
     }
 
     fn i32_mul(&mut self) -> Result<()> {
-        let a: i32 = self.state.stack.pop()?.try_into()?;
-        let b: i32 = self.state.stack.pop()?.try_into()?;
-        self.state.stack.push(a.wrapping_mul(b).into());
-        Ok(())
+        let a = self.state.stack.pop()?;
+        let b = self.state.stack.pop()?;
+        match_type!(a, Value::I32)?;
+        self.mul(a, b)
+    }
+
+    fn i64_mul(&mut self) -> Result<()> {
+        let a = self.state.stack.pop()?;
+        let b = self.state.stack.pop()?;
+        match_type!(a, Value::I64)?;
+        self.mul(a, b)
     }
 
     fn i32_div_s(&mut self) -> Result<()> {
@@ -149,6 +173,8 @@ impl<'a> Handler<'a> {
             Instruction::I64Clz => self.i64_clz(),
             Instruction::I64Ctz => self.i64_ctz(),
             Instruction::I64Add => self.i64_add(),
+            Instruction::I64Sub => self.i64_sub(),
+            Instruction::I64Mul => self.i64_mul(),
             Instruction::LocalGet(Index::Num(index, _)) => self.local_get(*index),
             Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
             Instruction::LocalSet(Index::Num(index, _)) => self.local_set(*index),

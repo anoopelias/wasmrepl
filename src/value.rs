@@ -81,6 +81,22 @@ impl Value {
             _ => Err(Error::msg("Type mismatch")),
         }
     }
+
+    pub fn sub(&self, other: &Self) -> Result<Self> {
+        match (self, other) {
+            (Self::I32(n), Self::I32(m)) => Ok(Self::I32(n.wrapping_sub(*m))),
+            (Self::I64(n), Self::I64(m)) => Ok(Self::I64(n.wrapping_sub(*m))),
+            _ => Err(Error::msg("Type mismatch")),
+        }
+    }
+
+    pub fn mul(&self, other: &Self) -> Result<Self> {
+        match (self, other) {
+            (Self::I32(n), Self::I32(m)) => Ok(Self::I32(n.wrapping_mul(*m))),
+            (Self::I64(n), Self::I64(m)) => Ok(Self::I64(n.wrapping_mul(*m))),
+            _ => Err(Error::msg("Type mismatch")),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -146,5 +162,51 @@ mod tests {
     #[test]
     fn test_add_error() {
         assert!(Value::I32(1).add(&Value::I64(2)).is_err());
+    }
+
+    #[test]
+    fn test_sub() {
+        assert_eq!(Value::I32(1).sub(&Value::I32(2)).unwrap(), Value::I32(-1));
+        assert_eq!(Value::I64(1).sub(&Value::I64(2)).unwrap(), Value::I64(-1));
+    }
+
+    #[test]
+    fn test_sub_overflow() {
+        assert_eq!(
+            Value::I32(i32::MIN).sub(&Value::I32(1)).unwrap(),
+            Value::I32(i32::MAX)
+        );
+        assert_eq!(
+            Value::I64(i64::MIN).sub(&Value::I64(1)).unwrap(),
+            Value::I64(i64::MAX)
+        );
+    }
+
+    #[test]
+    fn test_sub_error() {
+        assert!(Value::I32(1).sub(&Value::I64(2)).is_err());
+    }
+
+    #[test]
+    fn test_mul() {
+        assert_eq!(Value::I32(2).mul(&Value::I32(3)).unwrap(), Value::I32(6));
+        assert_eq!(Value::I64(2).mul(&Value::I64(3)).unwrap(), Value::I64(6));
+    }
+
+    #[test]
+    fn test_mul_overflow() {
+        assert_eq!(
+            Value::I32(i32::MIN).mul(&Value::I32(2)).unwrap(),
+            Value::I32(0)
+        );
+        assert_eq!(
+            Value::I64(i64::MIN).mul(&Value::I64(2)).unwrap(),
+            Value::I64(0)
+        );
+    }
+
+    #[test]
+    fn test_mul_error() {
+        assert!(Value::I32(1).mul(&Value::I64(2)).is_err());
     }
 }

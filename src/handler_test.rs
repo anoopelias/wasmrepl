@@ -119,7 +119,7 @@ fn test_i32_sub() {
     state.stack.push(2.into());
     state.stack.push(1.into());
     exec_instr_handler(&Instruction::I32Sub, &mut state).unwrap();
-    assert_eq!(state.stack.pop().unwrap(), 1.into());
+    assert_eq!(state.stack.pop().unwrap(), Value::from(-1));
 }
 
 #[test]
@@ -232,6 +232,40 @@ fn test_i64_add_type_error() {
     state.stack.push(1i64.into());
     state.stack.push(2.into());
     assert!(exec_instr_handler(&Instruction::I64Add, &mut state).is_err());
+}
+
+#[test]
+fn test_i64_sub() {
+    let mut state = State::new();
+    state.stack.push(2i64.into());
+    state.stack.push(1i64.into());
+    exec_instr_handler(&Instruction::I64Sub, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), Value::from(-1i64));
+}
+
+#[test]
+fn test_i64_sub_type_error() {
+    let mut state = State::new();
+    state.stack.push(1i64.into());
+    state.stack.push(2.into());
+    assert!(exec_instr_handler(&Instruction::I64Sub, &mut state).is_err());
+}
+
+#[test]
+fn test_i64_mul() {
+    let mut state = State::new();
+    state.stack.push(2i64.into());
+    state.stack.push(3i64.into());
+    exec_instr_handler(&Instruction::I64Mul, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 6i64.into());
+}
+
+#[test]
+fn test_i64_mul_type_error() {
+    let mut state = State::new();
+    state.stack.push(1i64.into());
+    state.stack.push(2.into());
+    assert!(exec_instr_handler(&Instruction::I64Mul, &mut state).is_err());
 }
 
 #[test]
