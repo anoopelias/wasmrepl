@@ -180,10 +180,10 @@ fn test_i32_div_s_error() {
 }
 
 #[test]
-fn test_i32_div_s_div_by_zero() {
+fn test_i32_div_s_type_error() {
     let mut state = State::new();
-    state.stack.push(1.into());
-    state.stack.push(0.into());
+    state.stack.push(1i64.into());
+    state.stack.push(2.into());
     assert!(exec_instr_handler(&Instruction::I32DivS, &mut state).is_err());
 }
 
@@ -266,6 +266,23 @@ fn test_i64_mul_type_error() {
     state.stack.push(1i64.into());
     state.stack.push(2.into());
     assert!(exec_instr_handler(&Instruction::I64Mul, &mut state).is_err());
+}
+
+#[test]
+fn test_i64_div_s() {
+    let mut state = State::new();
+    state.stack.push(7i64.into());
+    state.stack.push(3i64.into());
+    exec_instr_handler(&Instruction::I64DivS, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 2i64.into());
+}
+
+#[test]
+fn test_i64_div_s_type_error() {
+    let mut state = State::new();
+    state.stack.push(1.into());
+    state.stack.push(2.into());
+    assert!(exec_instr_handler(&Instruction::I64DivS, &mut state).is_err());
 }
 
 #[test]

@@ -35,14 +35,6 @@ impl<'a> Handler<'a> {
         Ok(())
     }
 
-    fn i32_const(&mut self, value: i32) -> Result<()> {
-        self.constant(value.into())
-    }
-
-    fn i64_const(&mut self, value: i64) -> Result<()> {
-        self.constant(value.into())
-    }
-
     fn drop(&mut self) -> Result<()> {
         self.state.stack.pop()?;
         Ok(())
@@ -53,34 +45,43 @@ impl<'a> Handler<'a> {
         Ok(())
     }
 
-    fn i32_clz(&mut self) -> Result<()> {
-        let val = self.pop_i32()?;
-        self.clz(val)
-    }
-
-    fn i64_clz(&mut self) -> Result<()> {
-        let val = self.pop_i64()?;
-        self.clz(val)
-    }
-
     fn ctz(&mut self, val: Value) -> Result<()> {
         self.state.stack.push(val.trailing_zeros());
         Ok(())
     }
 
-    fn i32_ctz(&mut self) -> Result<()> {
-        let val = self.pop_i32()?;
-        self.ctz(val)
-    }
-
-    fn i64_ctz(&mut self) -> Result<()> {
-        let val = self.pop_i64()?;
-        self.ctz(val)
-    }
-
     fn add(&mut self, a: Value, b: Value) -> Result<()> {
         self.state.stack.push(a.add(&b)?);
         Ok(())
+    }
+
+    fn sub(&mut self, a: Value, b: Value) -> Result<()> {
+        self.state.stack.push(a.sub(&b)?);
+        Ok(())
+    }
+
+    fn mul(&mut self, a: Value, b: Value) -> Result<()> {
+        self.state.stack.push(a.mul(&b)?);
+        Ok(())
+    }
+
+    fn div_s(&mut self, a: Value, b: Value) -> Result<()> {
+        self.state.stack.push(b.div_s(&a)?);
+        Ok(())
+    }
+
+    fn i32_const(&mut self, value: i32) -> Result<()> {
+        self.constant(value.into())
+    }
+
+    fn i32_clz(&mut self) -> Result<()> {
+        let val = self.pop_i32()?;
+        self.clz(val)
+    }
+
+    fn i32_ctz(&mut self) -> Result<()> {
+        let val = self.pop_i32()?;
+        self.ctz(val)
     }
 
     fn i32_add(&mut self) -> Result<()> {
@@ -89,32 +90,10 @@ impl<'a> Handler<'a> {
         self.add(a, b)
     }
 
-    fn i64_add(&mut self) -> Result<()> {
-        let a = self.pop_i64()?;
-        let b = self.pop_i64()?;
-        self.add(a, b)
-    }
-
-    fn sub(&mut self, a: Value, b: Value) -> Result<()> {
-        self.state.stack.push(a.sub(&b)?);
-        Ok(())
-    }
-
     fn i32_sub(&mut self) -> Result<()> {
         let a = self.pop_i32()?;
         let b = self.pop_i32()?;
         self.sub(a, b)
-    }
-
-    fn i64_sub(&mut self) -> Result<()> {
-        let a = self.pop_i64()?;
-        let b = self.pop_i64()?;
-        self.sub(a, b)
-    }
-
-    fn mul(&mut self, a: Value, b: Value) -> Result<()> {
-        self.state.stack.push(a.mul(&b)?);
-        Ok(())
     }
 
     fn i32_mul(&mut self) -> Result<()> {
@@ -124,20 +103,49 @@ impl<'a> Handler<'a> {
         self.mul(a, b)
     }
 
+    fn i32_div_s(&mut self) -> Result<()> {
+        let a = self.pop_i32()?;
+        let b = self.pop_i32()?;
+
+        self.div_s(a, b)
+    }
+
+    fn i64_const(&mut self, value: i64) -> Result<()> {
+        self.constant(value.into())
+    }
+
+    fn i64_clz(&mut self) -> Result<()> {
+        let val = self.pop_i64()?;
+        self.clz(val)
+    }
+
+    fn i64_ctz(&mut self) -> Result<()> {
+        let val = self.pop_i64()?;
+        self.ctz(val)
+    }
+
+    fn i64_add(&mut self) -> Result<()> {
+        let a = self.pop_i64()?;
+        let b = self.pop_i64()?;
+        self.add(a, b)
+    }
+
+    fn i64_sub(&mut self) -> Result<()> {
+        let a = self.pop_i64()?;
+        let b = self.pop_i64()?;
+        self.sub(a, b)
+    }
+
     fn i64_mul(&mut self) -> Result<()> {
         let a = self.pop_i64()?;
         let b = self.pop_i64()?;
         self.mul(a, b)
     }
 
-    fn i32_div_s(&mut self) -> Result<()> {
-        let a: i32 = self.state.stack.pop()?.try_into()?;
-        let b: i32 = self.state.stack.pop()?.try_into()?;
-        if a == 0 {
-            return Err(Error::msg("Division by zero"));
-        }
-        self.state.stack.push((b / a).into());
-        Ok(())
+    fn i64_div_s(&mut self) -> Result<()> {
+        let a = self.pop_i64()?;
+        let b = self.pop_i64()?;
+        self.div_s(a, b)
     }
 
     fn local_get(&mut self, index: u32) -> Result<()> {
@@ -178,6 +186,7 @@ impl<'a> Handler<'a> {
             Instruction::I64Add => self.i64_add(),
             Instruction::I64Sub => self.i64_sub(),
             Instruction::I64Mul => self.i64_mul(),
+            Instruction::I64DivS => self.i64_div_s(),
             Instruction::LocalGet(Index::Num(index, _)) => self.local_get(*index),
             Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
             Instruction::LocalSet(Index::Num(index, _)) => self.local_set(*index),

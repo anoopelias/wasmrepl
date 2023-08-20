@@ -97,6 +97,26 @@ impl Value {
             _ => Err(Error::msg("Type mismatch")),
         }
     }
+
+    pub fn div_s(&self, other: &Self) -> Result<Self> {
+        match (self, other) {
+            (Self::I32(n), Self::I32(m)) => {
+                if *m == 0 {
+                    Err(Error::msg("Divide by zero"))
+                } else {
+                    Ok(Self::I32(n.wrapping_div(*m)))
+                }
+            }
+            (Self::I64(n), Self::I64(m)) => {
+                if *m == 0 {
+                    Err(Error::msg("Divide by zero"))
+                } else {
+                    Ok(Self::I64(n.wrapping_div(*m)))
+                }
+            }
+            _ => Err(Error::msg("Type mismatch")),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -208,5 +228,34 @@ mod tests {
     #[test]
     fn test_mul_error() {
         assert!(Value::I32(1).mul(&Value::I64(2)).is_err());
+    }
+
+    #[test]
+    fn test_div_s() {
+        assert_eq!(Value::I32(6).div_s(&Value::I32(2)).unwrap(), Value::I32(3));
+        assert_eq!(Value::I64(6).div_s(&Value::I64(2)).unwrap(), Value::I64(3));
+    }
+
+    #[test]
+    fn test_div_s_overflow() {
+        assert_eq!(
+            Value::I32(i32::MIN).div_s(&Value::I32(-1)).unwrap(),
+            Value::I32(i32::MIN)
+        );
+        assert_eq!(
+            Value::I64(i64::MIN).div_s(&Value::I64(-1)).unwrap(),
+            Value::I64(i64::MIN)
+        );
+    }
+
+    #[test]
+    fn test_div_s_error() {
+        assert!(Value::I32(1).div_s(&Value::I64(2)).is_err());
+    }
+
+    #[test]
+    fn test_div_s_by_zero() {
+        assert!(Value::I32(1).div_s(&Value::I32(0)).is_err());
+        assert!(Value::I64(1).div_s(&Value::I64(0)).is_err());
     }
 }
