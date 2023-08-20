@@ -1,5 +1,8 @@
 use anyhow::{Error, Result};
-use std::fmt::{self, Display};
+use std::{
+    fmt::{self, Display},
+    mem::discriminant,
+};
 
 #[derive(PartialEq, Debug, Eq)]
 pub enum Value {
@@ -67,6 +70,14 @@ impl Value {
 
     pub fn default_i64() -> Value {
         Value::I64(0)
+    }
+
+    pub fn is_same(&self, other: &Self) -> Result<()> {
+        if discriminant(self) == discriminant(other) {
+            Ok(())
+        } else {
+            Err(Error::msg("Type mismatch"))
+        }
     }
 
     pub fn leading_zeros(&self) -> Self {
@@ -265,5 +276,16 @@ mod tests {
     fn test_div_s_by_zero() {
         assert!(Value::I32(1).div_s(&Value::I32(0)).is_err());
         assert!(Value::I64(1).div_s(&Value::I64(0)).is_err());
+    }
+
+    #[test]
+    fn test_is_same() {
+        Value::I32(1).is_same(&Value::I32(5)).unwrap();
+        Value::I64(3).is_same(&Value::I64(12)).unwrap();
+    }
+
+    #[test]
+    fn test_is_same_error() {
+        assert!(Value::I32(1).is_same(&Value::I64(2)).is_err());
     }
 }

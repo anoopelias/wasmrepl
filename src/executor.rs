@@ -289,4 +289,14 @@ mod tests {
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
+
+    #[test]
+    fn test_local_set_get_type_error() {
+        let mut executor = Executor::new();
+        let line = test_line![(test_new_local_i32())(
+            Instruction::I64Const(55),
+            Instruction::LocalSet(test_new_index(0))
+        )];
+        assert!(executor.execute(&line).is_err());
+    }
 }

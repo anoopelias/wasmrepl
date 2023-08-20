@@ -34,7 +34,7 @@ impl List {
     }
 
     pub fn set(&mut self, index: usize, value: Value) -> Result<()> {
-        self.has_index(index)?;
+        self.get(index)?.is_same(&value)?;
         self.soft_values.insert(index, value);
         Ok(())
     }
