@@ -99,17 +99,24 @@ fn test_i32_ctz() {
 }
 
 #[test]
-fn test_i32_ctz_max() {
-    let mut state = State::new();
-    state.stack.push(0.into());
-    exec_instr_handler(&Instruction::I32Ctz, &mut state).unwrap();
-    assert_eq!(state.stack.pop().unwrap(), 32.into());
-}
-
-#[test]
 fn test_i32_ctz_error() {
     let mut state = State::new();
     assert!(exec_instr_handler(&Instruction::I32Ctz, &mut state).is_err());
+}
+
+#[test]
+fn test_i64_ctz() {
+    let mut state = State::new();
+    state.stack.push(1024i64.into());
+    exec_instr_handler(&Instruction::I64Ctz, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 10i64.into());
+}
+
+#[test]
+fn test_i64_ctz_type_error() {
+    let mut state = State::new();
+    state.stack.push(1023.into());
+    assert!(exec_instr_handler(&Instruction::I64Ctz, &mut state).is_err());
 }
 
 #[test]

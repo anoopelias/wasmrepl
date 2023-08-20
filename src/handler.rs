@@ -53,11 +53,21 @@ impl<'a> Handler<'a> {
         self.clz(val)
     }
 
-    fn i32_ctz(&mut self) -> Result<()> {
-        let value: i32 = self.state.stack.pop()?.try_into()?;
-        let value = (value.trailing_zeros() as i32).into();
-        self.state.stack.push(value);
+    fn ctz(&mut self, val: Value) -> Result<()> {
+        self.state.stack.push(val.trailing_zeros());
         Ok(())
+    }
+
+    fn i32_ctz(&mut self) -> Result<()> {
+        let val = self.state.stack.pop()?;
+        match_type!(val, Value::I32)?;
+        self.ctz(val)
+    }
+
+    fn i64_ctz(&mut self) -> Result<()> {
+        let val = self.state.stack.pop()?;
+        match_type!(val, Value::I64)?;
+        self.ctz(val)
     }
 
     fn i32_add(&mut self) -> Result<()> {
@@ -116,15 +126,16 @@ impl<'a> Handler<'a> {
     pub fn handle(&mut self, instr: &Instruction) -> Result<()> {
         match instr {
             Instruction::I32Const(value) => self.i32_const(*value),
-            Instruction::I64Const(value) => self.i64_const(*value),
             Instruction::Drop => self.drop(),
             Instruction::I32Clz => self.i32_clz(),
-            Instruction::I64Clz => self.i64_clz(),
             Instruction::I32Ctz => self.i32_ctz(),
             Instruction::I32Add => self.i32_add(),
             Instruction::I32Sub => self.i32_sub(),
             Instruction::I32Mul => self.i32_mul(),
             Instruction::I32DivS => self.i32_div_s(),
+            Instruction::I64Const(value) => self.i64_const(*value),
+            Instruction::I64Clz => self.i64_clz(),
+            Instruction::I64Ctz => self.i64_ctz(),
             Instruction::LocalGet(Index::Num(index, _)) => self.local_get(*index),
             Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
             Instruction::LocalSet(Index::Num(index, _)) => self.local_set(*index),
