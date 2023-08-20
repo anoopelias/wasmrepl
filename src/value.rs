@@ -4,7 +4,7 @@ use std::{
     mem::discriminant,
 };
 
-#[derive(PartialEq, Debug, Eq)]
+#[derive(PartialEq, Debug)]
 pub enum Value {
     I32(i32),
     I64(i64),
