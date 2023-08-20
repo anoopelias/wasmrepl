@@ -18,6 +18,18 @@ impl<'a> Handler<'a> {
         Handler { state }
     }
 
+    fn pop_i32(&mut self) -> Result<Value> {
+        let val = self.state.stack.pop()?;
+        match_type!(val, Value::I32)?;
+        Ok(val)
+    }
+
+    fn pop_i64(&mut self) -> Result<Value> {
+        let val = self.state.stack.pop()?;
+        match_type!(val, Value::I64)?;
+        Ok(val)
+    }
+
     fn constant(&mut self, value: Value) -> Result<()> {
         self.state.stack.push(value);
         Ok(())
@@ -42,14 +54,12 @@ impl<'a> Handler<'a> {
     }
 
     fn i32_clz(&mut self) -> Result<()> {
-        let val = self.state.stack.pop()?;
-        match_type!(val, Value::I32)?;
+        let val = self.pop_i32()?;
         self.clz(val)
     }
 
     fn i64_clz(&mut self) -> Result<()> {
-        let val = self.state.stack.pop()?;
-        match_type!(val, Value::I64)?;
+        let val = self.pop_i64()?;
         self.clz(val)
     }
 
@@ -59,14 +69,12 @@ impl<'a> Handler<'a> {
     }
 
     fn i32_ctz(&mut self) -> Result<()> {
-        let val = self.state.stack.pop()?;
-        match_type!(val, Value::I32)?;
+        let val = self.pop_i32()?;
         self.ctz(val)
     }
 
     fn i64_ctz(&mut self) -> Result<()> {
-        let val = self.state.stack.pop()?;
-        match_type!(val, Value::I64)?;
+        let val = self.pop_i64()?;
         self.ctz(val)
     }
 
@@ -76,16 +84,14 @@ impl<'a> Handler<'a> {
     }
 
     fn i32_add(&mut self) -> Result<()> {
-        let a = self.state.stack.pop()?;
-        let b = self.state.stack.pop()?;
-        match_type!(a, Value::I32)?;
+        let a = self.pop_i32()?;
+        let b = self.pop_i32()?;
         self.add(a, b)
     }
 
     fn i64_add(&mut self) -> Result<()> {
-        let a = self.state.stack.pop()?;
-        let b = self.state.stack.pop()?;
-        match_type!(a, Value::I64)?;
+        let a = self.pop_i64()?;
+        let b = self.pop_i64()?;
         self.add(a, b)
     }
 
@@ -95,16 +101,14 @@ impl<'a> Handler<'a> {
     }
 
     fn i32_sub(&mut self) -> Result<()> {
-        let a = self.state.stack.pop()?;
-        let b = self.state.stack.pop()?;
-        match_type!(a, Value::I32)?;
+        let a = self.pop_i32()?;
+        let b = self.pop_i32()?;
         self.sub(a, b)
     }
 
     fn i64_sub(&mut self) -> Result<()> {
-        let a = self.state.stack.pop()?;
-        let b = self.state.stack.pop()?;
-        match_type!(a, Value::I64)?;
+        let a = self.pop_i64()?;
+        let b = self.pop_i64()?;
         self.sub(a, b)
     }
 
@@ -114,16 +118,15 @@ impl<'a> Handler<'a> {
     }
 
     fn i32_mul(&mut self) -> Result<()> {
-        let a = self.state.stack.pop()?;
-        let b = self.state.stack.pop()?;
-        match_type!(a, Value::I32)?;
+        let a = self.pop_i32()?;
+        let b = self.pop_i32()?;
+
         self.mul(a, b)
     }
 
     fn i64_mul(&mut self) -> Result<()> {
-        let a = self.state.stack.pop()?;
-        let b = self.state.stack.pop()?;
-        match_type!(a, Value::I64)?;
+        let a = self.pop_i64()?;
+        let b = self.pop_i64()?;
         self.mul(a, b)
     }
 
