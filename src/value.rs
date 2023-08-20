@@ -1,3 +1,4 @@
+use anyhow::{Error, Result};
 use std::fmt::{self, Display};
 
 #[derive(PartialEq, Debug, Eq)]
@@ -72,6 +73,14 @@ impl Value {
             Self::I64(n) => Self::I64(n.trailing_zeros() as i64),
         }
     }
+
+    pub fn add(&self, other: &Self) -> Result<Self> {
+        match (self, other) {
+            (Self::I32(n), Self::I32(m)) => Ok(Self::I32(n.wrapping_add(*m))),
+            (Self::I64(n), Self::I64(m)) => Ok(Self::I64(n.wrapping_add(*m))),
+            _ => Err(Error::msg("Type mismatch")),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -114,5 +123,28 @@ mod tests {
     fn test_trailing_zeros() {
         assert_eq!(Value::I32(1024).trailing_zeros(), Value::I32(10));
         assert_eq!(Value::I64(2048).trailing_zeros(), Value::I64(11));
+    }
+
+    #[test]
+    fn test_add() {
+        assert_eq!(Value::I32(1).add(&Value::I32(2)).unwrap(), Value::I32(3));
+        assert_eq!(Value::I64(1).add(&Value::I64(2)).unwrap(), Value::I64(3));
+    }
+
+    #[test]
+    fn test_add_overflow() {
+        assert_eq!(
+            Value::I32(i32::MAX).add(&Value::I32(1)).unwrap(),
+            Value::I32(i32::MIN)
+        );
+        assert_eq!(
+            Value::I64(i64::MAX).add(&Value::I64(1)).unwrap(),
+            Value::I64(i64::MIN)
+        );
+    }
+
+    #[test]
+    fn test_add_error() {
+        assert!(Value::I32(1).add(&Value::I64(2)).is_err());
     }
 }

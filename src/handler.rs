@@ -70,11 +70,23 @@ impl<'a> Handler<'a> {
         self.ctz(val)
     }
 
-    fn i32_add(&mut self) -> Result<()> {
-        let a: i32 = self.state.stack.pop()?.try_into()?;
-        let b: i32 = self.state.stack.pop()?.try_into()?;
-        self.state.stack.push(a.wrapping_add(b).into());
+    fn add(&mut self, a: Value, b: Value) -> Result<()> {
+        self.state.stack.push(a.add(&b)?);
         Ok(())
+    }
+
+    fn i32_add(&mut self) -> Result<()> {
+        let a = self.state.stack.pop()?;
+        let b = self.state.stack.pop()?;
+        match_type!(a, Value::I32)?;
+        self.add(a, b)
+    }
+
+    fn i64_add(&mut self) -> Result<()> {
+        let a = self.state.stack.pop()?;
+        let b = self.state.stack.pop()?;
+        match_type!(a, Value::I64)?;
+        self.add(a, b)
     }
 
     fn i32_sub(&mut self) -> Result<()> {
@@ -136,6 +148,7 @@ impl<'a> Handler<'a> {
             Instruction::I64Const(value) => self.i64_const(*value),
             Instruction::I64Clz => self.i64_clz(),
             Instruction::I64Ctz => self.i64_ctz(),
+            Instruction::I64Add => self.i64_add(),
             Instruction::LocalGet(Index::Num(index, _)) => self.local_get(*index),
             Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
             Instruction::LocalSet(Index::Num(index, _)) => self.local_set(*index),
