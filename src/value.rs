@@ -80,16 +80,16 @@ impl Value {
         }
     }
 
-    pub fn leading_zeros(&self) -> Self {
+    pub fn leading_zeros(&self) -> Result<Self> {
         match self {
-            Self::I32(n) => Self::I32(n.leading_zeros() as i32),
-            Self::I64(n) => Self::I64(n.leading_zeros() as i64),
+            Self::I32(n) => Ok(Self::I32(n.leading_zeros() as i32)),
+            Self::I64(n) => Ok(Self::I64(n.leading_zeros() as i64)),
         }
     }
-    pub fn trailing_zeros(&self) -> Self {
+    pub fn trailing_zeros(&self) -> Result<Self> {
         match self {
-            Self::I32(n) => Self::I32(n.trailing_zeros() as i32),
-            Self::I64(n) => Self::I64(n.trailing_zeros() as i64),
+            Self::I32(n) => Ok(Self::I32(n.trailing_zeros() as i32)),
+            Self::I64(n) => Ok(Self::I64(n.trailing_zeros() as i64)),
         }
     }
 
@@ -170,14 +170,14 @@ mod tests {
 
     #[test]
     fn test_leading_zeros() {
-        assert_eq!(Value::I32(1).leading_zeros(), Value::I32(31));
-        assert_eq!(Value::I64(1).leading_zeros(), Value::I64(63));
+        assert_eq!(Value::I32(1).leading_zeros().unwrap(), Value::I32(31));
+        assert_eq!(Value::I64(1).leading_zeros().unwrap(), Value::I64(63));
     }
 
     #[test]
     fn test_trailing_zeros() {
-        assert_eq!(Value::I32(1024).trailing_zeros(), Value::I32(10));
-        assert_eq!(Value::I64(2048).trailing_zeros(), Value::I64(11));
+        assert_eq!(Value::I32(1024).trailing_zeros().unwrap(), Value::I32(10));
+        assert_eq!(Value::I64(2048).trailing_zeros().unwrap(), Value::I64(11));
     }
 
     #[test]

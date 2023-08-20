@@ -41,12 +41,12 @@ impl<'a> Handler<'a> {
     }
 
     fn clz(&mut self, val: Value) -> Result<()> {
-        self.state.stack.push(val.leading_zeros());
+        self.state.stack.push(val.leading_zeros()?);
         Ok(())
     }
 
     fn ctz(&mut self, val: Value) -> Result<()> {
-        self.state.stack.push(val.trailing_zeros());
+        self.state.stack.push(val.trailing_zeros()?);
         Ok(())
     }
 
