@@ -43,8 +43,7 @@ impl List {
         self.has_index(index)?;
         match self.soft_values.get(&index) {
             Some(value) => Ok(value),
-            // TODO: This needs to be based on the request
-            None => Ok(self.values.get(index).unwrap_or(&Value::I32(0))),
+            None => Ok(self.values.get(index).unwrap()),
         }
     }
 
