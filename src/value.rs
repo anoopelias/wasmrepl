@@ -142,14 +142,7 @@ impl Value {
                     Ok(Self::I64(n.wrapping_div(*m)))
                 }
             }
-            (Self::F32(n), Self::F32(m)) => {
-                if *m == 0.0 {
-                    Err(Error::msg("Divide by zero"))
-                } else {
-                    Ok(Self::F32(*n / *m))
-                }
-            }
-
+            (Self::F32(n), Self::F32(m)) => Ok(Self::F32(*n / *m)),
             _ => Err(Error::msg("Type mismatch")),
         }
     }
@@ -321,7 +314,14 @@ mod tests {
     fn test_div_by_zero() {
         assert!(Value::I32(1).div(&Value::I32(0)).is_err());
         assert!(Value::I64(1).div(&Value::I64(0)).is_err());
-        assert!(Value::F32(1.0).div(&Value::F32(0.0)).is_err());
+    }
+
+    #[test]
+    fn test_float_div_by_zero() {
+        assert_eq!(
+            Value::F32(1.1).div(&Value::F32(0.0)).unwrap(),
+            Value::F32(f32::INFINITY)
+        );
     }
 
     #[test]
