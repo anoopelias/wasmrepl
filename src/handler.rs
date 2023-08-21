@@ -4,10 +4,7 @@ use wast::{
     token::{Id, Index},
 };
 
-use crate::{
-    executor::State,
-    value::{match_type, Value},
-};
+use crate::{executor::State, integer::Integer, value::Value};
 
 pub struct Handler<'a> {
     state: &'a mut State,
@@ -20,13 +17,19 @@ impl<'a> Handler<'a> {
 
     fn pop_i32(&mut self) -> Result<Value> {
         let val = self.state.stack.pop()?;
-        match_type!(val, Value::I32)?;
+        match val {
+            Value::Integer(Integer::I32(_)) => {}
+            _ => return Err(Error::msg("Expected i32")),
+        }
         Ok(val)
     }
 
     fn pop_i64(&mut self) -> Result<Value> {
         let val = self.state.stack.pop()?;
-        match_type!(val, Value::I64)?;
+        match val {
+            Value::Integer(Integer::I64(_)) => {}
+            _ => return Err(Error::msg("Expected i64")),
+        }
         Ok(val)
     }
 
@@ -41,12 +44,14 @@ impl<'a> Handler<'a> {
     }
 
     fn clz(&mut self, val: Value) -> Result<()> {
-        self.state.stack.push(val.leading_zeros()?);
+        let i: Integer = val.try_into()?;
+        self.state.stack.push(i.leading_zeros().into());
         Ok(())
     }
 
     fn ctz(&mut self, val: Value) -> Result<()> {
-        self.state.stack.push(val.trailing_zeros()?);
+        let i: Integer = val.try_into()?;
+        self.state.stack.push(i.trailing_zeros().into());
         Ok(())
     }
 

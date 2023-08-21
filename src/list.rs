@@ -66,13 +66,13 @@ impl List {
 
 #[cfg(test)]
 mod tests {
-    use crate::{list::List, value::Value};
+    use crate::{list::List, value::test_utils::test_val_i32};
 
     #[test]
     fn test_list_get_set() {
         let mut list = List::new();
-        assert_eq!(list.grow(Value::I32(0)), 0);
-        assert_eq!(list.grow(Value::I32(0)), 1);
+        assert_eq!(list.grow(test_val_i32(0)), 0);
+        assert_eq!(list.grow(test_val_i32(0)), 1);
         list.set(0, 1.into()).unwrap();
         list.set(1, 2.into()).unwrap();
 
@@ -84,8 +84,8 @@ mod tests {
     #[test]
     fn test_list_get_set_commit() {
         let mut list = List::new();
-        list.grow(Value::I32(0));
-        list.grow(Value::I32(0));
+        list.grow(test_val_i32(0));
+        list.grow(test_val_i32(0));
         list.set(0, 1.into()).unwrap();
         list.set(1, 2.into()).unwrap();
         list.commit();
@@ -97,13 +97,13 @@ mod tests {
     #[test]
     fn test_list_commit_grow() {
         let mut list = List::new();
-        list.grow(Value::I32(0));
-        list.grow(Value::I32(0));
+        list.grow(test_val_i32(0));
+        list.grow(test_val_i32(0));
         list.set(0, 1.into()).unwrap();
         list.set(1, 2.into()).unwrap();
         list.commit();
 
-        assert_eq!(list.grow(Value::I32(0)), 2);
+        assert_eq!(list.grow(test_val_i32(0)), 2);
         assert_eq!(list.get(2).unwrap().clone(), 0.into());
         list.set(2, 3.into()).unwrap();
         list.set(0, 4.into()).unwrap();
@@ -115,13 +115,13 @@ mod tests {
     #[test]
     fn test_list_commit_rollback() {
         let mut list = List::new();
-        list.grow(Value::I32(0));
-        list.grow(Value::I32(0));
+        list.grow(test_val_i32(0));
+        list.grow(test_val_i32(0));
         list.set(0, 1.into()).unwrap();
         list.set(1, 2.into()).unwrap();
         list.commit();
 
-        list.grow(Value::I32(0));
+        list.grow(test_val_i32(0));
         list.set(2, 3.into()).unwrap();
         list.set(0, 4.into()).unwrap();
         list.rollback();
@@ -134,18 +134,18 @@ mod tests {
     #[test]
     fn test_list_rollback_reuse() {
         let mut list = List::new();
-        list.grow(Value::I32(0));
-        list.grow(Value::I32(0));
+        list.grow(test_val_i32(0));
+        list.grow(test_val_i32(0));
         list.set(0, 1.into()).unwrap();
         list.set(1, 2.into()).unwrap();
         list.commit();
 
-        list.grow(Value::I32(0));
+        list.grow(test_val_i32(0));
         list.set(2, 3.into()).unwrap();
         list.set(0, 4.into()).unwrap();
         list.rollback();
 
-        assert_eq!(list.grow(Value::I32(0)), 2);
+        assert_eq!(list.grow(test_val_i32(0)), 2);
         list.set(2, 5.into()).unwrap();
         list.set(0, 6.into()).unwrap();
         assert_eq!(list.get(2).unwrap().clone(), 5.into());
