@@ -1,4 +1,3 @@
-use crate::op::Op;
 use anyhow::{Error, Result};
 use std::fmt::{self, Display};
 
@@ -91,39 +90,36 @@ impl Value {
         }
     }
 
-    pub fn op(
-        &self,
-        other: &Self,
-        i32_op: fn(i32, i32) -> Result<i32>,
-        i64_op: fn(i64, i64) -> Result<i64>,
-        f32_op: fn(f32, f32) -> Result<f32>,
-    ) -> Result<Self> {
+    pub fn add(&self, other: &Self) -> Result<Self> {
         match (self, other) {
-            (Self::Integer(Integer::I32(m)), Self::Integer(Integer::I32(n))) => {
-                Ok(i32_op(*m, *n)?.into())
-            }
-            (Self::Integer(Integer::I64(m)), Self::Integer(Integer::I64(n))) => {
-                Ok(i64_op(*m, *n)?.into())
-            }
-            (Self::Float(Float::F32(m)), Self::Float(Float::F32(n))) => Ok(f32_op(*m, *n)?.into()),
+            (Self::Integer(a), Self::Integer(b)) => Ok(Self::Integer(a.add(b)?)),
+            (Self::Float(a), Self::Float(b)) => Ok(Self::Float(a.add(b)?)),
             _ => Err(Error::msg("Type mismatch")),
         }
     }
 
-    pub fn add(&self, other: &Self) -> Result<Self> {
-        self.op(other, i32::add, i64::add, f32::add)
-    }
-
     pub fn sub(&self, other: &Self) -> Result<Self> {
-        self.op(other, i32::sub, i64::sub, f32::sub)
+        match (self, other) {
+            (Self::Integer(a), Self::Integer(b)) => Ok(Self::Integer(a.sub(b)?)),
+            (Self::Float(a), Self::Float(b)) => Ok(Self::Float(a.sub(b)?)),
+            _ => Err(Error::msg("Type mismatch")),
+        }
     }
 
     pub fn mul(&self, other: &Self) -> Result<Self> {
-        self.op(other, i32::mul, i64::mul, f32::mul)
+        match (self, other) {
+            (Self::Integer(a), Self::Integer(b)) => Ok(Self::Integer(a.mul(b)?)),
+            (Self::Float(a), Self::Float(b)) => Ok(Self::Float(a.mul(b)?)),
+            _ => Err(Error::msg("Type mismatch")),
+        }
     }
 
     pub fn div(&self, other: &Self) -> Result<Self> {
-        self.op(other, i32::div, i64::div, f32::div)
+        match (self, other) {
+            (Self::Integer(a), Self::Integer(b)) => Ok(Self::Integer(a.div(b)?)),
+            (Self::Float(a), Self::Float(b)) => Ok(Self::Float(a.div(b)?)),
+            _ => Err(Error::msg("Type mismatch")),
+        }
     }
 }
 
@@ -204,10 +200,6 @@ mod tests {
             test_val_i32(3)
         );
         assert_eq!(
-            test_val_i64(1).add(&test_val_i64(2)).unwrap(),
-            test_val_i64(3)
-        );
-        assert_eq!(
             test_val_f32(1.1).add(&test_val_f32(2.3)).unwrap(),
             test_val_f32(3.4)
         );
@@ -225,10 +217,6 @@ mod tests {
             test_val_i32(-1)
         );
         assert_eq!(
-            test_val_i64(1).sub(&test_val_i64(2)).unwrap(),
-            test_val_i64(-1)
-        );
-        assert_eq!(
             test_val_f32(1.1).sub(&test_val_f32(2.3)).unwrap(),
             // Due to floating point error, the result is not exactly -1.2
             // TODO: Is there a better way to do this?
@@ -243,10 +231,6 @@ mod tests {
             test_val_i32(6)
         );
         assert_eq!(
-            test_val_i64(2).mul(&test_val_i64(3)).unwrap(),
-            test_val_i64(6)
-        );
-        assert_eq!(
             test_val_f32(1.1).mul(&test_val_f32(2.3)).unwrap(),
             test_val_f32(2.53)
         );
@@ -257,10 +241,6 @@ mod tests {
         assert_eq!(
             test_val_i32(6).div(&test_val_i32(2)).unwrap(),
             test_val_i32(3)
-        );
-        assert_eq!(
-            test_val_i64(6).div(&test_val_i64(2)).unwrap(),
-            test_val_i64(3)
         );
         assert_eq!(
             test_val_f32(1.1).div(&test_val_f32(2.3)).unwrap(),
