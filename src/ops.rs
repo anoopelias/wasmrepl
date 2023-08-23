@@ -31,17 +31,24 @@ macro_rules! impl_integer_num_ops {
 impl_integer_num_ops!(i32);
 impl_integer_num_ops!(i64);
 
-impl NumOps for f32 {
-    fn add(self, rhs: Self) -> Self {
-        self + rhs
-    }
-    fn sub(self, rhs: Self) -> Self {
-        self - rhs
-    }
-    fn mul(self, rhs: Self) -> Self {
-        self * rhs
-    }
+macro_rules! impl_float_num_ops {
+    ($t:ty) => {
+        impl NumOps for $t {
+            fn add(self, rhs: Self) -> Self {
+                self + rhs
+            }
+            fn sub(self, rhs: Self) -> Self {
+                self - rhs
+            }
+            fn mul(self, rhs: Self) -> Self {
+                self * rhs
+            }
+        }
+    };
 }
+
+impl_float_num_ops!(f32);
+impl_float_num_ops!(f64);
 
 pub trait IntOps: NumOps {
     fn leading_zeros(self) -> Self
@@ -89,11 +96,18 @@ pub trait FloatOps: NumOps {
         Self: Sized;
 }
 
-impl FloatOps for f32 {
-    fn div(self, rhs: Self) -> Self {
-        self / rhs
-    }
+macro_rules! impl_float_ops {
+    ($t:ty) => {
+        impl FloatOps for $t {
+            fn div(self, rhs: Self) -> Self {
+                self / rhs
+            }
+        }
+    };
 }
+
+impl_float_ops!(f32);
+impl_float_ops!(f64);
 
 #[cfg(test)]
 mod tests {
@@ -193,5 +207,15 @@ mod tests {
     #[test]
     fn test_f32_div_by_zero() {
         assert_eq!(5.0.div(0.0), f32::INFINITY);
+    }
+
+    #[test]
+    fn test_f64_add() {
+        assert_eq!(1.0f64.add(2.0f64), 3.0f64);
+    }
+
+    #[test]
+    fn test_f64_div() {
+        assert_eq!(7.0f64.div(2.0f64), 3.5f64);
     }
 }
