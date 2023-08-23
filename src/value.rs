@@ -72,25 +72,6 @@ map_num_types!(f32, Value::Float, Float::F32);
 
 use crate::{float::Float, integer::Integer};
 
-macro_rules! impl_ops {
-    ($op:ident) => {
-        impl Value {
-            pub fn $op(&self, other: &Self) -> Result<Self> {
-                match (self, other) {
-                    (Self::Integer(a), Self::Integer(b)) => Ok(Self::Integer(a.$op(b)?)),
-                    (Self::Float(a), Self::Float(b)) => Ok(Self::Float(a.$op(b)?)),
-                    _ => Err(Error::msg("Type mismatch")),
-                }
-            }
-        }
-    };
-}
-
-impl_ops!(add);
-impl_ops!(sub);
-impl_ops!(mul);
-impl_ops!(div);
-
 impl Value {
     pub fn default_i32() -> Value {
         Self::Integer(Integer::I32(0))
@@ -178,47 +159,6 @@ mod tests {
         assert_eq!(i, Integer::I64(1));
         let i: Float = test_val_f32(1.0).try_into().unwrap();
         assert_eq!(i, Float::F32(1.0));
-    }
-
-    #[test]
-    fn test_add() {
-        assert_eq!(
-            test_val_i32(1).add(&test_val_i32(2)).unwrap(),
-            test_val_i32(3)
-        );
-        assert_eq!(
-            test_val_f32(1.1).add(&test_val_f32(2.3)).unwrap(),
-            test_val_f32(3.4)
-        );
-    }
-
-    #[test]
-    fn test_op_error() {
-        assert!(test_val_i32(1).add(&test_val_i64(2)).is_err());
-    }
-
-    #[test]
-    fn test_sub() {
-        assert_eq!(
-            test_val_i32(1).sub(&test_val_i32(2)).unwrap(),
-            test_val_i32(-1)
-        );
-    }
-
-    #[test]
-    fn test_mul() {
-        assert_eq!(
-            test_val_i32(2).mul(&test_val_i32(3)).unwrap(),
-            test_val_i32(6)
-        );
-    }
-
-    #[test]
-    fn test_div() {
-        assert_eq!(
-            test_val_i32(6).div(&test_val_i32(2)).unwrap(),
-            test_val_i32(3)
-        );
     }
 
     #[test]

@@ -1,10 +1,12 @@
+use crate::ops::IntOps;
+use crate::ops::NumOps;
 use anyhow::{Error, Result};
 use wast::{
     core::Instruction,
     token::{Id, Index},
 };
 
-use crate::{executor::State, integer::Integer, value::Value};
+use crate::{executor::State, value::Value};
 
 pub struct Handler<'a> {
     state: &'a mut State,
@@ -15,21 +17,13 @@ impl<'a> Handler<'a> {
         Handler { state }
     }
 
-    fn pop_i32(&mut self) -> Result<Value> {
-        let val = self.state.stack.pop()?;
-        match val {
-            Value::Integer(Integer::I32(_)) => {}
-            _ => return Err(Error::msg("Expected i32")),
-        }
+    fn i32_pop(&mut self) -> Result<i32> {
+        let val: i32 = self.state.stack.pop()?.try_into()?;
         Ok(val)
     }
 
-    fn pop_i64(&mut self) -> Result<Value> {
-        let val = self.state.stack.pop()?;
-        match val {
-            Value::Integer(Integer::I64(_)) => {}
-            _ => return Err(Error::msg("Expected i64")),
-        }
+    fn i64_pop(&mut self) -> Result<i64> {
+        let val: i64 = self.state.stack.pop()?.try_into()?;
         Ok(val)
     }
 
@@ -43,114 +37,12 @@ impl<'a> Handler<'a> {
         Ok(())
     }
 
-    fn clz(&mut self, val: Value) -> Result<()> {
-        let i: Integer = val.try_into()?;
-        self.state.stack.push(i.leading_zeros().into());
-        Ok(())
-    }
-
-    fn ctz(&mut self, val: Value) -> Result<()> {
-        let i: Integer = val.try_into()?;
-        self.state.stack.push(i.trailing_zeros().into());
-        Ok(())
-    }
-
-    fn add(&mut self, a: Value, b: Value) -> Result<()> {
-        self.state.stack.push(a.add(&b)?);
-        Ok(())
-    }
-
-    fn sub(&mut self, a: Value, b: Value) -> Result<()> {
-        self.state.stack.push(a.sub(&b)?);
-        Ok(())
-    }
-
-    fn mul(&mut self, a: Value, b: Value) -> Result<()> {
-        self.state.stack.push(a.mul(&b)?);
-        Ok(())
-    }
-
-    fn div_s(&mut self, a: Value, b: Value) -> Result<()> {
-        self.state.stack.push(b.div(&a)?);
-        Ok(())
-    }
-
     fn i32_const(&mut self, value: i32) -> Result<()> {
         self.constant(value.into())
     }
 
-    fn i32_clz(&mut self) -> Result<()> {
-        let val = self.pop_i32()?;
-        self.clz(val)
-    }
-
-    fn i32_ctz(&mut self) -> Result<()> {
-        let val = self.pop_i32()?;
-        self.ctz(val)
-    }
-
-    fn i32_add(&mut self) -> Result<()> {
-        let a = self.pop_i32()?;
-        let b = self.pop_i32()?;
-        self.add(a, b)
-    }
-
-    fn i32_sub(&mut self) -> Result<()> {
-        let a = self.pop_i32()?;
-        let b = self.pop_i32()?;
-        self.sub(a, b)
-    }
-
-    fn i32_mul(&mut self) -> Result<()> {
-        let a = self.pop_i32()?;
-        let b = self.pop_i32()?;
-
-        self.mul(a, b)
-    }
-
-    fn i32_div_s(&mut self) -> Result<()> {
-        let a = self.pop_i32()?;
-        let b = self.pop_i32()?;
-
-        self.div_s(a, b)
-    }
-
     fn i64_const(&mut self, value: i64) -> Result<()> {
         self.constant(value.into())
-    }
-
-    fn i64_clz(&mut self) -> Result<()> {
-        let val = self.pop_i64()?;
-        self.clz(val)
-    }
-
-    fn i64_ctz(&mut self) -> Result<()> {
-        let val = self.pop_i64()?;
-        self.ctz(val)
-    }
-
-    fn i64_add(&mut self) -> Result<()> {
-        let a = self.pop_i64()?;
-        let b = self.pop_i64()?;
-        self.add(a, b)
-    }
-
-    fn i64_sub(&mut self) -> Result<()> {
-        let a = self.pop_i64()?;
-        let b = self.pop_i64()?;
-        self.sub(a, b)
-    }
-
-    fn i64_mul(&mut self) -> Result<()> {
-        let a = self.pop_i64()?;
-        let b = self.pop_i64()?;
-        self.mul(a, b)
-    }
-
-    fn i64_div_s(&mut self) -> Result<()> {
-        let a = self.pop_i64()?;
-        let b = self.pop_i64()?;
-        self.div_s(a, b)
     }
 
     fn f32_const(&mut self, bits: u32) -> Result<()> {
@@ -205,6 +97,61 @@ impl<'a> Handler<'a> {
         }
     }
 }
+
+macro_rules! impl_binary_op {
+    ($fname:ident, $popper:ident, $op:ident) => {
+        impl<'a> Handler<'a> {
+            fn $fname(&mut self) -> Result<()> {
+                let a = self.$popper()?;
+                let b = self.$popper()?;
+                self.state.stack.push(a.$op(b).into());
+                Ok(())
+            }
+        }
+    };
+}
+
+impl_binary_op!(i32_add, i32_pop, add);
+impl_binary_op!(i32_sub, i32_pop, sub);
+impl_binary_op!(i32_mul, i32_pop, mul);
+
+impl_binary_op!(i64_add, i64_pop, add);
+impl_binary_op!(i64_sub, i64_pop, sub);
+impl_binary_op!(i64_mul, i64_pop, mul);
+
+macro_rules! impl_binary_res_op {
+    ($fname:ident, $popper:ident, $op:ident) => {
+        impl<'a> Handler<'a> {
+            fn $fname(&mut self) -> Result<()> {
+                let a = self.$popper()?;
+                let b = self.$popper()?;
+                self.state.stack.push(b.$op(a)?.into());
+                Ok(())
+            }
+        }
+    };
+}
+
+impl_binary_res_op!(i32_div_s, i32_pop, div);
+impl_binary_res_op!(i64_div_s, i64_pop, div);
+
+macro_rules! impl_unary_op {
+    ($fname:ident, $popper:ident, $op:ident) => {
+        impl<'a> Handler<'a> {
+            fn $fname(&mut self) -> Result<()> {
+                let a = self.$popper()?;
+                self.state.stack.push(a.$op().into());
+                Ok(())
+            }
+        }
+    };
+}
+
+impl_unary_op!(i32_clz, i32_pop, clz);
+impl_unary_op!(i32_ctz, i32_pop, ctz);
+
+impl_unary_op!(i64_clz, i64_pop, clz);
+impl_unary_op!(i64_ctz, i64_pop, ctz);
 
 #[cfg(test)]
 #[path = "./handler_test.rs"]

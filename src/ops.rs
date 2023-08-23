@@ -51,10 +51,10 @@ impl_float_num_ops!(f32);
 impl_float_num_ops!(f64);
 
 pub trait IntOps: NumOps {
-    fn leading_zeros(self) -> Self
+    fn clz(self) -> Self
     where
         Self: Sized;
-    fn trailing_zeros(self) -> Self
+    fn ctz(self) -> Self
     where
         Self: Sized;
     fn div(self, rhs: Self) -> Result<Self>
@@ -65,10 +65,10 @@ pub trait IntOps: NumOps {
 macro_rules! impl_int_ops {
     ($t:ty) => {
         impl IntOps for $t {
-            fn leading_zeros(self) -> Self {
+            fn clz(self) -> Self {
                 self.leading_zeros() as Self
             }
-            fn trailing_zeros(self) -> Self {
+            fn ctz(self) -> Self {
                 self.trailing_zeros() as Self
             }
             fn div(self, rhs: Self) -> Result<Self> {
