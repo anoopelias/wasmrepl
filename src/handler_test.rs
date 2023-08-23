@@ -260,6 +260,33 @@ fn test_f32_const() {
 }
 
 #[test]
+fn test_f32_add() {
+    let mut state = State::new();
+    state.stack.push(1.0f32.into());
+    state.stack.push(2.0f32.into());
+    exec_instr_handler(&Instruction::F32Add, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 3.0f32.into());
+}
+
+#[test]
+fn test_f32_sub() {
+    let mut state = State::new();
+    state.stack.push(2.0f32.into());
+    state.stack.push(1.5f32.into());
+    exec_instr_handler(&Instruction::F32Sub, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), (-0.5f32).into());
+}
+
+#[test]
+fn test_f32_mul() {
+    let mut state = State::new();
+    state.stack.push(2.5f32.into());
+    state.stack.push(2.0f32.into());
+    exec_instr_handler(&Instruction::F32Mul, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 5.0f32.into());
+}
+
+#[test]
 fn test_f64_const() {
     let mut state = State::new();
     let wat = "3.14";
