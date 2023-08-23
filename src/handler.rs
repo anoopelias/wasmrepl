@@ -6,7 +6,7 @@ use wast::{
     token::{Id, Index},
 };
 
-use crate::{executor::State, value::Value};
+use crate::executor::State;
 
 pub struct Handler<'a> {
     state: &'a mut State,
@@ -17,36 +17,9 @@ impl<'a> Handler<'a> {
         Handler { state }
     }
 
-    fn i32_pop(&mut self) -> Result<i32> {
-        let val: i32 = self.state.stack.pop()?.try_into()?;
-        Ok(val)
-    }
-
-    fn i64_pop(&mut self) -> Result<i64> {
-        let val: i64 = self.state.stack.pop()?.try_into()?;
-        Ok(val)
-    }
-
-    fn constant(&mut self, value: Value) -> Result<()> {
-        self.state.stack.push(value);
-        Ok(())
-    }
-
     fn drop(&mut self) -> Result<()> {
         self.state.stack.pop()?;
         Ok(())
-    }
-
-    fn i32_const(&mut self, value: i32) -> Result<()> {
-        self.constant(value.into())
-    }
-
-    fn i64_const(&mut self, value: i64) -> Result<()> {
-        self.constant(value.into())
-    }
-
-    fn f32_const(&mut self, bits: u32) -> Result<()> {
-        self.constant(f32::from_bits(bits).into())
     }
 
     fn local_get(&mut self, index: u32) -> Result<()> {
@@ -88,7 +61,7 @@ impl<'a> Handler<'a> {
             Instruction::I64Sub => self.i64_sub(),
             Instruction::I64Mul => self.i64_mul(),
             Instruction::I64DivS => self.i64_div_s(),
-            Instruction::F32Const(value) => self.f32_const(value.bits),
+            Instruction::F32Const(value) => self.f32_const(f32::from_bits(value.bits)),
             Instruction::LocalGet(Index::Num(index, _)) => self.local_get(*index),
             Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
             Instruction::LocalSet(Index::Num(index, _)) => self.local_set(*index),
@@ -97,6 +70,35 @@ impl<'a> Handler<'a> {
         }
     }
 }
+
+macro_rules! pop {
+    ($fname:ident, $ty:ty) => {
+        impl<'a> Handler<'a> {
+            fn $fname(&mut self) -> Result<$ty> {
+                let val: $ty = self.state.stack.pop()?.try_into()?;
+                Ok(val)
+            }
+        }
+    };
+}
+
+pop!(i32_pop, i32);
+pop!(i64_pop, i64);
+
+macro_rules! constant {
+    ($fname:ident, $ty:ty) => {
+        impl<'a> Handler<'a> {
+            fn $fname(&mut self, value: $ty) -> Result<()> {
+                self.state.stack.push(value.into());
+                Ok(())
+            }
+        }
+    };
+}
+
+constant!(i32_const, i32);
+constant!(i64_const, i64);
+constant!(f32_const, f32);
 
 macro_rules! impl_binary_op {
     ($fname:ident, $popper:ident, $op:ident) => {
