@@ -24,31 +24,22 @@ impl Clone for Float {
     }
 }
 
-impl Float {
-    pub fn add(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.add(*b))),
+macro_rules! impl_binary_op {
+    ($fnam:ident) => {
+        impl Float {
+            pub fn $fnam(&self, other: &Self) -> Result<Self> {
+                match (self, other) {
+                    (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.$fnam(*b))),
+                }
+            }
         }
-    }
-
-    pub fn sub(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.sub(*b))),
-        }
-    }
-
-    pub fn mul(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.mul(*b))),
-        }
-    }
-
-    pub fn div(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.div(*b))),
-        }
-    }
+    };
 }
+
+impl_binary_op!(add);
+impl_binary_op!(sub);
+impl_binary_op!(mul);
+impl_binary_op!(div);
 
 #[cfg(test)]
 mod tests {
