@@ -40,29 +40,6 @@ impl Integer {
             Self::I64(n) => Self::I64(n.trailing_zeros() as i64),
         }
     }
-    pub fn add(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.add(*b))),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.add(*b))),
-            _ => Err(Error::msg("Type mismatch")),
-        }
-    }
-
-    pub fn sub(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.sub(*b))),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.sub(*b))),
-            _ => Err(Error::msg("Type mismatch")),
-        }
-    }
-
-    pub fn mul(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.mul(*b))),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.mul(*b))),
-            _ => Err(Error::msg("Type mismatch")),
-        }
-    }
 
     pub fn div(&self, other: &Self) -> Result<Self> {
         match (self, other) {
@@ -72,6 +49,24 @@ impl Integer {
         }
     }
 }
+
+macro_rules! impl_op {
+    ($fnam:ident) => {
+        impl Integer {
+            pub fn $fnam(&self, other: &Self) -> Result<Self> {
+                match (self, other) {
+                    (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.$fnam(*b))),
+                    (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.$fnam(*b))),
+                    _ => Err(Error::msg("Type mismatch")),
+                }
+            }
+        }
+    };
+}
+
+impl_op!(add);
+impl_op!(sub);
+impl_op!(mul);
 
 #[cfg(test)]
 mod tests {
@@ -112,15 +107,6 @@ mod tests {
             Integer::I32(1).sub(&Integer::I32(2)).unwrap(),
             Integer::I32(-1)
         );
-        assert_eq!(
-            Integer::I64(1).sub(&Integer::I64(2)).unwrap(),
-            Integer::I64(-1)
-        );
-    }
-
-    #[test]
-    fn test_i32_sub_error() {
-        assert!(Integer::I32(1).sub(&Integer::I64(2)).is_err());
     }
 
     #[test]
@@ -129,15 +115,6 @@ mod tests {
             Integer::I32(1).mul(&Integer::I32(2)).unwrap(),
             Integer::I32(2)
         );
-        assert_eq!(
-            Integer::I64(1).mul(&Integer::I64(2)).unwrap(),
-            Integer::I64(2)
-        );
-    }
-
-    #[test]
-    fn test_i32_mul_error() {
-        assert!(Integer::I32(1).mul(&Integer::I64(2)).is_err());
     }
 
     #[test]

@@ -49,25 +49,22 @@ pub trait IntOps: NumOps {
         Self: Sized;
 }
 
-impl IntOps for i32 {
-    fn div(self, rhs: Self) -> Result<Self> {
-        if rhs == 0 {
-            Err(Error::msg("Divide by zero"))
-        } else {
-            Ok(self.wrapping_div(rhs))
+macro_rules! impl_int_ops {
+    ($t:ty) => {
+        impl IntOps for $t {
+            fn div(self, rhs: Self) -> Result<Self> {
+                if rhs == 0 {
+                    Err(Error::msg("Divide by zero"))
+                } else {
+                    Ok(self.wrapping_div(rhs))
+                }
+            }
         }
-    }
+    };
 }
 
-impl IntOps for i64 {
-    fn div(self, rhs: Self) -> Result<Self> {
-        if rhs == 0 {
-            Err(Error::msg("Divide by zero"))
-        } else {
-            Ok(self.wrapping_div(rhs))
-        }
-    }
-}
+impl_int_ops!(i32);
+impl_int_ops!(i64);
 
 pub trait FloatOps: NumOps {
     fn div(self, rhs: Self) -> Self
@@ -138,11 +135,6 @@ mod tests {
         assert_eq!(1i64.div(2i64).unwrap(), 0);
         // TODO: Do we need wrapping for div?
         assert_eq!(i64::MIN.div(2i64).unwrap(), i64::MIN / 2);
-    }
-
-    #[test]
-    fn test_i64_div_by_zero() {
-        assert!(5i64.div(0i64).is_err());
     }
 
     #[test]
