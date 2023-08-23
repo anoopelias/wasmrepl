@@ -68,7 +68,12 @@ macro_rules! impl_int_ops {
                 if rhs == 0 {
                     Err(Error::msg("Divide by zero"))
                 } else {
-                    Ok(self.wrapping_div(rhs))
+                    let (res, overflow) = self.overflowing_div(rhs);
+                    if overflow {
+                        Err(Error::msg("Integer Overflow"))
+                    } else {
+                        Ok(res)
+                    }
                 }
             }
         }
@@ -150,6 +155,12 @@ mod tests {
     }
 
     #[test]
+    fn test_i32_div_overflow_error() {
+        // Pulled from WASM test suite
+        assert!(i32::MIN.div(-1).is_err());
+    }
+
+    #[test]
     fn test_i32_div_by_zero() {
         assert!(5i32.div(0i32).is_err());
     }
@@ -157,8 +168,6 @@ mod tests {
     #[test]
     fn test_i64_div() {
         assert_eq!(1i64.div(2i64).unwrap(), 0);
-        // TODO: Do we need wrapping for div?
-        assert_eq!(i64::MIN.div(2i64).unwrap(), i64::MIN / 2);
     }
 
     #[test]
