@@ -1,4 +1,4 @@
-use crate::op::Op;
+use crate::op::NumOps;
 use anyhow::Result;
 use std::fmt::{self, Display};
 

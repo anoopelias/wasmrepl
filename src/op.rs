@@ -1,6 +1,6 @@
 use anyhow::{Error, Result};
 
-pub trait Op {
+pub trait NumOps {
     fn add(self, rhs: Self) -> Self
     where
         Self: Sized;
@@ -15,7 +15,7 @@ pub trait Op {
         Self: Sized;
 }
 
-impl Op for i32 {
+impl NumOps for i32 {
     fn add(self, rhs: Self) -> Self {
         self.wrapping_add(rhs)
     }
@@ -34,7 +34,7 @@ impl Op for i32 {
     }
 }
 
-impl Op for i64 {
+impl NumOps for i64 {
     fn add(self, rhs: Self) -> Self {
         self.wrapping_add(rhs)
     }
@@ -53,7 +53,7 @@ impl Op for i64 {
     }
 }
 
-impl Op for f32 {
+impl NumOps for f32 {
     fn add(self, rhs: Self) -> Self {
         self + rhs
     }
@@ -71,7 +71,7 @@ impl Op for f32 {
 #[cfg(test)]
 mod tests {
 
-    use crate::op::Op;
+    use crate::op::NumOps;
 
     #[test]
     fn test_i32_add() {
