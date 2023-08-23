@@ -26,19 +26,19 @@ impl Clone for Float {
 impl Float {
     pub fn add(&self, other: &Self) -> Result<Self> {
         match (self, other) {
-            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.add(*b)?)),
+            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.add(*b))),
         }
     }
 
     pub fn sub(&self, other: &Self) -> Result<Self> {
         match (self, other) {
-            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.sub(*b)?)),
+            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.sub(*b))),
         }
     }
 
     pub fn mul(&self, other: &Self) -> Result<Self> {
         match (self, other) {
-            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.mul(*b)?)),
+            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.mul(*b))),
         }
     }
 

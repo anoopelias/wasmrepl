@@ -41,24 +41,24 @@ impl Integer {
     }
     pub fn add(&self, other: &Self) -> Result<Self> {
         match (self, other) {
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.add(*b)?)),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.add(*b)?)),
+            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.add(*b))),
+            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.add(*b))),
             _ => Err(Error::msg("Type mismatch")),
         }
     }
 
     pub fn sub(&self, other: &Self) -> Result<Self> {
         match (self, other) {
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.sub(*b)?)),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.sub(*b)?)),
+            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.sub(*b))),
+            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.sub(*b))),
             _ => Err(Error::msg("Type mismatch")),
         }
     }
 
     pub fn mul(&self, other: &Self) -> Result<Self> {
         match (self, other) {
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.mul(*b)?)),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.mul(*b)?)),
+            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.mul(*b))),
+            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.mul(*b))),
             _ => Err(Error::msg("Type mismatch")),
         }
     }
