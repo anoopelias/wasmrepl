@@ -27,30 +27,23 @@ impl Clone for Integer {
     }
 }
 
-impl Integer {
-    pub fn leading_zeros(&self) -> Self {
-        match self {
-            Self::I32(n) => Self::I32(n.leading_zeros() as i32),
-            Self::I64(n) => Self::I64(n.leading_zeros() as i64),
+macro_rules! impl_unary_op {
+    ($fnam:ident) => {
+        impl Integer {
+            pub fn $fnam(&self) -> Self {
+                match self {
+                    Self::I32(a) => Self::I32(a.$fnam() as i32),
+                    Self::I64(a) => Self::I64(a.$fnam() as i64),
+                }
+            }
         }
-    }
-    pub fn trailing_zeros(&self) -> Self {
-        match self {
-            Self::I32(n) => Self::I32(n.trailing_zeros() as i32),
-            Self::I64(n) => Self::I64(n.trailing_zeros() as i64),
-        }
-    }
-
-    pub fn div(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.div(*b)?)),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.div(*b)?)),
-            _ => Err(Error::msg("Type mismatch")),
-        }
-    }
+    };
 }
 
-macro_rules! impl_op {
+impl_unary_op!(leading_zeros);
+impl_unary_op!(trailing_zeros);
+
+macro_rules! impl_binary_op {
     ($fnam:ident) => {
         impl Integer {
             pub fn $fnam(&self, other: &Self) -> Result<Self> {
@@ -64,9 +57,20 @@ macro_rules! impl_op {
     };
 }
 
-impl_op!(add);
-impl_op!(sub);
-impl_op!(mul);
+impl_binary_op!(add);
+impl_binary_op!(sub);
+impl_binary_op!(mul);
+
+// `div` is different from others
+impl Integer {
+    pub fn div(&self, other: &Self) -> Result<Self> {
+        match (self, other) {
+            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a.div(*b)?)),
+            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a.div(*b)?)),
+            _ => Err(Error::msg("Type mismatch")),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -81,7 +85,6 @@ mod tests {
     #[test]
     fn test_trailing_zeros() {
         assert_eq!(Integer::I32(1024).trailing_zeros(), Integer::I32(10));
-        assert_eq!(Integer::I64(2048).trailing_zeros(), Integer::I64(11));
     }
 
     #[test]

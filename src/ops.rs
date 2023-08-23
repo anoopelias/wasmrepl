@@ -44,6 +44,12 @@ impl NumOps for f32 {
 }
 
 pub trait IntOps: NumOps {
+    fn leading_zeros(self) -> Self
+    where
+        Self: Sized;
+    fn trailing_zeros(self) -> Self
+    where
+        Self: Sized;
     fn div(self, rhs: Self) -> Result<Self>
     where
         Self: Sized;
@@ -52,6 +58,12 @@ pub trait IntOps: NumOps {
 macro_rules! impl_int_ops {
     ($t:ty) => {
         impl IntOps for $t {
+            fn leading_zeros(self) -> Self {
+                self.leading_zeros() as Self
+            }
+            fn trailing_zeros(self) -> Self {
+                self.trailing_zeros() as Self
+            }
             fn div(self, rhs: Self) -> Result<Self> {
                 if rhs == 0 {
                     Err(Error::msg("Divide by zero"))
@@ -118,6 +130,18 @@ mod tests {
     #[test]
     fn test_i64_add() {
         assert_eq!(1i64.add(2i64), 3i64);
+    }
+
+    #[test]
+    fn test_leading_zeros() {
+        assert_eq!(1i32.leading_zeros(), 31);
+        assert_eq!(1i64.leading_zeros(), 63);
+    }
+
+    #[test]
+    fn test_trailing_zeros() {
+        assert_eq!(1024i32.trailing_zeros(), 10);
+        assert_eq!(2048i64.trailing_zeros(), 11);
     }
 
     #[test]
