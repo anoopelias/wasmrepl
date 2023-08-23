@@ -1,5 +1,5 @@
-use crate::op::FloatOps;
-use crate::op::NumOps;
+use crate::ops::FloatOps;
+use crate::ops::NumOps;
 use anyhow::Result;
 use std::fmt::{self, Display};
 

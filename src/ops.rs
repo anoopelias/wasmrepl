@@ -89,9 +89,9 @@ impl FloatOps for f32 {
 #[cfg(test)]
 mod tests {
 
-    use crate::op::FloatOps;
-    use crate::op::IntOps;
-    use crate::op::NumOps;
+    use crate::ops::FloatOps;
+    use crate::ops::IntOps;
+    use crate::ops::NumOps;
 
     #[test]
     fn test_i32_add() {

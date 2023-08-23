@@ -1,5 +1,5 @@
-use crate::op::IntOps;
-use crate::op::NumOps;
+use crate::ops::IntOps;
+use crate::ops::NumOps;
 use anyhow::{Error, Result};
 use std::fmt::{self, Display};
 

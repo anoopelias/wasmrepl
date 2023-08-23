@@ -5,7 +5,7 @@ mod handler;
 mod integer;
 mod list;
 mod locals;
-mod op;
+mod ops;
 mod parser;
 mod stack;
 mod value;
