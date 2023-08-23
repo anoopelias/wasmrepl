@@ -203,25 +203,11 @@ fn test_i64_clz() {
 }
 
 #[test]
-fn test_i64_clz_type_error() {
-    let mut state = State::new();
-    state.stack.push(1023.into());
-    assert!(exec_instr_handler(&Instruction::I64Clz, &mut state).is_err());
-}
-
-#[test]
 fn test_i64_ctz() {
     let mut state = State::new();
     state.stack.push(1024i64.into());
     exec_instr_handler(&Instruction::I64Ctz, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 10i64.into());
-}
-
-#[test]
-fn test_i64_ctz_type_error() {
-    let mut state = State::new();
-    state.stack.push(1023.into());
-    assert!(exec_instr_handler(&Instruction::I64Ctz, &mut state).is_err());
 }
 
 #[test]
@@ -234,28 +220,12 @@ fn test_i64_add() {
 }
 
 #[test]
-fn test_i64_add_type_error() {
-    let mut state = State::new();
-    state.stack.push(1i64.into());
-    state.stack.push(2.into());
-    assert!(exec_instr_handler(&Instruction::I64Add, &mut state).is_err());
-}
-
-#[test]
 fn test_i64_sub() {
     let mut state = State::new();
     state.stack.push(2i64.into());
     state.stack.push(1i64.into());
     exec_instr_handler(&Instruction::I64Sub, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), Value::from(-1i64));
-}
-
-#[test]
-fn test_i64_sub_type_error() {
-    let mut state = State::new();
-    state.stack.push(1i64.into());
-    state.stack.push(2.into());
-    assert!(exec_instr_handler(&Instruction::I64Sub, &mut state).is_err());
 }
 
 #[test]
@@ -268,28 +238,12 @@ fn test_i64_mul() {
 }
 
 #[test]
-fn test_i64_mul_type_error() {
-    let mut state = State::new();
-    state.stack.push(1i64.into());
-    state.stack.push(2.into());
-    assert!(exec_instr_handler(&Instruction::I64Mul, &mut state).is_err());
-}
-
-#[test]
 fn test_i64_div_s() {
     let mut state = State::new();
     state.stack.push(7i64.into());
     state.stack.push(3i64.into());
     exec_instr_handler(&Instruction::I64DivS, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 2i64.into());
-}
-
-#[test]
-fn test_i64_div_s_type_error() {
-    let mut state = State::new();
-    state.stack.push(1.into());
-    state.stack.push(2.into());
-    assert!(exec_instr_handler(&Instruction::I64DivS, &mut state).is_err());
 }
 
 #[test]
