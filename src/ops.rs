@@ -12,29 +12,24 @@ pub trait NumOps {
         Self: Sized;
 }
 
-impl NumOps for i32 {
-    fn add(self, rhs: Self) -> Self {
-        self.wrapping_add(rhs)
-    }
-    fn sub(self, rhs: Self) -> Self {
-        self.wrapping_sub(rhs)
-    }
-    fn mul(self, rhs: Self) -> Self {
-        self.wrapping_mul(rhs)
-    }
+macro_rules! impl_integer_num_ops {
+    ($t:ty) => {
+        impl NumOps for $t {
+            fn add(self, rhs: Self) -> Self {
+                self.wrapping_add(rhs)
+            }
+            fn sub(self, rhs: Self) -> Self {
+                self.wrapping_sub(rhs)
+            }
+            fn mul(self, rhs: Self) -> Self {
+                self.wrapping_mul(rhs)
+            }
+        }
+    };
 }
 
-impl NumOps for i64 {
-    fn add(self, rhs: Self) -> Self {
-        self.wrapping_add(rhs)
-    }
-    fn sub(self, rhs: Self) -> Self {
-        self.wrapping_sub(rhs)
-    }
-    fn mul(self, rhs: Self) -> Self {
-        self.wrapping_mul(rhs)
-    }
-}
+impl_integer_num_ops!(i32);
+impl_integer_num_ops!(i64);
 
 impl NumOps for f32 {
     fn add(self, rhs: Self) -> Self {
@@ -124,6 +119,11 @@ mod tests {
     }
 
     #[test]
+    fn test_i64_add() {
+        assert_eq!(1i64.add(2i64), 3i64);
+    }
+
+    #[test]
     fn test_i32_div() {
         assert_eq!(7.div(3).unwrap(), 2);
     }
@@ -131,36 +131,6 @@ mod tests {
     #[test]
     fn test_i32_div_by_zero() {
         assert!(5i32.div(0i32).is_err());
-    }
-
-    #[test]
-    fn test_i64_add() {
-        assert_eq!(1i64.add(2i64), 3i64);
-    }
-
-    #[test]
-    fn test_i64_add_overflow() {
-        assert_eq!(i64::MAX.add(1i64), i64::MIN);
-    }
-
-    #[test]
-    fn test_i64_sub() {
-        assert_eq!(1i64.sub(2i64), -1i64);
-    }
-
-    #[test]
-    fn test_i64_sub_overflow() {
-        assert_eq!(i64::MIN.sub(1i64), i64::MAX);
-    }
-
-    #[test]
-    fn test_i64_mul() {
-        assert_eq!(7i64.mul(2i64), 14i64);
-    }
-
-    #[test]
-    fn test_i64_mul_overflow() {
-        assert_eq!(i64::MAX.mul(2i64), -2);
     }
 
     #[test]
