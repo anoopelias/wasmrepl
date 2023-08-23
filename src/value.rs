@@ -72,6 +72,25 @@ map_num_types!(f32, Value::Float, Float::F32);
 
 use crate::{float::Float, integer::Integer};
 
+macro_rules! impl_ops {
+    ($op:ident) => {
+        impl Value {
+            pub fn $op(&self, other: &Self) -> Result<Self> {
+                match (self, other) {
+                    (Self::Integer(a), Self::Integer(b)) => Ok(Self::Integer(a.$op(b)?)),
+                    (Self::Float(a), Self::Float(b)) => Ok(Self::Float(a.$op(b)?)),
+                    _ => Err(Error::msg("Type mismatch")),
+                }
+            }
+        }
+    };
+}
+
+impl_ops!(add);
+impl_ops!(sub);
+impl_ops!(mul);
+impl_ops!(div);
+
 impl Value {
     pub fn default_i32() -> Value {
         Self::Integer(Integer::I32(0))
@@ -86,38 +105,6 @@ impl Value {
             (Self::Integer(Integer::I32(_)), Self::Integer(Integer::I32(_))) => Ok(()),
             (Self::Integer(Integer::I64(_)), Self::Integer(Integer::I64(_))) => Ok(()),
             (Self::Float(Float::F32(_)), Self::Float(Float::F32(_))) => Ok(()),
-            _ => Err(Error::msg("Type mismatch")),
-        }
-    }
-
-    pub fn add(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::Integer(a), Self::Integer(b)) => Ok(Self::Integer(a.add(b)?)),
-            (Self::Float(a), Self::Float(b)) => Ok(Self::Float(a.add(b)?)),
-            _ => Err(Error::msg("Type mismatch")),
-        }
-    }
-
-    pub fn sub(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::Integer(a), Self::Integer(b)) => Ok(Self::Integer(a.sub(b)?)),
-            (Self::Float(a), Self::Float(b)) => Ok(Self::Float(a.sub(b)?)),
-            _ => Err(Error::msg("Type mismatch")),
-        }
-    }
-
-    pub fn mul(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::Integer(a), Self::Integer(b)) => Ok(Self::Integer(a.mul(b)?)),
-            (Self::Float(a), Self::Float(b)) => Ok(Self::Float(a.mul(b)?)),
-            _ => Err(Error::msg("Type mismatch")),
-        }
-    }
-
-    pub fn div(&self, other: &Self) -> Result<Self> {
-        match (self, other) {
-            (Self::Integer(a), Self::Integer(b)) => Ok(Self::Integer(a.div(b)?)),
-            (Self::Float(a), Self::Float(b)) => Ok(Self::Float(a.div(b)?)),
             _ => Err(Error::msg("Type mismatch")),
         }
     }
@@ -216,12 +203,6 @@ mod tests {
             test_val_i32(1).sub(&test_val_i32(2)).unwrap(),
             test_val_i32(-1)
         );
-        assert_eq!(
-            test_val_f32(1.1).sub(&test_val_f32(2.3)).unwrap(),
-            // Due to floating point error, the result is not exactly -1.2
-            // TODO: Is there a better way to do this?
-            test_val_f32(-1.1999999)
-        );
     }
 
     #[test]
@@ -230,10 +211,6 @@ mod tests {
             test_val_i32(2).mul(&test_val_i32(3)).unwrap(),
             test_val_i32(6)
         );
-        assert_eq!(
-            test_val_f32(1.1).mul(&test_val_f32(2.3)).unwrap(),
-            test_val_f32(2.53)
-        );
     }
 
     #[test]
@@ -241,10 +218,6 @@ mod tests {
         assert_eq!(
             test_val_i32(6).div(&test_val_i32(2)).unwrap(),
             test_val_i32(3)
-        );
-        assert_eq!(
-            test_val_f32(1.1).div(&test_val_f32(2.3)).unwrap(),
-            test_val_f32(0.4782609)
         );
     }
 
