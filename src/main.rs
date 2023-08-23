@@ -1,8 +1,6 @@
 mod dict;
 mod executor;
-mod float;
 mod handler;
-mod integer;
 mod list;
 mod locals;
 mod ops;

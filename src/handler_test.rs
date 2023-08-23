@@ -298,7 +298,7 @@ fn test_f32_const() {
     let wat = "3.14";
     let buf = ParseBuffer::new(wat).unwrap();
     exec_instr_handler(&Instruction::F32Const(float32_for(&buf)), &mut state).unwrap();
-    assert_eq!(state.stack.pop().unwrap(), 3.14.into());
+    assert_eq!(state.stack.pop().unwrap(), 3.14f32.into());
 }
 
 #[test]
