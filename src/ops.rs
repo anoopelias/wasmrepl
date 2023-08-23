@@ -153,14 +153,14 @@ mod tests {
 
     #[test]
     fn test_leading_zeros() {
-        assert_eq!(1i32.leading_zeros(), 31);
-        assert_eq!(1i64.leading_zeros(), 63);
+        assert_eq!(1i32.clz(), 31);
+        assert_eq!(1i64.clz(), 63);
     }
 
     #[test]
     fn test_trailing_zeros() {
-        assert_eq!(1024i32.trailing_zeros(), 10);
-        assert_eq!(2048i64.trailing_zeros(), 11);
+        assert_eq!(1024i32.ctz(), 10);
+        assert_eq!(2048i64.ctz(), 11);
     }
 
     #[test]
