@@ -7,7 +7,7 @@ use anyhow::Result;
 use wast::{
     core::Instruction,
     parser::{self as wastparser, ParseBuffer},
-    token::{Float32, Id, Index, Span},
+    token::{Float32, Float64, Id, Index, Span},
 };
 
 use super::Handler;
@@ -24,6 +24,10 @@ fn exec_instr_handler(instr: &Instruction, state: &mut State) -> Result<()> {
 
 fn float32_for(buf: &ParseBuffer) -> Float32 {
     wastparser::parse::<Float32>(&buf).unwrap()
+}
+
+fn float64_for(buf: &ParseBuffer) -> Float64 {
+    wastparser::parse::<Float64>(&buf).unwrap()
 }
 
 #[test]
@@ -253,6 +257,15 @@ fn test_f32_const() {
     let buf = ParseBuffer::new(wat).unwrap();
     exec_instr_handler(&Instruction::F32Const(float32_for(&buf)), &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 3.14f32.into());
+}
+
+#[test]
+fn test_f64_const() {
+    let mut state = State::new();
+    let wat = "3.14";
+    let buf = ParseBuffer::new(wat).unwrap();
+    exec_instr_handler(&Instruction::F64Const(float64_for(&buf)), &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 3.14f64.into());
 }
 
 #[test]
