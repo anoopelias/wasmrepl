@@ -3,7 +3,8 @@
 - [x] Nested instructions
 - [x] Local by id
 - [x] I64 support
-- [ ] F32 support
+- [x] F32 support
+- [ ] F64 support
 - [ ] I32 instructions
 - [ ] I64 instructions
 - [ ] Print locals
