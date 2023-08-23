@@ -296,6 +296,33 @@ fn test_f64_const() {
 }
 
 #[test]
+fn test_f64_add() {
+    let mut state = State::new();
+    state.stack.push(1.0f64.into());
+    state.stack.push(2.0f64.into());
+    exec_instr_handler(&Instruction::F64Add, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 3.0f64.into());
+}
+
+#[test]
+fn test_f64_sub() {
+    let mut state = State::new();
+    state.stack.push(2.0f64.into());
+    state.stack.push(1.5f64.into());
+    exec_instr_handler(&Instruction::F64Sub, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), (-0.5f64).into());
+}
+
+#[test]
+fn test_f64_mul() {
+    let mut state = State::new();
+    state.stack.push(2.5f64.into());
+    state.stack.push(2.0f64.into());
+    exec_instr_handler(&Instruction::F64Mul, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 5.0f64.into());
+}
+
+#[test]
 fn test_local_get() {
     let mut state = State::new();
     state.locals.grow(test_val_i32(0));
