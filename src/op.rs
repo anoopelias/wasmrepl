@@ -10,9 +10,6 @@ pub trait NumOps {
     fn mul(self, rhs: Self) -> Self
     where
         Self: Sized;
-    fn div(self, rhs: Self) -> Result<Self>
-    where
-        Self: Sized;
 }
 
 impl NumOps for i32 {
@@ -24,13 +21,6 @@ impl NumOps for i32 {
     }
     fn mul(self, rhs: Self) -> Self {
         self.wrapping_mul(rhs)
-    }
-    fn div(self, rhs: Self) -> Result<Self> {
-        if rhs == 0 {
-            Err(Error::msg("Divide by zero"))
-        } else {
-            Ok(self.wrapping_div(rhs))
-        }
     }
 }
 
@@ -44,13 +34,6 @@ impl NumOps for i64 {
     fn mul(self, rhs: Self) -> Self {
         self.wrapping_mul(rhs)
     }
-    fn div(self, rhs: Self) -> Result<Self> {
-        if rhs == 0 {
-            Err(Error::msg("Divide by zero"))
-        } else {
-            Ok(self.wrapping_div(rhs))
-        }
-    }
 }
 
 impl NumOps for f32 {
@@ -63,14 +46,51 @@ impl NumOps for f32 {
     fn mul(self, rhs: Self) -> Self {
         self * rhs
     }
+}
+
+pub trait IntOps: NumOps {
+    fn div(self, rhs: Self) -> Result<Self>
+    where
+        Self: Sized;
+}
+
+impl IntOps for i32 {
     fn div(self, rhs: Self) -> Result<Self> {
-        Ok(self / rhs)
+        if rhs == 0 {
+            Err(Error::msg("Divide by zero"))
+        } else {
+            Ok(self.wrapping_div(rhs))
+        }
+    }
+}
+
+impl IntOps for i64 {
+    fn div(self, rhs: Self) -> Result<Self> {
+        if rhs == 0 {
+            Err(Error::msg("Divide by zero"))
+        } else {
+            Ok(self.wrapping_div(rhs))
+        }
+    }
+}
+
+pub trait FloatOps: NumOps {
+    fn div(self, rhs: Self) -> Self
+    where
+        Self: Sized;
+}
+
+impl FloatOps for f32 {
+    fn div(self, rhs: Self) -> Self {
+        self / rhs
     }
 }
 
 #[cfg(test)]
 mod tests {
 
+    use crate::op::FloatOps;
+    use crate::op::IntOps;
     use crate::op::NumOps;
 
     #[test]
@@ -171,7 +191,12 @@ mod tests {
     }
 
     #[test]
+    fn test_f32_div() {
+        assert_eq!(7.0.div(2.0), 3.5);
+    }
+
+    #[test]
     fn test_f32_div_by_zero() {
-        assert_eq!(5.0.div(0.0).unwrap(), f32::INFINITY);
+        assert_eq!(5.0.div(0.0), f32::INFINITY);
     }
 }

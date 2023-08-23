@@ -1,3 +1,4 @@
+use crate::op::IntOps;
 use crate::op::NumOps;
 use anyhow::{Error, Result};
 use std::fmt::{self, Display};

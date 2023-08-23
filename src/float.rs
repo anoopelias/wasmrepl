@@ -1,3 +1,4 @@
+use crate::op::FloatOps;
 use crate::op::NumOps;
 use anyhow::Result;
 use std::fmt::{self, Display};
@@ -44,7 +45,7 @@ impl Float {
 
     pub fn div(&self, other: &Self) -> Result<Self> {
         match (self, other) {
-            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.div(*b)?)),
+            (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a.div(*b))),
         }
     }
 }
