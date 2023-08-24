@@ -69,10 +69,13 @@ pub trait IntOps: NumOps {
     fn rem_s(self, rhs: Self) -> Result<Self>
     where
         Self: Sized;
+    fn rem_u(self, rhs: Self) -> Result<Self>
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_int_ops {
-    ($t:ty, $ut:ty) => {
+    ($t:ty) => {
         impl IntOps for $t {
             fn clz(self) -> Self {
                 self.leading_zeros() as Self
@@ -96,8 +99,8 @@ macro_rules! impl_int_ops {
                 }
             }
             fn div_u(self, rhs: Self) -> Result<Self> {
-                let a = <$ut>::from_ne_bytes(self.to_ne_bytes());
-                let b = <$ut>::from_ne_bytes(rhs.to_ne_bytes());
+                let a = self.into_unsigned();
+                let b = rhs.into_unsigned();
                 if b == 0 {
                     Err(Error::msg("Divide by zero"))
                 } else {
@@ -113,12 +116,38 @@ macro_rules! impl_int_ops {
                     Ok(self.wrapping_rem(rhs))
                 }
             }
+            fn rem_u(self, rhs: Self) -> Result<Self> {
+                let a = self.into_unsigned();
+                let b = rhs.into_unsigned();
+                if b == 0 {
+                    Err(Error::msg("Divide by zero"))
+                } else {
+                    Ok(Self::from_ne_bytes((a % b).to_ne_bytes()))
+                }
+            }
         }
     };
 }
 
-impl_int_ops!(i32, u32);
-impl_int_ops!(i64, u64);
+impl_int_ops!(i32);
+impl_int_ops!(i64);
+
+trait IntoUnsigned<U> {
+    fn into_unsigned(self) -> U;
+}
+
+macro_rules! into_unsigned {
+    ($s:ty, $t:ty) => {
+        impl IntoUnsigned<$t> for $s {
+            fn into_unsigned(self) -> $t {
+                <$t>::from_ne_bytes(self.to_ne_bytes())
+            }
+        }
+    };
+}
+
+into_unsigned!(i32, u32);
+into_unsigned!(i64, u64);
 
 pub trait FloatOps: NumOps {
     fn neg(self) -> Self
@@ -222,6 +251,18 @@ mod tests {
     }
 
     #[test]
+    fn test_i32_div_u() {
+        assert_eq!(7.div_s(3).unwrap(), 2);
+        // Pulled from WASM test suite
+        assert_eq!(i32::MIN.div_u(2).unwrap(), 0x40000000);
+    }
+
+    #[test]
+    fn test_i32_div_u_div_by_zero_error() {
+        assert!(5.div_u(0).is_err());
+    }
+
+    #[test]
     fn test_i32_rem_s() {
         assert_eq!(7.rem_s(3).unwrap(), 1);
     }
@@ -237,19 +278,19 @@ mod tests {
     }
 
     #[test]
+    fn test_i32_rem_u() {
+        assert_eq!(7.rem_s(3).unwrap(), 1);
+        assert_eq!(i32::MIN.rem_u(-1).unwrap(), i32::MIN);
+    }
+
+    #[test]
+    fn test_i32_rem_u_div_by_zero_error() {
+        assert!(5.rem_u(0).is_err());
+    }
+
+    #[test]
     fn test_i64_div_s() {
         assert_eq!(1i64.div_s(2i64).unwrap(), 0);
-    }
-
-    #[test]
-    fn test_i32_div_u() {
-        // Pulled from WASM test suite
-        assert_eq!(i32::MIN.div_u(2).unwrap(), 0x40000000);
-    }
-
-    #[test]
-    fn test_i32_div_u_div_by_zero_error() {
-        assert!(5.div_u(0).is_err());
     }
 
     #[test]

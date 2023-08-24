@@ -225,6 +225,15 @@ fn test_i32_rem_s() {
 }
 
 #[test]
+fn test_i32_rem_u() {
+    let mut state = State::new();
+    state.stack.push(i32::MIN.into());
+    state.stack.push((-1).into());
+    exec_instr_handler(&Instruction::I32RemU, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), i32::MIN.into());
+}
+
+#[test]
 fn test_i64_clz() {
     let mut state = State::new();
     state.stack.push(1023i64.into());
@@ -300,6 +309,15 @@ fn test_i64_rem_s() {
     state.stack.push(3i64.into());
     exec_instr_handler(&Instruction::I64RemS, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 1i64.into());
+}
+
+#[test]
+fn test_i64_rem_u() {
+    let mut state = State::new();
+    state.stack.push(i64::MIN.into());
+    state.stack.push((-1i64).into());
+    exec_instr_handler(&Instruction::I64RemU, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), i64::MIN.into());
 }
 
 #[test]
