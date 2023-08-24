@@ -1,3 +1,4 @@
+use crate::ops::FloatOps;
 use crate::ops::IntOps;
 use crate::ops::NumOps;
 use anyhow::{Error, Result};
@@ -65,10 +66,12 @@ impl<'a> Handler<'a> {
             Instruction::F32Add => self.f32_add(),
             Instruction::F32Sub => self.f32_sub(),
             Instruction::F32Mul => self.f32_mul(),
+            Instruction::F32Div => self.f32_div(),
             Instruction::F64Const(value) => self.f64_const(f64::from_bits(value.bits)),
             Instruction::F64Add => self.f64_add(),
             Instruction::F64Sub => self.f64_sub(),
             Instruction::F64Mul => self.f64_mul(),
+            Instruction::F64Div => self.f64_div(),
             Instruction::LocalGet(Index::Num(index, _)) => self.local_get(*index),
             Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
             Instruction::LocalSet(Index::Num(index, _)) => self.local_set(*index),
@@ -116,7 +119,7 @@ macro_rules! impl_binary_op {
             fn $fname(&mut self) -> Result<()> {
                 let a = self.$popper()?;
                 let b = self.$popper()?;
-                self.state.stack.push(a.$op(b).into());
+                self.state.stack.push(b.$op(a).into());
                 Ok(())
             }
         }
@@ -134,10 +137,12 @@ impl_binary_op!(i64_mul, i64_pop, mul);
 impl_binary_op!(f32_add, f32_pop, add);
 impl_binary_op!(f32_sub, f32_pop, sub);
 impl_binary_op!(f32_mul, f32_pop, mul);
+impl_binary_op!(f32_div, f32_pop, div);
 
 impl_binary_op!(f64_add, f64_pop, add);
 impl_binary_op!(f64_sub, f64_pop, sub);
 impl_binary_op!(f64_mul, f64_pop, mul);
+impl_binary_op!(f64_div, f64_pop, div);
 
 macro_rules! impl_binary_res_op {
     ($fname:ident, $popper:ident, $op:ident) => {

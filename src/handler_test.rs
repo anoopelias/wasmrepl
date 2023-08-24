@@ -130,7 +130,7 @@ fn test_i32_sub() {
     state.stack.push(2.into());
     state.stack.push(1.into());
     exec_instr_handler(&Instruction::I32Sub, &mut state).unwrap();
-    assert_eq!(state.stack.pop().unwrap(), Value::from(-1));
+    assert_eq!(state.stack.pop().unwrap(), Value::from(1));
 }
 
 #[test]
@@ -229,7 +229,7 @@ fn test_i64_sub() {
     state.stack.push(2i64.into());
     state.stack.push(1i64.into());
     exec_instr_handler(&Instruction::I64Sub, &mut state).unwrap();
-    assert_eq!(state.stack.pop().unwrap(), Value::from(-1i64));
+    assert_eq!(state.stack.pop().unwrap(), 1i64.into());
 }
 
 #[test]
@@ -274,7 +274,7 @@ fn test_f32_sub() {
     state.stack.push(2.0f32.into());
     state.stack.push(1.5f32.into());
     exec_instr_handler(&Instruction::F32Sub, &mut state).unwrap();
-    assert_eq!(state.stack.pop().unwrap(), (-0.5f32).into());
+    assert_eq!(state.stack.pop().unwrap(), 0.5f32.into());
 }
 
 #[test]
@@ -284,6 +284,15 @@ fn test_f32_mul() {
     state.stack.push(2.0f32.into());
     exec_instr_handler(&Instruction::F32Mul, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 5.0f32.into());
+}
+
+#[test]
+fn test_f32_div() {
+    let mut state = State::new();
+    state.stack.push(7.0f32.into());
+    state.stack.push(2.0f32.into());
+    exec_instr_handler(&Instruction::F32Div, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 3.5f32.into());
 }
 
 #[test]
@@ -310,7 +319,7 @@ fn test_f64_sub() {
     state.stack.push(2.0f64.into());
     state.stack.push(1.5f64.into());
     exec_instr_handler(&Instruction::F64Sub, &mut state).unwrap();
-    assert_eq!(state.stack.pop().unwrap(), (-0.5f64).into());
+    assert_eq!(state.stack.pop().unwrap(), 0.5f64.into());
 }
 
 #[test]
@@ -320,6 +329,15 @@ fn test_f64_mul() {
     state.stack.push(2.0f64.into());
     exec_instr_handler(&Instruction::F64Mul, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 5.0f64.into());
+}
+
+#[test]
+fn test_f64_div() {
+    let mut state = State::new();
+    state.stack.push(12.0f64.into());
+    state.stack.push(3.0f64.into());
+    exec_instr_handler(&Instruction::F64Div, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 4.0f64.into());
 }
 
 #[test]
