@@ -205,24 +205,19 @@ impl_unary_op!(i64_clz, i64_pop, clz);
 impl_unary_op!(i64_ctz, i64_pop, ctz);
 
 impl_unary_op!(f32_abs, f32_pop, abs);
-impl_unary_op!(f64_abs, f64_pop, abs);
-
 impl_unary_op!(f32_neg, f32_pop, neg);
-impl_unary_op!(f64_neg, f64_pop, neg);
-
 impl_unary_op!(f32_ceil, f32_pop, ceil);
-impl_unary_op!(f64_ceil, f64_pop, ceil);
-
 impl_unary_op!(f32_floor, f32_pop, floor);
-impl_unary_op!(f64_floor, f64_pop, floor);
-
 impl_unary_op!(f32_trunc, f32_pop, trunc);
-impl_unary_op!(f64_trunc, f64_pop, trunc);
-
 impl_unary_op!(f32_nearest, f32_pop, round);
-impl_unary_op!(f64_nearest, f64_pop, round);
-
 impl_unary_op!(f32_sqrt, f32_pop, sqrt);
+
+impl_unary_op!(f64_abs, f64_pop, abs);
+impl_unary_op!(f64_neg, f64_pop, neg);
+impl_unary_op!(f64_ceil, f64_pop, ceil);
+impl_unary_op!(f64_floor, f64_pop, floor);
+impl_unary_op!(f64_trunc, f64_pop, trunc);
+impl_unary_op!(f64_nearest, f64_pop, round);
 impl_unary_op!(f64_sqrt, f64_pop, sqrt);
 
 #[cfg(test)]
