@@ -308,6 +308,14 @@ fn test_f32_nearest() {
 }
 
 #[test]
+fn test_f32_sqrt() {
+    let mut state = State::new();
+    state.stack.push(4.0f32.into());
+    exec_instr_handler(&Instruction::F32Sqrt, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), (2.0f32).into());
+}
+
+#[test]
 fn test_f32_add() {
     let mut state = State::new();
     state.stack.push(1.0f32.into());
@@ -398,6 +406,14 @@ fn test_f64_nearest() {
     state.stack.push(2.5f64.into());
     exec_instr_handler(&Instruction::F64Nearest, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), (3.0f64).into());
+}
+
+#[test]
+fn test_f64_sqrt() {
+    let mut state = State::new();
+    state.stack.push(4.0f64.into());
+    exec_instr_handler(&Instruction::F64Sqrt, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), (2.0f64).into());
 }
 
 #[test]
