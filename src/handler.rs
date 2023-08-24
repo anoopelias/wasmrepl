@@ -158,17 +158,16 @@ impl_binary_op!(f32_add, f32_pop, add);
 impl_binary_op!(f32_sub, f32_pop, sub);
 impl_binary_op!(f32_mul, f32_pop, mul);
 impl_binary_op!(f32_div, f32_pop, div);
+impl_binary_op!(f32_min, f32_pop, min);
+impl_binary_op!(f32_max, f32_pop, max);
+impl_binary_op!(f32_copysign, f32_pop, copysign);
 
 impl_binary_op!(f64_add, f64_pop, add);
 impl_binary_op!(f64_sub, f64_pop, sub);
 impl_binary_op!(f64_mul, f64_pop, mul);
 impl_binary_op!(f64_div, f64_pop, div);
-
-impl_binary_op!(f32_min, f32_pop, min);
 impl_binary_op!(f64_min, f64_pop, min);
-impl_binary_op!(f32_max, f32_pop, max);
 impl_binary_op!(f64_max, f64_pop, max);
-impl_binary_op!(f32_copysign, f32_pop, copysign);
 impl_binary_op!(f64_copysign, f64_pop, copysign);
 
 macro_rules! impl_binary_res_op {
