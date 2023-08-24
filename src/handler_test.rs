@@ -276,6 +276,14 @@ fn test_f32_neg() {
 }
 
 #[test]
+fn test_f32_ceil() {
+    let mut state = State::new();
+    state.stack.push((-2.5f32).into());
+    exec_instr_handler(&Instruction::F32Ceil, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), (-2.0f32).into());
+}
+
+#[test]
 fn test_f32_add() {
     let mut state = State::new();
     state.stack.push(1.0f32.into());
@@ -334,6 +342,14 @@ fn test_f64_neg() {
     state.stack.push(2.5f64.into());
     exec_instr_handler(&Instruction::F64Neg, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), (-2.5f64).into());
+}
+
+#[test]
+fn test_f64_ceil() {
+    let mut state = State::new();
+    state.stack.push(2.5f64.into());
+    exec_instr_handler(&Instruction::F64Ceil, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), (3.0f64).into());
 }
 
 #[test]
