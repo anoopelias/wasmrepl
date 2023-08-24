@@ -91,6 +91,9 @@ impl_int_ops!(i32);
 impl_int_ops!(i64);
 
 pub trait FloatOps: NumOps {
+    fn neg(self) -> Self
+    where
+        Self: Sized;
     fn div(self, rhs: Self) -> Self
     where
         Self: Sized;
@@ -99,6 +102,9 @@ pub trait FloatOps: NumOps {
 macro_rules! impl_float_ops {
     ($t:ty) => {
         impl FloatOps for $t {
+            fn neg(self) -> Self {
+                self * -1.0
+            }
             fn div(self, rhs: Self) -> Self {
                 self / rhs
             }
@@ -200,6 +206,12 @@ mod tests {
     }
 
     #[test]
+    fn test_f32_abs() {
+        assert_eq!((-2.5f32).abs(), 2.5);
+        assert_eq!((2.5f32).abs(), 2.5);
+    }
+
+    #[test]
     fn test_f32_div() {
         assert_eq!(7.0.div(2.0), 3.5);
     }
@@ -217,5 +229,10 @@ mod tests {
     #[test]
     fn test_f64_div() {
         assert_eq!(7.0f64.div(2.0f64), 3.5f64);
+    }
+
+    #[test]
+    fn test_f64_abs() {
+        assert_eq!((-2.5f64).abs(), 2.5f64);
     }
 }
