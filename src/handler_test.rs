@@ -101,6 +101,14 @@ fn test_i32_ctz_error() {
 }
 
 #[test]
+fn test_i32_popcnt() {
+    let mut state = State::new();
+    state.stack.push(1023.into());
+    exec_instr_handler(&Instruction::I32Popcnt, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 10.into());
+}
+
+#[test]
 fn test_i32_add() {
     let mut state = State::new();
     state.stack.push(1.into());
@@ -211,6 +219,14 @@ fn test_i64_ctz() {
     let mut state = State::new();
     state.stack.push(1024i64.into());
     exec_instr_handler(&Instruction::I64Ctz, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 10i64.into());
+}
+
+#[test]
+fn test_i64_popcnt() {
+    let mut state = State::new();
+    state.stack.push(1023i64.into());
+    exec_instr_handler(&Instruction::I64Popcnt, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 10i64.into());
 }
 

@@ -51,6 +51,7 @@ impl<'a> Handler<'a> {
             Instruction::Drop => self.drop(),
             Instruction::I32Clz => self.i32_clz(),
             Instruction::I32Ctz => self.i32_ctz(),
+            Instruction::I32Popcnt => self.i32_popcnt(),
             Instruction::I32Add => self.i32_add(),
             Instruction::I32Sub => self.i32_sub(),
             Instruction::I32Mul => self.i32_mul(),
@@ -58,6 +59,7 @@ impl<'a> Handler<'a> {
             Instruction::I64Const(value) => self.i64_const(*value),
             Instruction::I64Clz => self.i64_clz(),
             Instruction::I64Ctz => self.i64_ctz(),
+            Instruction::I64Popcnt => self.i64_popcnt(),
             Instruction::I64Add => self.i64_add(),
             Instruction::I64Sub => self.i64_sub(),
             Instruction::I64Mul => self.i64_mul(),
@@ -200,9 +202,11 @@ macro_rules! impl_unary_op {
 
 impl_unary_op!(i32_clz, i32_pop, clz);
 impl_unary_op!(i32_ctz, i32_pop, ctz);
+impl_unary_op!(i32_popcnt, i32_pop, popcnt);
 
 impl_unary_op!(i64_clz, i64_pop, clz);
 impl_unary_op!(i64_ctz, i64_pop, ctz);
+impl_unary_op!(i64_popcnt, i64_pop, popcnt);
 
 impl_unary_op!(f32_abs, f32_pop, abs);
 impl_unary_op!(f32_neg, f32_pop, neg);

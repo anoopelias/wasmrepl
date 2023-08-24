@@ -57,6 +57,9 @@ pub trait IntOps: NumOps {
     fn ctz(self) -> Self
     where
         Self: Sized;
+    fn popcnt(self) -> Self
+    where
+        Self: Sized;
     fn div(self, rhs: Self) -> Result<Self>
     where
         Self: Sized;
@@ -70,6 +73,9 @@ macro_rules! impl_int_ops {
             }
             fn ctz(self) -> Self {
                 self.trailing_zeros() as Self
+            }
+            fn popcnt(self) -> Self {
+                self.count_ones() as Self
             }
             fn div(self, rhs: Self) -> Result<Self> {
                 if rhs == 0 {
@@ -158,15 +164,21 @@ mod tests {
     }
 
     #[test]
-    fn test_leading_zeros() {
+    fn test_clz() {
         assert_eq!(1i32.clz(), 31);
         assert_eq!(1i64.clz(), 63);
     }
 
     #[test]
-    fn test_trailing_zeros() {
+    fn test_ctz() {
         assert_eq!(1024i32.ctz(), 10);
         assert_eq!(2048i64.ctz(), 11);
+    }
+
+    #[test]
+    fn test_popcnt() {
+        assert_eq!(1023i32.popcnt(), 10);
+        assert_eq!(1023i64.popcnt(), 10);
     }
 
     #[test]
