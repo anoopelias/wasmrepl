@@ -63,11 +63,13 @@ impl<'a> Handler<'a> {
             Instruction::I64Mul => self.i64_mul(),
             Instruction::I64DivS => self.i64_div_s(),
             Instruction::F32Const(value) => self.f32_const(f32::from_bits(value.bits)),
+            Instruction::F32Abs => self.f32_abs(),
             Instruction::F32Add => self.f32_add(),
             Instruction::F32Sub => self.f32_sub(),
             Instruction::F32Mul => self.f32_mul(),
             Instruction::F32Div => self.f32_div(),
             Instruction::F64Const(value) => self.f64_const(f64::from_bits(value.bits)),
+            Instruction::F64Abs => self.f64_abs(),
             Instruction::F64Add => self.f64_add(),
             Instruction::F64Sub => self.f64_sub(),
             Instruction::F64Mul => self.f64_mul(),
@@ -177,6 +179,9 @@ impl_unary_op!(i32_ctz, i32_pop, ctz);
 
 impl_unary_op!(i64_clz, i64_pop, clz);
 impl_unary_op!(i64_ctz, i64_pop, ctz);
+
+impl_unary_op!(f32_abs, f32_pop, abs);
+impl_unary_op!(f64_abs, f64_pop, abs);
 
 #[cfg(test)]
 #[path = "./handler_test.rs"]
