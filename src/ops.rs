@@ -63,10 +63,14 @@ pub trait IntOps: NumOps {
     fn div_s(self, rhs: Self) -> Result<Self>
     where
         Self: Sized;
+
+    fn div_u(self, rhs: Self) -> Result<Self>
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_int_ops {
-    ($t:ty) => {
+    ($t:ty, $ut:ty) => {
         impl IntOps for $t {
             fn clz(self) -> Self {
                 self.leading_zeros() as Self
@@ -89,12 +93,21 @@ macro_rules! impl_int_ops {
                     }
                 }
             }
+            fn div_u(self, rhs: Self) -> Result<Self> {
+                let a = <$ut>::from_ne_bytes(self.to_ne_bytes());
+                let b = <$ut>::from_ne_bytes(rhs.to_ne_bytes());
+                if b == 0 {
+                    Err(Error::msg("Divide by zero"))
+                } else {
+                    Ok(Self::from_ne_bytes((a / b).to_ne_bytes()))
+                }
+            }
         }
     };
 }
 
-impl_int_ops!(i32);
-impl_int_ops!(i64);
+impl_int_ops!(i32, u32);
+impl_int_ops!(i64, u64);
 
 pub trait FloatOps: NumOps {
     fn neg(self) -> Self
@@ -200,6 +213,23 @@ mod tests {
     #[test]
     fn test_i64_div_s() {
         assert_eq!(1i64.div_s(2i64).unwrap(), 0);
+    }
+
+    #[test]
+    fn test_i32_div_u() {
+        // Pulled from WASM test suite
+        assert_eq!(i32::MIN.div_u(2).unwrap(), 0x40000000);
+    }
+
+    #[test]
+    fn test_i32_div_u_div_by_zero_error() {
+        assert!(5.div_u(0).is_err());
+    }
+
+    #[test]
+    fn test_i64_div_u() {
+        // Pulled from WASM test suite
+        assert_eq!(i64::MIN.div_u(2).unwrap(), 0x4000000000000000i64);
     }
 
     #[test]
