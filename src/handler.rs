@@ -134,11 +134,11 @@ constant!(f32_const, f32);
 constant!(f64_const, f64);
 
 macro_rules! impl_binary_op {
-    ($fname:ident, $popper:ident, $op:ident) => {
+    ($fname:ident, $pop:ident, $op:ident) => {
         impl<'a> Handler<'a> {
             fn $fname(&mut self) -> Result<()> {
-                let a = self.$popper()?;
-                let b = self.$popper()?;
+                let a = self.$pop()?;
+                let b = self.$pop()?;
                 self.state.stack.push(b.$op(a).into());
                 Ok(())
             }
