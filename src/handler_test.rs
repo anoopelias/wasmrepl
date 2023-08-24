@@ -268,6 +268,14 @@ fn test_f32_abs() {
 }
 
 #[test]
+fn test_f32_neg() {
+    let mut state = State::new();
+    state.stack.push(2.5f32.into());
+    exec_instr_handler(&Instruction::F32Neg, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), (-2.5f32).into());
+}
+
+#[test]
 fn test_f32_add() {
     let mut state = State::new();
     state.stack.push(1.0f32.into());
@@ -313,6 +321,22 @@ fn test_f64_const() {
 }
 
 #[test]
+fn test_f64_abs() {
+    let mut state = State::new();
+    state.stack.push((-2.5f64).into());
+    exec_instr_handler(&Instruction::F64Abs, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 2.5f64.into());
+}
+
+#[test]
+fn test_f64_neg() {
+    let mut state = State::new();
+    state.stack.push(2.5f64.into());
+    exec_instr_handler(&Instruction::F64Neg, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), (-2.5f64).into());
+}
+
+#[test]
 fn test_f64_add() {
     let mut state = State::new();
     state.stack.push(1.0f64.into());
@@ -337,14 +361,6 @@ fn test_f64_mul() {
     state.stack.push(2.0f64.into());
     exec_instr_handler(&Instruction::F64Mul, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 5.0f64.into());
-}
-
-#[test]
-fn test_f64_abs() {
-    let mut state = State::new();
-    state.stack.push((-2.5f64).into());
-    exec_instr_handler(&Instruction::F64Abs, &mut state).unwrap();
-    assert_eq!(state.stack.pop().unwrap(), 2.5f64.into());
 }
 
 #[test]
