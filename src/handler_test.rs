@@ -370,6 +370,15 @@ fn test_f32_max() {
 }
 
 #[test]
+fn test_f32_copysign() {
+    let mut state = State::new();
+    state.stack.push(2.0f32.into());
+    state.stack.push((-3.0f32).into());
+    exec_instr_handler(&Instruction::F32Copysign, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), (-2.0f32).into());
+}
+
+#[test]
 fn test_f64_const() {
     let mut state = State::new();
     let wat = "3.14";
@@ -486,6 +495,15 @@ fn test_f64_max() {
     state.stack.push(3.0f64.into());
     exec_instr_handler(&Instruction::F64Max, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 3.0f64.into());
+}
+
+#[test]
+fn test_f64_copysign() {
+    let mut state = State::new();
+    state.stack.push(2.0f64.into());
+    state.stack.push((-3.0f64).into());
+    exec_instr_handler(&Instruction::F64Copysign, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), (-2.0f64).into());
 }
 
 #[test]
