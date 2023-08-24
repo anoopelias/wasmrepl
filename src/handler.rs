@@ -57,6 +57,7 @@ impl<'a> Handler<'a> {
             Instruction::I32Mul => self.i32_mul(),
             Instruction::I32DivS => self.i32_div_s(),
             Instruction::I32DivU => self.i32_div_u(),
+            Instruction::I32RemS => self.i32_rem_s(),
             Instruction::I64Const(value) => self.i64_const(*value),
             Instruction::I64Clz => self.i64_clz(),
             Instruction::I64Ctz => self.i64_ctz(),
@@ -66,6 +67,7 @@ impl<'a> Handler<'a> {
             Instruction::I64Mul => self.i64_mul(),
             Instruction::I64DivS => self.i64_div_s(),
             Instruction::I64DivU => self.i64_div_u(),
+            Instruction::I64RemS => self.i64_rem_s(),
             Instruction::F32Const(value) => self.f32_const(f32::from_bits(value.bits)),
             Instruction::F32Abs => self.f32_abs(),
             Instruction::F32Neg => self.f32_neg(),
@@ -189,9 +191,11 @@ macro_rules! impl_binary_res_op {
 
 impl_binary_res_op!(i32_div_s, i32_pop, div_s);
 impl_binary_res_op!(i32_div_u, i32_pop, div_u);
+impl_binary_res_op!(i32_rem_s, i32_pop, rem_s);
 
 impl_binary_res_op!(i64_div_s, i64_pop, div_s);
 impl_binary_res_op!(i64_div_u, i64_pop, div_u);
+impl_binary_res_op!(i64_rem_s, i64_pop, rem_s);
 
 macro_rules! impl_unary_op {
     ($fname:ident, $popper:ident, $op:ident) => {

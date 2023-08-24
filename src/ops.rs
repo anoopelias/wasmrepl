@@ -63,8 +63,10 @@ pub trait IntOps: NumOps {
     fn div_s(self, rhs: Self) -> Result<Self>
     where
         Self: Sized;
-
     fn div_u(self, rhs: Self) -> Result<Self>
+    where
+        Self: Sized;
+    fn rem_s(self, rhs: Self) -> Result<Self>
     where
         Self: Sized;
 }
@@ -100,6 +102,15 @@ macro_rules! impl_int_ops {
                     Err(Error::msg("Divide by zero"))
                 } else {
                     Ok(Self::from_ne_bytes((a / b).to_ne_bytes()))
+                }
+            }
+            fn rem_s(self, rhs: Self) -> Result<Self> {
+                if rhs == 0 {
+                    Err(Error::msg("Divide by zero"))
+                } else {
+                    // This is mathematically not possible but is due to
+                    // the implementation artifact we need to use `wrapping_rem`
+                    Ok(self.wrapping_rem(rhs))
                 }
             }
         }
@@ -208,6 +219,21 @@ mod tests {
     #[test]
     fn test_i32_div_s_by_zero() {
         assert!(5i32.div_s(0i32).is_err());
+    }
+
+    #[test]
+    fn test_i32_rem_s() {
+        assert_eq!(7.rem_s(3).unwrap(), 1);
+    }
+
+    #[test]
+    fn test_i32_rem_s_overflow_error() {
+        assert_eq!(i32::MIN.rem_s(-1).unwrap(), 0);
+    }
+
+    #[test]
+    fn test_i32_rem_s_by_zero() {
+        assert!(5i32.rem_s(0i32).is_err());
     }
 
     #[test]
