@@ -60,7 +60,7 @@ pub trait IntOps: NumOps {
     fn popcnt(self) -> Self
     where
         Self: Sized;
-    fn div(self, rhs: Self) -> Result<Self>
+    fn div_s(self, rhs: Self) -> Result<Self>
     where
         Self: Sized;
 }
@@ -77,7 +77,7 @@ macro_rules! impl_int_ops {
             fn popcnt(self) -> Self {
                 self.count_ones() as Self
             }
-            fn div(self, rhs: Self) -> Result<Self> {
+            fn div_s(self, rhs: Self) -> Result<Self> {
                 if rhs == 0 {
                     Err(Error::msg("Divide by zero"))
                 } else {
@@ -182,24 +182,24 @@ mod tests {
     }
 
     #[test]
-    fn test_i32_div() {
-        assert_eq!(7.div(3).unwrap(), 2);
+    fn test_i32_div_s() {
+        assert_eq!(7.div_s(3).unwrap(), 2);
     }
 
     #[test]
-    fn test_i32_div_overflow_error() {
+    fn test_i32_div_s_overflow_error() {
         // Pulled from WASM test suite
-        assert!(i32::MIN.div(-1).is_err());
+        assert!(i32::MIN.div_s(-1).is_err());
     }
 
     #[test]
-    fn test_i32_div_by_zero() {
-        assert!(5i32.div(0i32).is_err());
+    fn test_i32_div_s_by_zero() {
+        assert!(5i32.div_s(0i32).is_err());
     }
 
     #[test]
-    fn test_i64_div() {
-        assert_eq!(1i64.div(2i64).unwrap(), 0);
+    fn test_i64_div_s() {
+        assert_eq!(1i64.div_s(2i64).unwrap(), 0);
     }
 
     #[test]

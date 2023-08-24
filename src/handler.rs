@@ -185,8 +185,8 @@ macro_rules! impl_binary_res_op {
     };
 }
 
-impl_binary_res_op!(i32_div_s, i32_pop, div);
-impl_binary_res_op!(i64_div_s, i64_pop, div);
+impl_binary_res_op!(i32_div_s, i32_pop, div_s);
+impl_binary_res_op!(i64_div_s, i64_pop, div_s);
 
 macro_rules! impl_unary_op {
     ($fname:ident, $popper:ident, $op:ident) => {
