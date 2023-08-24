@@ -74,6 +74,7 @@ impl<'a> Handler<'a> {
             Instruction::F32Sub => self.f32_sub(),
             Instruction::F32Mul => self.f32_mul(),
             Instruction::F32Div => self.f32_div(),
+            Instruction::F32Min => self.f32_min(),
             Instruction::F64Const(value) => self.f64_const(f64::from_bits(value.bits)),
             Instruction::F64Abs => self.f64_abs(),
             Instruction::F64Neg => self.f64_neg(),
@@ -86,6 +87,7 @@ impl<'a> Handler<'a> {
             Instruction::F64Sub => self.f64_sub(),
             Instruction::F64Mul => self.f64_mul(),
             Instruction::F64Div => self.f64_div(),
+            Instruction::F64Min => self.f64_min(),
             Instruction::LocalGet(Index::Num(index, _)) => self.local_get(*index),
             Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
             Instruction::LocalSet(Index::Num(index, _)) => self.local_set(*index),
@@ -157,6 +159,9 @@ impl_binary_op!(f64_add, f64_pop, add);
 impl_binary_op!(f64_sub, f64_pop, sub);
 impl_binary_op!(f64_mul, f64_pop, mul);
 impl_binary_op!(f64_div, f64_pop, div);
+
+impl_binary_op!(f32_min, f32_pop, min);
+impl_binary_op!(f64_min, f64_pop, min);
 
 macro_rules! impl_binary_res_op {
     ($fname:ident, $popper:ident, $op:ident) => {
