@@ -243,6 +243,15 @@ fn test_i32_and() {
 }
 
 #[test]
+fn test_i32_or() {
+    let mut state = State::new();
+    state.stack.push(0b1010.into());
+    state.stack.push(0b1100.into());
+    exec_instr_handler(&Instruction::I32Or, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 0b1110.into());
+}
+
+#[test]
 fn test_i64_clz() {
     let mut state = State::new();
     state.stack.push(1023i64.into());
@@ -336,6 +345,15 @@ fn test_i64_and() {
     state.stack.push(0b1100i64.into());
     exec_instr_handler(&Instruction::I64And, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 0b1000i64.into());
+}
+
+#[test]
+fn test_i64_or() {
+    let mut state = State::new();
+    state.stack.push(0b1010i64.into());
+    state.stack.push(0b1100i64.into());
+    exec_instr_handler(&Instruction::I64Or, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 0b1110i64.into());
 }
 
 #[test]

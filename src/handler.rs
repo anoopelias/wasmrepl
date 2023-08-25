@@ -1,4 +1,5 @@
 use std::ops::BitAnd;
+use std::ops::BitOr;
 
 use crate::ops::FloatOps;
 use crate::ops::IntOps;
@@ -62,6 +63,7 @@ impl<'a> Handler<'a> {
             Instruction::I32RemS => self.i32_rem_s(),
             Instruction::I32RemU => self.i32_rem_u(),
             Instruction::I32And => self.i32_and(),
+            Instruction::I32Or => self.i32_or(),
             Instruction::I64Const(value) => self.i64_const(*value),
             Instruction::I64Clz => self.i64_clz(),
             Instruction::I64Ctz => self.i64_ctz(),
@@ -74,6 +76,7 @@ impl<'a> Handler<'a> {
             Instruction::I64RemS => self.i64_rem_s(),
             Instruction::I64RemU => self.i64_rem_u(),
             Instruction::I64And => self.i64_and(),
+            Instruction::I64Or => self.i64_or(),
             Instruction::F32Const(value) => self.f32_const(f32::from_bits(value.bits)),
             Instruction::F32Abs => self.f32_abs(),
             Instruction::F32Neg => self.f32_neg(),
@@ -162,11 +165,13 @@ impl_binary_op!(i32_add, i32_pop, add);
 impl_binary_op!(i32_sub, i32_pop, sub);
 impl_binary_op!(i32_mul, i32_pop, mul);
 impl_binary_op!(i32_and, i32_pop, bitand);
+impl_binary_op!(i32_or, i32_pop, bitor);
 
 impl_binary_op!(i64_add, i64_pop, add);
 impl_binary_op!(i64_sub, i64_pop, sub);
 impl_binary_op!(i64_mul, i64_pop, mul);
 impl_binary_op!(i64_and, i64_pop, bitand);
+impl_binary_op!(i64_or, i64_pop, bitor);
 
 impl_binary_op!(f32_add, f32_pop, add);
 impl_binary_op!(f32_sub, f32_pop, sub);
