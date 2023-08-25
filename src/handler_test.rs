@@ -234,6 +234,15 @@ fn test_i32_rem_u() {
 }
 
 #[test]
+fn test_i32_and() {
+    let mut state = State::new();
+    state.stack.push(0b1010.into());
+    state.stack.push(0b1100.into());
+    exec_instr_handler(&Instruction::I32And, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 0b1000.into());
+}
+
+#[test]
 fn test_i64_clz() {
     let mut state = State::new();
     state.stack.push(1023i64.into());
@@ -318,6 +327,15 @@ fn test_i64_rem_u() {
     state.stack.push((-1i64).into());
     exec_instr_handler(&Instruction::I64RemU, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), i64::MIN.into());
+}
+
+#[test]
+fn test_i64_and() {
+    let mut state = State::new();
+    state.stack.push(0b1010i64.into());
+    state.stack.push(0b1100i64.into());
+    exec_instr_handler(&Instruction::I64And, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 0b1000i64.into());
 }
 
 #[test]
