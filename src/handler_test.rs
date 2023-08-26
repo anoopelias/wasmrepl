@@ -297,6 +297,15 @@ fn test_i32_rotl() {
 }
 
 #[test]
+fn test_i32_rotr() {
+    let mut state = State::new();
+    state.stack.push(0x40020008.into());
+    state.stack.push(2.into());
+    exec_instr_handler(&Instruction::I32Rotr, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 0x10008002.into());
+}
+
+#[test]
 fn test_i64_clz() {
     let mut state = State::new();
     state.stack.push(1023i64.into());
@@ -444,6 +453,15 @@ fn test_i64_rotl() {
     state.stack.push(2i64.into());
     exec_instr_handler(&Instruction::I64Rotl, &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 0x40020008i64.into());
+}
+
+#[test]
+fn test_i64_rotr() {
+    let mut state = State::new();
+    state.stack.push(0x40020008i64.into());
+    state.stack.push(2i64.into());
+    exec_instr_handler(&Instruction::I64Rotr, &mut state).unwrap();
+    assert_eq!(state.stack.pop().unwrap(), 0x10008002i64.into());
 }
 
 #[test]

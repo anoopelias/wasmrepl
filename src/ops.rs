@@ -81,6 +81,9 @@ pub trait IntOps: NumOps {
     fn rotl(self, rhs: Self) -> Self
     where
         Self: Sized;
+    fn rotr(self, rhs: Self) -> Self
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_int_ops {
@@ -143,6 +146,9 @@ macro_rules! impl_int_ops {
             }
             fn rotl(self, rhs: Self) -> Self {
                 self.rotate_left(rhs as u32)
+            }
+            fn rotr(self, rhs: Self) -> Self {
+                self.rotate_right(rhs as u32)
             }
         }
     };
@@ -336,6 +342,11 @@ mod tests {
     }
 
     #[test]
+    fn test_i32_rotr() {
+        assert_eq!(0x100042.rotr(37), 0x10008002);
+    }
+
+    #[test]
     fn test_i64_div_s() {
         assert_eq!(1i64.div_s(2i64).unwrap(), 0);
     }
@@ -359,6 +370,11 @@ mod tests {
     #[test]
     fn test_i64_rotl() {
         assert_eq!(0x10008002i64.rotl(37), 0x10004000000002);
+    }
+
+    #[test]
+    fn test_i64_rotr() {
+        assert_eq!(0x10004000000002i64.rotr(37), 0x10008002i64);
     }
 
     #[test]
