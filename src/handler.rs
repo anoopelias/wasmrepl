@@ -5,7 +5,7 @@ use crate::ops::FloatOps;
 use crate::ops::IntOps;
 use crate::ops::NumOps;
 use anyhow::{Error, Result};
-use std::ops::{BitXor, Shl, Shr};
+use std::ops::{BitXor, Shl};
 use wast::{
     core::Instruction,
     token::{Id, Index},
@@ -175,7 +175,7 @@ impl_binary_op!(i32_and, i32_pop, bitand);
 impl_binary_op!(i32_or, i32_pop, bitor);
 impl_binary_op!(i32_xor, i32_pop, bitxor);
 impl_binary_op!(i32_shl, i32_pop, shl);
-impl_binary_op!(i32_shr_s, i32_pop, shr);
+impl_binary_op!(i32_shr_s, i32_pop, shr_s);
 
 impl_binary_op!(i64_add, i64_pop, add);
 impl_binary_op!(i64_sub, i64_pop, sub);
@@ -184,7 +184,7 @@ impl_binary_op!(i64_and, i64_pop, bitand);
 impl_binary_op!(i64_or, i64_pop, bitor);
 impl_binary_op!(i64_xor, i64_pop, bitxor);
 impl_binary_op!(i64_shl, i64_pop, shl);
-impl_binary_op!(i64_shr_s, i64_pop, shr);
+impl_binary_op!(i64_shr_s, i64_pop, shr_s);
 
 impl_binary_op!(f32_add, f32_pop, add);
 impl_binary_op!(f32_sub, f32_pop, sub);

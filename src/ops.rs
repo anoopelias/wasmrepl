@@ -72,6 +72,9 @@ pub trait IntOps: NumOps {
     fn rem_u(self, rhs: Self) -> Result<Self>
     where
         Self: Sized;
+    fn shr_s(self, rhs: Self) -> Self
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_int_ops {
@@ -124,6 +127,9 @@ macro_rules! impl_int_ops {
                 } else {
                     Ok(Self::from_ne_bytes((a % b).to_ne_bytes()))
                 }
+            }
+            fn shr_s(self, rhs: Self) -> Self {
+                self.wrapping_shr(rhs as u32)
             }
         }
     };
@@ -297,6 +303,21 @@ mod tests {
     fn test_i64_div_u() {
         // Pulled from WASM test suite
         assert_eq!(i64::MIN.div_u(2).unwrap(), 0x4000000000000000i64);
+    }
+
+    #[test]
+    fn test_shr_s() {
+        assert_eq!(1i32.shr_s(2), 0);
+    }
+
+    #[test]
+    fn test_shr_s_overflow() {
+        assert_eq!(2i32.shr_s(33), 1);
+    }
+
+    #[test]
+    fn test_shr_s_nagative() {
+        assert_eq!(2i32.shr_s(-31), 1);
     }
 
     #[test]
