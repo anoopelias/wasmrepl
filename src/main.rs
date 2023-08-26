@@ -8,6 +8,9 @@ mod parser;
 mod stack;
 mod value;
 
+#[cfg(test)]
+mod test_utils;
+
 use executor::Executor;
 use parser::Line;
 use rustyline::error::ReadlineError;

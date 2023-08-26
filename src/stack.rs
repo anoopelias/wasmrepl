@@ -88,7 +88,7 @@ impl Stack {
 #[cfg(test)]
 mod tests {
     use crate::stack::Stack;
-    use crate::value::test_utils::test_val_i32;
+    use crate::test_utils::test_val_i32;
 
     #[test]
     fn test_stack() {

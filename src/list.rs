@@ -66,7 +66,7 @@ impl List {
 
 #[cfg(test)]
 mod tests {
-    use crate::{list::List, value::test_utils::test_val_i32};
+    use crate::{list::List, test_utils::test_val_i32};
 
     #[test]
     fn test_list_get_set() {

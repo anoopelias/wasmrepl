@@ -1,13 +1,15 @@
 use crate::{
     executor::State,
-    value::{test_utils::test_val_i32, Value},
+    test_utils::test_val_i32,
+    test_utils::{float32_for, float64_for},
+    value::Value,
 };
 use anyhow::Result;
 
 use wast::{
     core::Instruction,
     parser::{self as wastparser, ParseBuffer},
-    token::{Float32, Float64, Id, Index, Span},
+    token::{Id, Index, Span},
 };
 
 use super::Handler;
@@ -20,14 +22,6 @@ fn test_new_index_id<'a>(buf: &'a ParseBuffer) -> Index<'a> {
 fn exec_instr_handler(instr: &Instruction, state: &mut State) -> Result<()> {
     let mut handler = Handler::new(state);
     handler.handle(instr)
-}
-
-fn float32_for(buf: &ParseBuffer) -> Float32 {
-    wastparser::parse::<Float32>(&buf).unwrap()
-}
-
-fn float64_for(buf: &ParseBuffer) -> Float64 {
-    wastparser::parse::<Float64>(&buf).unwrap()
 }
 
 #[test]

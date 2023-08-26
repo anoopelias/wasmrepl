@@ -56,10 +56,7 @@ impl Locals {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        locals::Locals,
-        value::{test_utils::test_val_i32, Value},
-    };
+    use crate::{locals::Locals, test_utils::test_val_i32, value::Value};
 
     fn locals_get_by_id(locals: &Locals, id: &str) -> Value {
         locals.get_by_id(id).unwrap().clone()

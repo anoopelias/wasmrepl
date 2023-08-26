@@ -84,29 +84,8 @@ impl Value {
 }
 
 #[cfg(test)]
-pub mod test_utils {
-    use crate::value::Value;
-
-    pub fn test_val_i32(n: i32) -> Value {
-        n.into()
-    }
-
-    pub fn test_val_i64(n: i64) -> Value {
-        n.into()
-    }
-
-    pub fn test_val_f32(n: f32) -> Value {
-        n.into()
-    }
-
-    pub fn test_val_f64(n: f64) -> Value {
-        n.into()
-    }
-}
-
-#[cfg(test)]
 mod tests {
-    use crate::value::test_utils::{test_val_f32, test_val_f64, test_val_i32, test_val_i64};
+    use crate::test_utils::{test_val_f32, test_val_f64, test_val_i32, test_val_i64};
     use crate::value::Value;
     use anyhow::Result;
 

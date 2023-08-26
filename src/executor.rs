@@ -94,10 +94,11 @@ fn default_value(lc: &Local) -> Result<Value> {
 mod tests {
     use wast::core::{Expression, Instruction, Local, ValType};
     use wast::parser::{self as wastparser, ParseBuffer};
-    use wast::token::{Float32, Float64, Id, Index, Span};
+    use wast::token::{Id, Index, Span};
 
     use crate::executor::Executor;
     use crate::parser::{Line, LocalParser};
+    use crate::test_utils::{float32_for, float64_for};
 
     // An instruction that is not implemented yet,
     // to be used to force an error
@@ -132,14 +133,6 @@ mod tests {
     test_new_local!(test_new_local_i64, ValType::I64);
     test_new_local!(test_new_local_f32, ValType::F32);
     test_new_local!(test_new_local_f64, ValType::F64);
-
-    fn float32_for(buf: &ParseBuffer) -> Float32 {
-        wastparser::parse::<Float32>(&buf).unwrap()
-    }
-
-    fn float64_for(buf: &ParseBuffer) -> Float64 {
-        wastparser::parse::<Float64>(&buf).unwrap()
-    }
 
     fn test_local_command_for(id: &String) -> String {
         let mut command = String::from("local ");
