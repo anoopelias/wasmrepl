@@ -64,6 +64,14 @@ impl Value {
         Self::I64(0)
     }
 
+    pub fn default_f32() -> Value {
+        Self::F32(0.0)
+    }
+
+    pub fn default_f64() -> Value {
+        Self::F64(0.0)
+    }
+
     pub fn is_same(&self, other: &Self) -> Result<()> {
         match (self, other) {
             (Self::I32(_), Self::I32(_)) => Ok(()),

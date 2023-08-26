@@ -84,6 +84,8 @@ fn default_value(lc: &Local) -> Result<Value> {
     match lc.ty {
         ValType::I32 => Ok(Value::default_i32()),
         ValType::I64 => Ok(Value::default_i64()),
+        ValType::F32 => Ok(Value::default_f32()),
+        ValType::F64 => Ok(Value::default_f64()),
         _ => Err(Error::msg("Unsupported type")),
     }
 }
@@ -92,7 +94,7 @@ fn default_value(lc: &Local) -> Result<Value> {
 mod tests {
     use wast::core::{Expression, Instruction, Local, ValType};
     use wast::parser::{self as wastparser, ParseBuffer};
-    use wast::token::{Id, Index, Span};
+    use wast::token::{Float32, Float64, Id, Index, Span};
 
     use crate::executor::Executor;
     use crate::parser::{Line, LocalParser};
@@ -112,6 +114,31 @@ mod tests {
                 }
             }
         };
+    }
+
+    macro_rules! test_new_local {
+        ($fname:ident, $type:expr) => {
+            fn $fname<'a>() -> Local<'a> {
+                Local {
+                    id: None,
+                    name: None,
+                    ty: $type,
+                }
+            }
+        };
+    }
+
+    test_new_local!(test_new_local_i32, ValType::I32);
+    test_new_local!(test_new_local_i64, ValType::I64);
+    test_new_local!(test_new_local_f32, ValType::F32);
+    test_new_local!(test_new_local_f64, ValType::F64);
+
+    fn float32_for(buf: &ParseBuffer) -> Float32 {
+        wastparser::parse::<Float32>(&buf).unwrap()
+    }
+
+    fn float64_for(buf: &ParseBuffer) -> Float64 {
+        wastparser::parse::<Float64>(&buf).unwrap()
     }
 
     fn test_local_command_for(id: &String) -> String {
@@ -136,22 +163,6 @@ mod tests {
     fn test_new_index_id<'a>(buf: &'a ParseBuffer) -> Index<'a> {
         let id = wastparser::parse::<Id>(buf).unwrap();
         Index::Id(id)
-    }
-
-    fn test_new_local_i32<'a>() -> Local<'a> {
-        Local {
-            id: None,
-            name: None,
-            ty: ValType::I32,
-        }
-    }
-
-    fn test_new_local_i64<'a>() -> Local<'a> {
-        Local {
-            id: None,
-            name: None,
-            ty: ValType::I32,
-        }
     }
 
     #[test]
@@ -282,12 +293,40 @@ mod tests {
     fn test_local_set_get_i64() {
         let mut executor = Executor::new();
         let line = test_line![(test_new_local_i64())(
-            Instruction::I32Const(42),
+            Instruction::I64Const(42),
             Instruction::LocalSet(test_new_index(0)),
             Instruction::LocalGet(test_new_index(0))
         )];
         executor.execute(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
+    }
+
+    #[test]
+    fn test_local_set_get_f32() {
+        let mut executor = Executor::new();
+        let wat = "3.14";
+        let buf = ParseBuffer::new(wat).unwrap();
+        let line = test_line![(test_new_local_f32())(
+            Instruction::F32Const(float32_for(&buf)),
+            Instruction::LocalSet(test_new_index(0)),
+            Instruction::LocalGet(test_new_index(0))
+        )];
+        executor.execute(&line).unwrap();
+        assert_eq!(executor.to_state(), "[3.14]");
+    }
+
+    #[test]
+    fn test_local_set_get_f64() {
+        let mut executor = Executor::new();
+        let wat = "3.14";
+        let buf = ParseBuffer::new(wat).unwrap();
+        let line = test_line![(test_new_local_f64())(
+            Instruction::F64Const(float64_for(&buf)),
+            Instruction::LocalSet(test_new_index(0)),
+            Instruction::LocalGet(test_new_index(0))
+        )];
+        executor.execute(&line).unwrap();
+        assert_eq!(executor.to_state(), "[3.14]");
     }
 
     #[test]
