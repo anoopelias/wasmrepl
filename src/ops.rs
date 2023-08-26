@@ -75,6 +75,9 @@ pub trait IntOps: NumOps {
     fn shr_s(self, rhs: Self) -> Self
     where
         Self: Sized;
+    fn shr_u(self, rhs: Self) -> Self
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_int_ops {
@@ -130,6 +133,10 @@ macro_rules! impl_int_ops {
             }
             fn shr_s(self, rhs: Self) -> Self {
                 self.wrapping_shr(rhs as u32)
+            }
+            fn shr_u(self, rhs: Self) -> Self {
+                let n = self as $ut;
+                n.wrapping_shr(rhs as u32) as Self
             }
         }
     };
@@ -289,12 +296,32 @@ mod tests {
 
     #[test]
     fn test_i32_shr_s_negative() {
-        assert_eq!(-2i32.shr_s(1), -1);
+        assert_eq!((-2i32).shr_s(1), -1);
     }
 
     #[test]
     fn test_i32_shr_s_by_negative() {
         assert_eq!(2i32.shr_s(-31), 1);
+    }
+
+    #[test]
+    fn test_i32_shr_u() {
+        assert_eq!(1i32.shr_u(2), 0);
+    }
+
+    #[test]
+    fn test_i32_shr_u_overflow() {
+        assert_eq!(2i32.shr_u(33), 1);
+    }
+
+    #[test]
+    fn test_i32_shr_u_negative() {
+        assert_eq!((-2i32).shr_u(1), 0x7FFFFFFF);
+    }
+
+    #[test]
+    fn test_i32_shr_u_by_negative() {
+        assert_eq!(2i32.shr_u(-31), 1);
     }
 
     #[test]
@@ -311,6 +338,11 @@ mod tests {
     #[test]
     fn test_i64_shr_s() {
         assert_eq!(4i64.shr_s(1), 2i64);
+    }
+
+    #[test]
+    fn test_i64_shr_u() {
+        assert_eq!(1i64.shr_u(2), 0);
     }
 
     #[test]
