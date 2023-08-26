@@ -78,7 +78,7 @@ pub trait IntOps: NumOps {
 }
 
 macro_rules! impl_int_ops {
-    ($t:ty) => {
+    ($t:ty, $ut:ty) => {
         impl IntOps for $t {
             fn clz(self) -> Self {
                 self.leading_zeros() as Self
@@ -102,8 +102,8 @@ macro_rules! impl_int_ops {
                 }
             }
             fn div_u(self, rhs: Self) -> Result<Self> {
-                let a = self.into_unsigned();
-                let b = rhs.into_unsigned();
+                let a = self as $ut;
+                let b = rhs as $ut;
                 if b == 0 {
                     Err(Error::msg("Divide by zero"))
                 } else {
@@ -120,8 +120,8 @@ macro_rules! impl_int_ops {
                 }
             }
             fn rem_u(self, rhs: Self) -> Result<Self> {
-                let a = self.into_unsigned();
-                let b = rhs.into_unsigned();
+                let a = self as $ut;
+                let b = rhs as $ut;
                 if b == 0 {
                     Err(Error::msg("Divide by zero"))
                 } else {
@@ -135,25 +135,8 @@ macro_rules! impl_int_ops {
     };
 }
 
-impl_int_ops!(i32);
-impl_int_ops!(i64);
-
-trait IntoUnsigned<U> {
-    fn into_unsigned(self) -> U;
-}
-
-macro_rules! into_unsigned {
-    ($s:ty, $t:ty) => {
-        impl IntoUnsigned<$t> for $s {
-            fn into_unsigned(self) -> $t {
-                <$t>::from_ne_bytes(self.to_ne_bytes())
-            }
-        }
-    };
-}
-
-into_unsigned!(i32, u32);
-into_unsigned!(i64, u64);
+impl_int_ops!(i32, u32);
+impl_int_ops!(i64, u64);
 
 pub trait FloatOps: NumOps {
     fn neg(self) -> Self
@@ -295,6 +278,26 @@ mod tests {
     }
 
     #[test]
+    fn test_i32_shr_s() {
+        assert_eq!(1i32.shr_s(2), 0);
+    }
+
+    #[test]
+    fn test_i32_shr_s_overflow() {
+        assert_eq!(2i32.shr_s(33), 1);
+    }
+
+    #[test]
+    fn test_i32_shr_s_negative() {
+        assert_eq!(-2i32.shr_s(1), -1);
+    }
+
+    #[test]
+    fn test_i32_shr_s_by_negative() {
+        assert_eq!(2i32.shr_s(-31), 1);
+    }
+
+    #[test]
     fn test_i64_div_s() {
         assert_eq!(1i64.div_s(2i64).unwrap(), 0);
     }
@@ -306,18 +309,8 @@ mod tests {
     }
 
     #[test]
-    fn test_shr_s() {
-        assert_eq!(1i32.shr_s(2), 0);
-    }
-
-    #[test]
-    fn test_shr_s_overflow() {
-        assert_eq!(2i32.shr_s(33), 1);
-    }
-
-    #[test]
-    fn test_shr_s_nagative() {
-        assert_eq!(2i32.shr_s(-31), 1);
+    fn test_i64_shr_s() {
+        assert_eq!(4i64.shr_s(1), 2i64);
     }
 
     #[test]
