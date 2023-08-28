@@ -69,3 +69,56 @@ impl<'a> Parse<'a> for Line<'a> {
         }))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use wast::{
+        core::Instruction,
+        parser::{parse, ParseBuffer},
+    };
+
+    use crate::parser::Line;
+
+    #[test]
+    fn test_line_parse_expr() {
+        let buf = ParseBuffer::new("(i32.const 32)").unwrap();
+        let lp = parse::<Line>(&buf).unwrap();
+
+        if let Line::Expression(line_expr) = lp {
+            assert_eq!(line_expr.expr.instrs.len(), 1);
+            if let Instruction::I32Const(i) = line_expr.expr.instrs[0] {
+                assert_eq!(i, 32);
+            } else {
+                panic!("Expected Instruction::I32Const");
+            }
+        } else {
+            panic!("Expected Line::Expression");
+        }
+    }
+
+    #[test]
+    fn test_line_parse_local() {
+        let buf = ParseBuffer::new("(local $num i32)").unwrap();
+        let lp = parse::<Line>(&buf).unwrap();
+
+        if let Line::Expression(line_expr) = lp {
+            assert_eq!(line_expr.locals.len(), 1);
+            let lc = line_expr.locals.get(0).unwrap();
+            assert_eq!(lc.id.unwrap().name(), "num");
+        } else {
+            panic!("Expected Line::Expression");
+        }
+    }
+
+    #[test]
+    fn test_line_parse_func() {
+        let buf = ParseBuffer::new("(func $f (i32.const 44))").unwrap();
+        let lp = parse::<Line>(&buf).unwrap();
+
+        if let Line::Func(func) = lp {
+            assert_eq!(func.id.unwrap().name(), "f");
+        } else {
+            panic!("Expected Line::Expression");
+        }
+    }
+}
