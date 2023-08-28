@@ -37,6 +37,16 @@ impl Stack {
         }
     }
 
+    pub fn peek(&self) -> Result<Value> {
+        if self.soft_values.len() == 0 {
+            self.check_underflow()?;
+            let idx = self.values.len() - 1;
+            Ok(self.values.get(idx).unwrap().clone())
+        } else {
+            Ok(self.soft_values.last().unwrap().clone())
+        }
+    }
+
     fn check_underflow(&self) -> Result<()> {
         if (self.values.len() as i32 - self.shrink_by as i32 - 1) < 0 {
             return Err(Error::msg("Stack underflow"));
@@ -91,9 +101,11 @@ mod tests {
         let mut stack = Stack::new();
         stack.push(test_val_i32(1));
         stack.push(test_val_i32(2));
+        assert_eq!(stack.peek().unwrap(), test_val_i32(2));
         assert_eq!(stack.pop().unwrap(), test_val_i32(2));
         assert_eq!(stack.pop().unwrap(), test_val_i32(1));
         assert!(stack.pop().is_err());
+        assert!(stack.peek().is_err());
     }
 
     #[test]
@@ -102,6 +114,7 @@ mod tests {
         stack.push(test_val_i32(1));
         stack.push(test_val_i32(2));
         stack.commit().unwrap();
+        assert_eq!(stack.peek().unwrap(), test_val_i32(2));
         assert_eq!(stack.pop().unwrap(), test_val_i32(2));
         assert_eq!(stack.pop().unwrap(), test_val_i32(1));
         assert!(stack.pop().is_err());

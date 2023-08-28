@@ -49,6 +49,11 @@ impl<'a> Handler<'a> {
         self.state.locals.set_by_id(id.name(), value)
     }
 
+    fn local_tee(&mut self, index: u32) -> Result<()> {
+        let value = self.state.stack.peek()?;
+        self.state.locals.set(index as usize, value)
+    }
+
     pub fn handle(&mut self, instr: &Instruction) -> Result<()> {
         match instr {
             Instruction::I32Const(value) => self.i32_const(*value),
@@ -124,6 +129,7 @@ impl<'a> Handler<'a> {
             Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
             Instruction::LocalSet(Index::Num(index, _)) => self.local_set(*index),
             Instruction::LocalSet(Index::Id(id)) => self.local_set_by_id(id),
+            Instruction::LocalTee(Index::Num(index, _)) => self.local_tee(*index),
             _ => Err(Error::msg("Unknown instruction")),
         }
     }

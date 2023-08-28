@@ -749,6 +749,7 @@ fn test_local_set() {
     )
     .unwrap();
     assert_eq!(state.locals.get(1).unwrap().clone(), 15.into());
+    assert!(state.stack.pop().is_err());
 }
 
 #[test]
@@ -828,4 +829,29 @@ fn test_local_set_by_id_error() {
     let id = test_new_index_id(&buf_id);
 
     assert!(exec_instr_handler(&Instruction::LocalSet(id), &mut state).is_err());
+}
+
+#[test]
+fn test_local_tee() {
+    let mut state = State::new();
+    state.stack.push(15.into());
+    state.locals.grow(test_val_i32(0));
+    state.locals.grow(test_val_i32(0));
+    exec_instr_handler(
+        &Instruction::LocalTee(Index::Num(1, Span::from_offset(0))),
+        &mut state,
+    )
+    .unwrap();
+    assert_eq!(state.locals.get(1).unwrap().clone(), 15.into());
+    assert_eq!(state.stack.pop().unwrap(), 15.into());
+}
+
+#[test]
+fn test_local_tee_error() {
+    let mut state = State::new();
+    assert!(exec_instr_handler(
+        &Instruction::LocalTee(Index::Num(0, Span::from_offset(0))),
+        &mut state,
+    )
+    .is_err());
 }
