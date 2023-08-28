@@ -9,7 +9,7 @@
 - [x] I64 instructions
 - [x] F32 instructions
 - [x] F64 instructions
-- [ ] Local tee
+- [x] Local tee
 - [ ] Functions
 - [ ] Mutli line inputs
 - [ ] Print locals
