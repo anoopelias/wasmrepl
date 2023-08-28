@@ -4,15 +4,17 @@
 - [x] Local by id
 - [x] I64 support
 - [x] F32 support
-- [ ] F64 support
-- [ ] I32 instructions
-- [ ] I64 instructions
-- [ ] Print locals
+- [x] F64 support
+- [x] I32 instructions
+- [x] I64 instructions
+- [x] F32 instructions
+- [x] F64 instructions
+- [ ] Local tee
 - [ ] Functions
 - [ ] Mutli line inputs
+- [ ] Print locals
+- [ ] Eq instructions
 - [ ] R/W memory
-- [ ] F32 instructions
-- [ ] F64 instructions
 - [ ] V128 instructions
 - [ ] Check if id already exists in `grow_by_id`
 - [ ] Readme
