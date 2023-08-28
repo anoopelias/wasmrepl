@@ -1,4 +1,5 @@
 use wast::core::Expression;
+use wast::core::Func;
 use wast::core::Local;
 use wast::kw;
 use wast::parser::Parse;
@@ -35,13 +36,23 @@ impl<'a> Parse<'a> for LocalParser<'a> {
     }
 }
 
-pub struct Line<'a> {
+pub enum Line<'a> {
+    Expression(LineExpression<'a>),
+    Func(Func<'a>),
+}
+
+pub struct LineExpression<'a> {
     pub locals: Vec<Local<'a>>,
     pub expr: Expression<'a>,
 }
 
 impl<'a> Parse<'a> for Line<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
+        if parser.peek2::<kw::func>()? {
+            let func = parser.parens(|p| p.parse::<Func>())?;
+            return Ok(Line::Func(func));
+        }
+
         // We need to parse locals explicitly because of this issue:
         // https://github.com/bytecodealliance/wasm-tools/issues/1156
         let mut locals = Vec::new();
@@ -52,9 +63,9 @@ impl<'a> Parse<'a> for Line<'a> {
             })?;
         }
 
-        Ok(Line {
+        Ok(Line::Expression(LineExpression {
             locals,
             expr: parser.parse()?,
-        })
+        }))
     }
 }

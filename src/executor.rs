@@ -2,8 +2,9 @@ use anyhow::{Error, Result};
 use wast::core::{Instruction, Local, ValType};
 
 use crate::handler::Handler;
+use crate::parser::Line;
 use crate::value::Value;
-use crate::{locals::Locals, parser::Line, stack::Stack};
+use crate::{locals::Locals, parser::LineExpression, stack::Stack};
 
 pub struct Executor {
     state: State,
@@ -42,11 +43,22 @@ impl Executor {
     }
 
     pub fn execute(&mut self, line: &Line) -> Result<()> {
-        for lc in line.locals.iter() {
+        match line {
+            Line::Expression(line) => self.execute_line_expression(line),
+            Line::Func(_) => Err(Error::msg("Func not supported yet")),
+        }
+    }
+
+    pub fn to_state(&self) -> String {
+        self.state.stack.to_string()
+    }
+
+    fn execute_line_expression(&mut self, line_expr: &LineExpression) -> Result<()> {
+        for lc in line_expr.locals.iter() {
             self.execute_local(lc)?
         }
 
-        for instr in line.expr.instrs.iter() {
+        for instr in line_expr.expr.instrs.iter() {
             match self.execute_instruction(instr) {
                 Ok(_) => {}
                 Err(err) => {
@@ -58,10 +70,6 @@ impl Executor {
 
         self.state.commit()?;
         Ok(())
-    }
-
-    pub fn to_state(&self) -> String {
-        self.state.stack.to_string()
     }
 
     fn execute_local(&mut self, lc: &Local) -> Result<()> {
@@ -97,7 +105,7 @@ mod tests {
     use wast::token::{Id, Index, Span};
 
     use crate::executor::Executor;
-    use crate::parser::{Line, LocalParser};
+    use crate::parser::{Line, LineExpression, LocalParser};
     use crate::test_utils::{float32_for, float64_for};
 
     // An instruction that is not implemented yet,
@@ -106,14 +114,14 @@ mod tests {
 
     macro_rules! test_line {
         (($( $y:expr ),*)($( $x:expr ),*)) => {
-            Line {
+            Line::Expression(LineExpression {
                 locals:  vec![$( $y ),*],
                 expr: Expression{
                     instrs: Box::new([
                         $( $x ),*
                     ])
                 }
-            }
+            })
         };
     }
 
