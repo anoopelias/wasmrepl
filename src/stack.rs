@@ -24,8 +24,8 @@ impl Stack {
 
     pub fn pop(&mut self) -> Result<Value> {
         if self.soft_values.len() == 0 {
-            self.shrink_by += 1;
             self.check_underflow()?;
+            self.shrink_by += 1;
             let idx = self.values.len() - self.shrink_by;
 
             // We remove the value from the stack only when we commit.
@@ -38,15 +38,13 @@ impl Stack {
     }
 
     fn check_underflow(&self) -> Result<()> {
-        if self.values.len() < self.shrink_by {
+        if (self.values.len() as i32 - self.shrink_by as i32 - 1) < 0 {
             return Err(Error::msg("Stack underflow"));
         }
         Ok(())
     }
 
     pub fn commit(&mut self) -> Result<()> {
-        self.check_underflow()?;
-
         self.values.truncate(self.values.len() - self.shrink_by);
         self.values.append(&mut self.soft_values);
         self.shrink_by = 0;
@@ -62,8 +60,6 @@ impl Stack {
 
     #[allow(dead_code)]
     pub fn to_soft_string(&self) -> Result<String> {
-        self.check_underflow()?;
-
         let mut strs = vec![];
 
         let mut i = 0;
@@ -98,7 +94,6 @@ mod tests {
         assert_eq!(stack.pop().unwrap(), test_val_i32(2));
         assert_eq!(stack.pop().unwrap(), test_val_i32(1));
         assert!(stack.pop().is_err());
-        assert!(stack.to_soft_string().is_err());
     }
 
     #[test]
@@ -201,7 +196,7 @@ mod tests {
         stack.pop().unwrap();
         assert!(stack.pop().is_err());
 
-        assert!(stack.commit().is_err());
+        assert!(stack.commit().is_ok());
     }
 
     #[test]
