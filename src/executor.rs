@@ -12,7 +12,7 @@ pub struct Executor {
 
 pub struct State {
     pub stack: Stack,
-    pub locals: Locals,
+    pub locals: Locals<Value>,
 }
 
 impl State {

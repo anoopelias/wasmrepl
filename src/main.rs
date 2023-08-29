@@ -6,6 +6,7 @@ mod locals;
 mod ops;
 mod parser;
 mod stack;
+mod utils;
 mod value;
 
 #[cfg(test)]

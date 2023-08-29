@@ -1,45 +1,45 @@
-use crate::{dict::Dict, list::List, value::Value};
+use crate::{dict::Dict, list::List, utils::IsSame};
 use anyhow::Result;
 
-pub struct Locals {
-    values: List<Value>,
+pub struct Locals<T: IsSame> {
+    values: List<T>,
     ids: Dict<usize>,
 }
 
-impl Locals {
-    pub fn new() -> Locals {
+impl<T: IsSame> Locals<T> {
+    pub fn new() -> Locals<T> {
         Locals {
             values: List::new(),
             ids: Dict::new(),
         }
     }
 
-    pub fn grow(&mut self, value: Value) -> usize {
+    pub fn grow(&mut self, value: T) -> usize {
         self.values.grow(value)
     }
 
-    pub fn grow_by_id(&mut self, id: &str, value: Value) -> Result<()> {
+    pub fn grow_by_id(&mut self, id: &str, value: T) -> Result<()> {
         // TODO: Check if id already exists
         let index = self.values.grow(value);
         self.ids.set(id, index);
         Ok(())
     }
 
-    pub fn set(&mut self, index: usize, value: Value) -> Result<()> {
+    pub fn set(&mut self, index: usize, value: T) -> Result<()> {
         self.get(index)?.is_same(&value)?;
         self.values.set(index, value)
     }
 
-    pub fn set_by_id(&mut self, id: &str, value: Value) -> Result<()> {
+    pub fn set_by_id(&mut self, id: &str, value: T) -> Result<()> {
         let index = self.ids.get(id)?;
         self.set(index, value)
     }
 
-    pub fn get(&self, index: usize) -> Result<&Value> {
+    pub fn get(&self, index: usize) -> Result<&T> {
         self.values.get(index)
     }
 
-    pub fn get_by_id(&self, id: &str) -> Result<&Value> {
+    pub fn get_by_id(&self, id: &str) -> Result<&T> {
         let index = self.ids.get(id)?;
         self.get(index)
     }
@@ -57,13 +57,16 @@ impl Locals {
 
 #[cfg(test)]
 mod tests {
-    use crate::{locals::Locals, test_utils::test_val_i32, value::Value};
+    use crate::{
+        locals::{IsSame, Locals},
+        test_utils::test_val_i32,
+    };
 
-    fn locals_get_by_id(locals: &Locals, id: &str) -> Value {
+    fn locals_get_by_id<T: IsSame + Clone>(locals: &Locals<T>, id: &str) -> T {
         locals.get_by_id(id).unwrap().clone()
     }
 
-    fn locals_get(locals: &Locals, index: usize) -> Value {
+    fn locals_get<T: IsSame + Clone>(locals: &Locals<T>, index: usize) -> T {
         locals.get(index).unwrap().clone()
     }
 
