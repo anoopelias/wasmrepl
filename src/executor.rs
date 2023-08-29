@@ -4,7 +4,7 @@ use wast::core::{Instruction, Local, ValType};
 use crate::handler::Handler;
 use crate::parser::Line;
 use crate::value::Value;
-use crate::{locals::Locals, parser::LineExpression, stack::Stack};
+use crate::{elements::Elements, parser::LineExpression, stack::Stack};
 
 pub struct Executor {
     state: State,
@@ -12,14 +12,14 @@ pub struct Executor {
 
 pub struct State {
     pub stack: Stack,
-    pub locals: Locals<Value>,
+    pub locals: Elements<Value>,
 }
 
 impl State {
     pub fn new() -> State {
         State {
             stack: Stack::new(),
-            locals: Locals::new(),
+            locals: Elements::new(),
         }
     }
 
