@@ -2,7 +2,7 @@ use crate::{dict::Dict, list::List, value::Value};
 use anyhow::Result;
 
 pub struct Locals {
-    values: List,
+    values: List<Value>,
     ids: Dict<usize>,
 }
 

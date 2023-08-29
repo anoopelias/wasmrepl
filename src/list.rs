@@ -2,15 +2,14 @@ use std::collections::HashMap;
 
 use anyhow::{Error, Result};
 
-use crate::value::Value;
-pub struct List {
-    values: Vec<Value>,
+pub struct List<T> {
+    values: Vec<T>,
     soft_len: usize,
-    soft_values: HashMap<usize, Value>,
+    soft_values: HashMap<usize, T>,
 }
 
-impl List {
-    pub fn new() -> List {
+impl<T> List<T> {
+    pub fn new() -> List<T> {
         List {
             values: Vec::new(),
             soft_values: HashMap::new(),
@@ -18,7 +17,7 @@ impl List {
         }
     }
 
-    pub fn grow(&mut self, value: Value) -> usize {
+    pub fn grow(&mut self, value: T) -> usize {
         self.soft_len += 1;
         let index = self.values.len() + self.soft_len - 1;
         self.soft_values.insert(index, value);
@@ -33,12 +32,12 @@ impl List {
         }
     }
 
-    pub fn set(&mut self, index: usize, value: Value) -> Result<()> {
+    pub fn set(&mut self, index: usize, value: T) -> Result<()> {
         self.soft_values.insert(index, value);
         Ok(())
     }
 
-    pub fn get(&self, index: usize) -> Result<&Value> {
+    pub fn get(&self, index: usize) -> Result<&T> {
         self.has_index(index)?;
         match self.soft_values.get(&index) {
             Some(value) => Ok(value),
