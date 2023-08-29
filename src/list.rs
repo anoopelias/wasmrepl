@@ -47,8 +47,11 @@ impl List {
     }
 
     pub fn commit(&mut self) {
-        for _ in 0..self.soft_len {
-            self.values.push(0.into());
+        // Possible to do this operation in O(n), n being the number of
+        // inserts since the last commit.
+
+        for i in self.values.len()..self.values.len() + self.soft_len {
+            self.values.push(self.soft_values.remove(&i).unwrap());
         }
 
         self.soft_values.drain().for_each(|(k, v)| {
@@ -128,6 +131,24 @@ mod tests {
         assert_eq!(list.get(0).unwrap().clone(), 1.into());
         assert_eq!(list.get(1).unwrap().clone(), 2.into());
         assert!(list.get(2).is_err());
+    }
+
+    #[test]
+    fn test_list_commit_replace_commit() {
+        let mut list = List::new();
+        list.grow(test_val_i32(0));
+        list.grow(test_val_i32(0));
+        list.set(0, 1.into()).unwrap();
+        list.set(1, 2.into()).unwrap();
+        list.commit();
+
+        list.grow(test_val_i32(0));
+        list.set(0, 3.into()).unwrap();
+        list.set(2, 4.into()).unwrap();
+        list.commit();
+
+        assert_eq!(list.get(0).unwrap().clone(), 3.into());
+        assert_eq!(list.get(2).unwrap().clone(), 4.into());
     }
 
     #[test]
