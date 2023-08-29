@@ -46,7 +46,7 @@ impl<T> List<T> {
     }
 
     pub fn commit(&mut self) {
-        // Possible to do this operation in O(n), n being the number of
+        // O(n) operation, n being the number of
         // inserts since the last commit.
 
         for i in self.values.len()..self.values.len() + self.soft_len {
