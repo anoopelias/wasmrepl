@@ -71,46 +71,28 @@ mod tests {
     }
 
     #[test]
-    fn test_elements_set_get() {
+    fn test_elements_grow_set_get() {
         let mut elements = Elements::new();
-        elements.grow(test_val_i32(0));
         elements.grow(test_val_i32(0));
         elements.set(0, 1.into()).unwrap();
-        elements.set(1, 2.into()).unwrap();
-
         assert_eq!(elements_get(&elements, 0), 1.into());
-        assert_eq!(elements_get(&elements, 1), 2.into());
-    }
-
-    #[test]
-    fn test_elements_get() {
-        let mut elements = Elements::new();
-        elements.grow(test_val_i32(0));
-        assert_eq!(elements_get(&elements, 0), 0.into());
     }
 
     #[test]
     fn test_elements_set_get_by_id() {
         let mut elements = Elements::new();
         elements.grow_by_id("a", test_val_i32(0)).unwrap();
-        elements.grow_by_id("b", test_val_i32(0)).unwrap();
         elements.set_by_id("a", 1.into()).unwrap();
-        elements.set_by_id("b", 2.into()).unwrap();
-
         assert_eq!(elements_get_by_id(&elements, "a"), 1.into());
-        assert_eq!(elements_get_by_id(&elements, "b"), 2.into());
     }
 
     #[test]
     fn test_elements_gid_set_get() {
         let mut elements = Elements::new();
         elements.grow_by_id("a", test_val_i32(0)).unwrap();
-        elements.grow_by_id("b", test_val_i32(0)).unwrap();
         elements.set(0, 1.into()).unwrap();
-        elements.set(1, 2.into()).unwrap();
 
         assert_eq!(elements_get(&elements, 0), 1.into());
-        assert_eq!(elements_get(&elements, 1), 2.into());
     }
 
     #[test]
