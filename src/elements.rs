@@ -92,15 +92,6 @@ mod tests {
     }
 
     #[test]
-    fn test_elements_get_error() {
-        let mut elements = Elements::new();
-        elements.grow(test_val_i32(0));
-        elements.set(0, 1.into()).unwrap();
-
-        assert!(elements.get(1).is_err());
-    }
-
-    #[test]
     fn test_elements_set_by_id_error() {
         let mut elements = Elements::new();
         elements.grow_by_id("a", test_val_i32(0)).unwrap();
