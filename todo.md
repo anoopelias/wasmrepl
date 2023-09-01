@@ -10,6 +10,8 @@
 - [x] F32 instructions
 - [x] F64 instructions
 - [x] Local tee
+- [ ] Look at tests in `elements`, isn't these too much?
+- [ ] Remove utils function `test_val_xx`
 - [ ] Functions
 - [ ] Mutli line inputs
 - [ ] Print locals
