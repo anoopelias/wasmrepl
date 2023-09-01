@@ -1,8 +1,6 @@
 use anyhow::{Error, Result};
 use std::fmt::{self, Display};
 
-use crate::utils::IsSame;
-
 #[derive(PartialEq, Debug)]
 pub enum Value {
     I32(i32),
@@ -29,18 +27,6 @@ impl Clone for Value {
             Self::I64(n) => Self::I64(*n),
             Self::F32(n) => Self::F32(*n),
             Self::F64(n) => Self::F64(*n),
-        }
-    }
-}
-
-impl IsSame for Value {
-    fn is_same(&self, other: &Self) -> Result<()> {
-        match (self, other) {
-            (Self::I32(_), Self::I32(_)) => Ok(()),
-            (Self::I64(_), Self::I64(_)) => Ok(()),
-            (Self::F32(_), Self::F32(_)) => Ok(()),
-            (Self::F64(_), Self::F64(_)) => Ok(()),
-            _ => Err(Error::msg("Type mismatch")),
         }
     }
 }
@@ -85,12 +71,22 @@ impl Value {
     pub fn default_f64() -> Value {
         Self::F64(0.0)
     }
+
+    pub fn is_same(&self, other: &Self) -> Result<()> {
+        match (self, other) {
+            (Self::I32(_), Self::I32(_)) => Ok(()),
+            (Self::I64(_), Self::I64(_)) => Ok(()),
+            (Self::F32(_), Self::F32(_)) => Ok(()),
+            (Self::F64(_), Self::F64(_)) => Ok(()),
+            _ => Err(Error::msg("Type mismatch")),
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::test_utils::{test_val_f32, test_val_f64, test_val_i32, test_val_i64};
-    use crate::{utils::IsSame, value::Value};
+    use crate::value::Value;
     use anyhow::Result;
 
     #[test]

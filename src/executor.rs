@@ -2,9 +2,10 @@ use anyhow::{Error, Result};
 use wast::core::{Instruction, Local, ValType};
 
 use crate::handler::Handler;
+use crate::locals::Locals;
 use crate::parser::Line;
 use crate::value::Value;
-use crate::{elements::Elements, parser::LineExpression, stack::Stack};
+use crate::{parser::LineExpression, stack::Stack};
 
 pub struct Executor {
     state: State,
@@ -12,14 +13,14 @@ pub struct Executor {
 
 pub struct State {
     pub stack: Stack,
-    pub locals: Elements<Value>,
+    pub locals: Locals,
 }
 
 impl State {
     pub fn new() -> State {
         State {
             stack: Stack::new(),
-            locals: Elements::new(),
+            locals: Locals::new(),
         }
     }
 

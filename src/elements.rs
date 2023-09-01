@@ -1,12 +1,12 @@
-use crate::{dict::Dict, list::List, utils::IsSame};
+use crate::{dict::Dict, list::List};
 use anyhow::Result;
 
-pub struct Elements<T: IsSame> {
+pub struct Elements<T> {
     values: List<T>,
     ids: Dict<usize>,
 }
 
-impl<T: IsSame> Elements<T> {
+impl<T> Elements<T> {
     pub fn new() -> Elements<T> {
         Elements {
             values: List::new(),
@@ -26,7 +26,6 @@ impl<T: IsSame> Elements<T> {
     }
 
     pub fn set(&mut self, index: usize, value: T) -> Result<()> {
-        self.get(index)?.is_same(&value)?;
         self.values.set(index, value)
     }
 
@@ -57,16 +56,13 @@ impl<T: IsSame> Elements<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        elements::{Elements, IsSame},
-        test_utils::test_val_i32,
-    };
+    use crate::{elements::Elements, test_utils::test_val_i32};
 
-    fn elements_get_by_id<T: IsSame + Clone>(elements: &Elements<T>, id: &str) -> T {
+    fn elements_get_by_id<T: Clone>(elements: &Elements<T>, id: &str) -> T {
         elements.get_by_id(id).unwrap().clone()
     }
 
-    fn elements_get<T: IsSame + Clone>(elements: &Elements<T>, index: usize) -> T {
+    fn elements_get<T: Clone>(elements: &Elements<T>, index: usize) -> T {
         elements.get(index).unwrap().clone()
     }
 
@@ -102,15 +98,6 @@ mod tests {
         elements.set(0, 1.into()).unwrap();
 
         assert!(elements.get(1).is_err());
-    }
-
-    #[test]
-    fn test_elements_set_error() {
-        let mut elements = Elements::new();
-        elements.grow(test_val_i32(0));
-        elements.set(0, 1.into()).unwrap();
-
-        assert!(elements.set(1, 2.into()).is_err());
     }
 
     #[test]
@@ -201,7 +188,6 @@ mod tests {
         elements.set(0, 3.into()).unwrap();
         assert_eq!(elements_get(&elements, 0), 3.into());
         assert_eq!(elements_get(&elements, 1), 0.into());
-        assert!(elements.set(2, 4.into()).is_err());
     }
 
     #[test]
@@ -219,6 +205,5 @@ mod tests {
         elements.set_by_id("a", 3.into()).unwrap();
         assert_eq!(elements_get_by_id(&elements, "a"), 3.into());
         assert_eq!(elements_get_by_id(&elements, "c"), 0.into());
-        assert!(elements.set_by_id("b", 4.into()).is_err());
     }
 }
