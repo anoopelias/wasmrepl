@@ -56,7 +56,7 @@ impl<T> Elements<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{elements::Elements, test_utils::test_val_i32};
+    use crate::elements::Elements;
 
     fn elements_get_by_id<T: Clone>(elements: &Elements<T>, id: &str) -> T {
         elements.get_by_id(id).unwrap().clone()
@@ -69,42 +69,42 @@ mod tests {
     #[test]
     fn test_elements_grow_set_get() {
         let mut elements = Elements::new();
-        elements.grow(test_val_i32(0));
-        elements.set(0, 1.into()).unwrap();
-        assert_eq!(elements_get(&elements, 0), 1.into());
+        elements.grow(0);
+        elements.set(0, 1).unwrap();
+        assert_eq!(elements_get(&elements, 0), 1);
     }
 
     #[test]
     fn test_elements_set_get_by_id() {
         let mut elements = Elements::new();
-        elements.grow_by_id("a", test_val_i32(0)).unwrap();
-        elements.set_by_id("a", 1.into()).unwrap();
-        assert_eq!(elements_get_by_id(&elements, "a"), 1.into());
+        elements.grow_by_id("a", 0).unwrap();
+        elements.set_by_id("a", 1).unwrap();
+        assert_eq!(elements_get_by_id(&elements, "a"), 1);
     }
 
     #[test]
     fn test_elements_gid_set_get() {
         let mut elements = Elements::new();
-        elements.grow_by_id("a", test_val_i32(0)).unwrap();
-        elements.set(0, 1.into()).unwrap();
+        elements.grow_by_id("a", 0).unwrap();
+        elements.set(0, 1).unwrap();
 
-        assert_eq!(elements_get(&elements, 0), 1.into());
+        assert_eq!(elements_get(&elements, 0), 1);
     }
 
     #[test]
     fn test_elements_set_by_id_error() {
         let mut elements = Elements::new();
-        elements.grow_by_id("a", test_val_i32(0)).unwrap();
-        elements.set_by_id("a", 1.into()).unwrap();
+        elements.grow_by_id("a", 0).unwrap();
+        elements.set_by_id("a", 1).unwrap();
 
-        assert!(elements.set_by_id("b", 2.into()).is_err());
+        assert!(elements.set_by_id("b", 2).is_err());
     }
 
     #[test]
     fn test_elements_get_by_id_error() {
         let mut elements = Elements::new();
-        elements.grow_by_id("a", test_val_i32(0)).unwrap();
-        elements.set_by_id("a", 1.into()).unwrap();
+        elements.grow_by_id("a", 0).unwrap();
+        elements.set_by_id("a", 1).unwrap();
 
         assert!(elements.get_by_id("b").is_err());
     }
@@ -112,89 +112,89 @@ mod tests {
     #[test]
     fn test_elements_commit() {
         let mut elements = Elements::new();
-        elements.grow(test_val_i32(0));
-        elements.set(0, 1.into()).unwrap();
+        elements.grow(0);
+        elements.set(0, 1).unwrap();
         elements.commit();
 
-        elements.grow(test_val_i32(0));
-        elements.set(0, 2.into()).unwrap();
-        elements.set(1, 4.into()).unwrap();
+        elements.grow(0);
+        elements.set(0, 2).unwrap();
+        elements.set(1, 4).unwrap();
         elements.commit();
 
-        assert_eq!(elements_get(&elements, 0), 2.into());
-        assert_eq!(elements_get(&elements, 1), 4.into());
+        assert_eq!(elements_get(&elements, 0), 2);
+        assert_eq!(elements_get(&elements, 1), 4);
         assert!(elements.get(2).is_err());
     }
 
     #[test]
     fn test_elements_commit_rollback() {
         let mut elements = Elements::new();
-        elements.grow(test_val_i32(0));
-        elements.grow(test_val_i32(0));
-        elements.set(0, 1.into()).unwrap();
-        elements.set(1, 2.into()).unwrap();
+        elements.grow(0);
+        elements.grow(0);
+        elements.set(0, 1).unwrap();
+        elements.set(1, 2).unwrap();
         elements.commit();
 
-        elements.grow(test_val_i32(0));
-        elements.set(0, 3.into()).unwrap();
-        elements.set(2, 4.into()).unwrap();
+        elements.grow(0);
+        elements.set(0, 3).unwrap();
+        elements.set(2, 4).unwrap();
         elements.rollback();
 
-        assert_eq!(elements_get(&elements, 0), 1.into());
-        assert_eq!(elements_get(&elements, 1), 2.into());
+        assert_eq!(elements_get(&elements, 0), 1);
+        assert_eq!(elements_get(&elements, 1), 2);
         assert!(elements.get(2).is_err());
     }
 
     #[test]
     fn test_elements_commit_rollback_id() {
         let mut elements = Elements::new();
-        elements.grow_by_id("a", test_val_i32(0)).unwrap();
-        elements.grow_by_id("b", test_val_i32(0)).unwrap();
-        elements.set_by_id("a", 1.into()).unwrap();
-        elements.set_by_id("b", 2.into()).unwrap();
+        elements.grow_by_id("a", 0).unwrap();
+        elements.grow_by_id("b", 0).unwrap();
+        elements.set_by_id("a", 1).unwrap();
+        elements.set_by_id("b", 2).unwrap();
         elements.commit();
 
-        elements.grow_by_id("c", test_val_i32(0)).unwrap();
-        elements.set_by_id("a", 3.into()).unwrap();
-        elements.set_by_id("c", 4.into()).unwrap();
+        elements.grow_by_id("c", 0).unwrap();
+        elements.set_by_id("a", 3).unwrap();
+        elements.set_by_id("c", 4).unwrap();
         elements.rollback();
 
-        assert_eq!(elements_get_by_id(&elements, "a"), 1.into());
-        assert_eq!(elements_get_by_id(&elements, "b"), 2.into());
+        assert_eq!(elements_get_by_id(&elements, "a"), 1);
+        assert_eq!(elements_get_by_id(&elements, "b"), 2);
         assert!(elements.get_by_id("c").is_err());
     }
 
     #[test]
     fn test_elements_rollback_recovery() {
         let mut elements = Elements::new();
-        elements.grow(test_val_i32(0));
-        elements.set(0, 1.into()).unwrap();
+        elements.grow(0);
+        elements.set(0, 1).unwrap();
         elements.commit();
 
-        elements.grow(test_val_i32(0));
-        elements.set(1, 2.into()).unwrap();
+        elements.grow(0);
+        elements.set(1, 2).unwrap();
         elements.rollback();
 
-        elements.grow(test_val_i32(0));
-        elements.set(0, 3.into()).unwrap();
-        assert_eq!(elements_get(&elements, 0), 3.into());
-        assert_eq!(elements_get(&elements, 1), 0.into());
+        elements.grow(0);
+        elements.set(0, 3).unwrap();
+        assert_eq!(elements_get(&elements, 0), 3);
+        assert_eq!(elements_get(&elements, 1), 0);
     }
 
     #[test]
     fn test_elements_rollback_recovery_id() {
         let mut elements = Elements::new();
-        elements.grow_by_id("a", test_val_i32(0)).unwrap();
-        elements.set_by_id("a", 1.into()).unwrap();
+        elements.grow_by_id("a", 0).unwrap();
+        elements.set_by_id("a", 1).unwrap();
         elements.commit();
 
-        elements.grow_by_id("b", test_val_i32(0)).unwrap();
-        elements.set_by_id("b", 2.into()).unwrap();
+        elements.grow_by_id("b", 0).unwrap();
+        elements.set_by_id("b", 2).unwrap();
         elements.rollback();
 
-        elements.grow_by_id("c", test_val_i32(0)).unwrap();
-        elements.set_by_id("a", 3.into()).unwrap();
-        assert_eq!(elements_get_by_id(&elements, "a"), 3.into());
-        assert_eq!(elements_get_by_id(&elements, "c"), 0.into());
+        elements.grow_by_id("c", 0).unwrap();
+        elements.set_by_id("a", 3).unwrap();
+        assert_eq!(elements_get_by_id(&elements, "a"), 3);
+        assert_eq!(elements_get_by_id(&elements, "c"), 0);
     }
 }

@@ -1,6 +1,5 @@
 use crate::{
     executor::State,
-    test_utils::test_val_i32,
     test_utils::{float32_for, float64_for},
     value::Value,
 };
@@ -717,7 +716,7 @@ fn test_f64_copysign() {
 #[test]
 fn test_local_get() {
     let mut state = State::new();
-    state.locals.grow(test_val_i32(0));
+    state.locals.grow(0.into());
     state.locals.set(0, 42.into()).unwrap();
     exec_instr_handler(
         &Instruction::LocalGet(Index::Num(0, Span::from_offset(0))),
@@ -741,8 +740,8 @@ fn test_local_get_error() {
 fn test_local_set() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow(test_val_i32(0));
-    state.locals.grow(test_val_i32(0));
+    state.locals.grow(0.into());
+    state.locals.grow(0.into());
     exec_instr_handler(
         &Instruction::LocalSet(Index::Num(1, Span::from_offset(0))),
         &mut state,
@@ -776,7 +775,7 @@ fn test_local_set_stack_error() {
 #[test]
 fn test_local_get_by_id() {
     let mut state = State::new();
-    state.locals.grow_by_id("num", test_val_i32(0)).unwrap();
+    state.locals.grow_by_id("num", 0.into()).unwrap();
     state.locals.set(0, 42.into()).unwrap();
 
     let str_id = String::from("$num");
@@ -790,7 +789,7 @@ fn test_local_get_by_id() {
 #[test]
 fn test_local_get_by_id_error() {
     let mut state = State::new();
-    state.locals.grow_by_id("num", test_val_i32(0)).unwrap();
+    state.locals.grow_by_id("num", 0.into()).unwrap();
     state.locals.set(0, 42.into()).unwrap();
 
     let str_id = String::from("$num_other");
@@ -804,11 +803,8 @@ fn test_local_get_by_id_error() {
 fn test_local_set_by_id() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow_by_id("num", test_val_i32(0)).unwrap();
-    state
-        .locals
-        .grow_by_id("num_other", test_val_i32(0))
-        .unwrap();
+    state.locals.grow_by_id("num", 0.into()).unwrap();
+    state.locals.grow_by_id("num_other", 0.into()).unwrap();
 
     let str_id = String::from("$num_other");
     let buf_id = ParseBuffer::new(&str_id).unwrap();
@@ -823,7 +819,7 @@ fn test_local_set_by_id() {
 fn test_local_set_by_id_error() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow_by_id("num", test_val_i32(0)).unwrap();
+    state.locals.grow_by_id("num", 0.into()).unwrap();
 
     let str_id = String::from("$num_other");
     let buf_id = ParseBuffer::new(&str_id).unwrap();
@@ -836,8 +832,8 @@ fn test_local_set_by_id_error() {
 fn test_local_tee() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow(test_val_i32(0));
-    state.locals.grow(test_val_i32(0));
+    state.locals.grow(0.into());
+    state.locals.grow(0.into());
     exec_instr_handler(
         &Instruction::LocalTee(Index::Num(1, Span::from_offset(0))),
         &mut state,
@@ -861,11 +857,8 @@ fn test_local_tee_error() {
 fn test_local_tee_by_id() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow_by_id("num", test_val_i32(0)).unwrap();
-    state
-        .locals
-        .grow_by_id("num_other", test_val_i32(0))
-        .unwrap();
+    state.locals.grow_by_id("num", 0.into()).unwrap();
+    state.locals.grow_by_id("num_other", 0.into()).unwrap();
 
     let str_id = String::from("$num_other");
     let buf_id = ParseBuffer::new(&str_id).unwrap();
@@ -880,7 +873,7 @@ fn test_local_tee_by_id() {
 fn test_local_tee_by_id_error() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow_by_id("num", test_val_i32(0)).unwrap();
+    state.locals.grow_by_id("num", 0.into()).unwrap();
 
     let str_id = String::from("$num_other");
     let buf_id = ParseBuffer::new(&str_id).unwrap();

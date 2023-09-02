@@ -67,108 +67,108 @@ impl<T> List<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{list::List, test_utils::test_val_i32};
+    use crate::list::List;
 
     #[test]
     fn test_list_get_set() {
         let mut list = List::new();
-        assert_eq!(list.grow(test_val_i32(0)), 0);
-        assert_eq!(list.grow(test_val_i32(0)), 1);
-        list.set(0, 1.into()).unwrap();
-        list.set(1, 2.into()).unwrap();
+        assert_eq!(list.grow(0), 0);
+        assert_eq!(list.grow(0), 1);
+        list.set(0, 1).unwrap();
+        list.set(1, 2).unwrap();
 
-        assert_eq!(list.get(0).unwrap().clone(), 1.into());
-        assert_eq!(list.get(1).unwrap().clone(), 2.into());
+        assert_eq!(list.get(0).unwrap().clone(), 1);
+        assert_eq!(list.get(1).unwrap().clone(), 2);
         assert!(list.get(2).is_err());
     }
 
     #[test]
     fn test_list_get_set_commit() {
         let mut list = List::new();
-        list.grow(test_val_i32(0));
-        list.grow(test_val_i32(0));
-        list.set(0, 1.into()).unwrap();
-        list.set(1, 2.into()).unwrap();
+        list.grow(0);
+        list.grow(0);
+        list.set(0, 1).unwrap();
+        list.set(1, 2).unwrap();
         list.commit();
 
-        assert_eq!(list.get(0).unwrap().clone(), 1.into());
-        assert_eq!(list.get(1).unwrap().clone(), 2.into());
+        assert_eq!(list.get(0).unwrap().clone(), 1);
+        assert_eq!(list.get(1).unwrap().clone(), 2);
     }
 
     #[test]
     fn test_list_commit_grow() {
         let mut list = List::new();
-        list.grow(test_val_i32(0));
-        list.grow(test_val_i32(0));
-        list.set(0, 1.into()).unwrap();
-        list.set(1, 2.into()).unwrap();
+        list.grow(0);
+        list.grow(0);
+        list.set(0, 1).unwrap();
+        list.set(1, 2).unwrap();
         list.commit();
 
-        assert_eq!(list.grow(test_val_i32(0)), 2);
-        assert_eq!(list.get(2).unwrap().clone(), 0.into());
-        list.set(2, 3.into()).unwrap();
-        list.set(0, 4.into()).unwrap();
-        assert_eq!(list.get(2).unwrap().clone(), 3.into());
-        assert_eq!(list.get(0).unwrap().clone(), 4.into());
+        assert_eq!(list.grow(0), 2);
+        assert_eq!(list.get(2).unwrap().clone(), 0);
+        list.set(2, 3).unwrap();
+        list.set(0, 4).unwrap();
+        assert_eq!(list.get(2).unwrap().clone(), 3);
+        assert_eq!(list.get(0).unwrap().clone(), 4);
         assert!(list.get(3).is_err());
     }
 
     #[test]
     fn test_list_commit_rollback() {
         let mut list = List::new();
-        list.grow(test_val_i32(0));
-        list.grow(test_val_i32(0));
-        list.set(0, 1.into()).unwrap();
-        list.set(1, 2.into()).unwrap();
+        list.grow(0);
+        list.grow(0);
+        list.set(0, 1).unwrap();
+        list.set(1, 2).unwrap();
         list.commit();
 
-        list.grow(test_val_i32(0));
-        list.set(2, 3.into()).unwrap();
-        list.set(0, 4.into()).unwrap();
+        list.grow(0);
+        list.set(2, 3).unwrap();
+        list.set(0, 4).unwrap();
         list.rollback();
 
-        assert_eq!(list.get(0).unwrap().clone(), 1.into());
-        assert_eq!(list.get(1).unwrap().clone(), 2.into());
+        assert_eq!(list.get(0).unwrap().clone(), 1);
+        assert_eq!(list.get(1).unwrap().clone(), 2);
         assert!(list.get(2).is_err());
     }
 
     #[test]
     fn test_list_commit_replace_commit() {
         let mut list = List::new();
-        list.grow(test_val_i32(0));
-        list.grow(test_val_i32(0));
-        list.set(0, 1.into()).unwrap();
-        list.set(1, 2.into()).unwrap();
+        list.grow(0);
+        list.grow(0);
+        list.set(0, 1).unwrap();
+        list.set(1, 2).unwrap();
         list.commit();
 
-        list.grow(test_val_i32(0));
-        list.set(0, 3.into()).unwrap();
-        list.set(2, 4.into()).unwrap();
+        list.grow(0);
+        list.set(0, 3).unwrap();
+        list.set(2, 4).unwrap();
         list.commit();
 
-        assert_eq!(list.get(0).unwrap().clone(), 3.into());
-        assert_eq!(list.get(2).unwrap().clone(), 4.into());
+        assert_eq!(list.get(0).unwrap().clone(), 3);
+        assert_eq!(list.get(2).unwrap().clone(), 4);
     }
 
     #[test]
     fn test_list_rollback_reuse() {
         let mut list = List::new();
-        list.grow(test_val_i32(0));
-        list.grow(test_val_i32(0));
-        list.set(0, 1.into()).unwrap();
-        list.set(1, 2.into()).unwrap();
+        list.grow(0);
+        list.grow(0);
+        list.set(0, 1).unwrap();
+        list.set(1, 2).unwrap();
         list.commit();
 
-        list.grow(test_val_i32(0));
-        list.set(2, 3.into()).unwrap();
-        list.set(0, 4.into()).unwrap();
+        list.grow(0);
+        list.set(2, 3).unwrap();
+        list.set(0, 4).unwrap();
         list.rollback();
 
-        assert_eq!(list.grow(test_val_i32(0)), 2);
-        list.set(2, 5.into()).unwrap();
-        list.set(0, 6.into()).unwrap();
-        assert_eq!(list.get(2).unwrap().clone(), 5.into());
-        assert_eq!(list.get(0).unwrap().clone(), 6.into());
+        assert_eq!(list.grow(0), 2);
+        list.set(2, 5).unwrap();
+        list.set(0, 6).unwrap();
+        assert_eq!(list.get(2).unwrap().clone(), 5);
+        assert_eq!(list.get(0).unwrap().clone(), 6);
         assert!(list.get(3).is_err());
     }
 }
