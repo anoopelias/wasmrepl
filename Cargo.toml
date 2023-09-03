@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.72"
 rustyline = "12.0.0"
-wast = "62.0.1"
+wast = "64.0.0"

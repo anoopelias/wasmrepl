@@ -101,12 +101,12 @@ fn default_value(lc: &Local) -> Result<Value> {
 
 #[cfg(test)]
 mod tests {
-    use wast::core::{Expression, Instruction, Local, ValType};
+    use wast::core::{Expression, Instruction, Local, LocalParser, ValType};
     use wast::parser::{self as wastparser, ParseBuffer};
     use wast::token::{Id, Index, Span};
 
     use crate::executor::Executor;
-    use crate::parser::{Line, LineExpression, LocalParser};
+    use crate::parser::{Line, LineExpression};
     use crate::test_utils::{float32_for, float64_for};
 
     // An instruction that is not implemented yet,
