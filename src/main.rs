@@ -4,6 +4,7 @@ mod executor;
 mod handler;
 mod list;
 mod locals;
+mod model;
 mod ops;
 mod parser;
 mod stack;
