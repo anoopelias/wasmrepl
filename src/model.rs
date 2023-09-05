@@ -8,6 +8,41 @@ use wast::{
 
 use anyhow::{Error, Result};
 
+use crate::parser::{Line as WastLine, LineExpression as WastLineExpression};
+
+pub enum Line {
+    Expression(LineExpression),
+    Func(Func),
+}
+
+impl TryFrom<&WastLine<'_>> for Line {
+    type Error = Error;
+    fn try_from(line: &WastLine) -> Result<Self> {
+        match line {
+            WastLine::Expression(line_expr) => Ok(Line::Expression(line_expr.try_into()?)),
+            WastLine::Func(func) => Ok(Line::Func(func.try_into()?)),
+        }
+    }
+}
+
+pub struct LineExpression {
+    pub locals: Vec<Local>,
+    pub expr: Expression,
+}
+
+impl TryFrom<&WastLineExpression<'_>> for LineExpression {
+    type Error = Error;
+    fn try_from(line_expr: &WastLineExpression) -> Result<Self> {
+        let mut locals = Vec::new();
+        for local in line_expr.locals.iter() {
+            locals.push(local.try_into()?);
+        }
+
+        let expr: Expression = (&line_expr.expr).try_into()?;
+        Ok(LineExpression { locals, expr })
+    }
+}
+
 pub struct Func {
     pub id: Option<String>,
 }
@@ -253,7 +288,8 @@ mod tests {
     use std::vec;
 
     use crate::{
-        model::{Expression, Func, Index, Instruction, Local, ValType},
+        model::{Expression, Func, Index, Instruction, Line, LineExpression, Local, ValType},
+        parser::{Line as WastLine, LineExpression as WastLineExpression},
         test_utils::{float32_for, float64_for},
     };
     use wast::{
@@ -383,5 +419,70 @@ mod tests {
         .unwrap();
 
         assert_eq!(func.id, Some(String::from("fun1")));
+    }
+
+    #[test]
+    fn test_from_wast_line_expression() {
+        let line_expr = LineExpression::try_from(&WastLineExpression {
+            locals: vec![test_new_local_i32()],
+            expr: WastExpression {
+                instrs: Box::new([WastInstruction::I32Const(2)]),
+            },
+        })
+        .unwrap();
+
+        assert_eq!(line_expr.locals.len(), 1);
+        assert_eq!(line_expr.locals[0].val_type, ValType::I32);
+        assert_eq!(line_expr.expr.instrs.len(), 1);
+        assert_eq!(line_expr.expr.instrs[0], Instruction::I32Const(2));
+    }
+
+    #[test]
+    fn test_from_wast_line_for_line_expression() {
+        let line_expression = Line::try_from(&WastLine::Expression(WastLineExpression {
+            locals: vec![test_new_local_i32()],
+            expr: WastExpression {
+                instrs: Box::new([WastInstruction::I32Const(2)]),
+            },
+        }))
+        .unwrap();
+
+        if let Line::Expression(line_expr) = line_expression {
+            assert_eq!(line_expr.locals.len(), 1);
+            assert_eq!(line_expr.locals[0].val_type, ValType::I32);
+            assert_eq!(line_expr.expr.instrs.len(), 1);
+            assert_eq!(line_expr.expr.instrs[0], Instruction::I32Const(2));
+        } else {
+            panic!("Expected Line::Expression");
+        }
+    }
+
+    #[test]
+    fn test_from_wast_line_for_func() {
+        let str_id = String::from("$fun1");
+        let buf_id = ParseBuffer::new(&str_id).unwrap();
+        let id = parser::parse::<Id>(&buf_id).unwrap();
+        let index = WastIndex::Id(id);
+
+        let line_func = Line::try_from(&WastLine::Func(WastFunc {
+            id: Some(id),
+            name: None,
+            exports: InlineExport { names: vec![] },
+            ty: TypeUse::new_with_index(index),
+            span: Span::from_offset(0),
+            kind: wast::core::FuncKind::Inline {
+                locals: Box::new([]),
+                expression: WastExpression {
+                    instrs: Box::new([]),
+                },
+            },
+        }))
+        .unwrap();
+
+        if let Line::Func(func) = line_func {
+            assert_eq!(func.id, Some(String::from("fun1")));
+        } else {
+            panic!("Expected Line::Func");
+        }
     }
 }
