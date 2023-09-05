@@ -8,19 +8,14 @@ use wast::{
 
 use anyhow::{Error, Result};
 
-pub trait FromWast<T> {
-    fn from_wast(wast: &T) -> Result<Self>
-    where
-        Self: Sized;
-}
-
 pub struct Func {
     pub id: Option<String>,
 }
 
-impl FromWast<WastFunc<'_>> for Func {
-    fn from_wast(func: &WastFunc) -> Result<Self> {
-        let id = Option::from_wast(&func.id)?;
+impl TryFrom<&WastFunc<'_>> for Func {
+    type Error = Error;
+    fn try_from(func: &WastFunc) -> Result<Self> {
+        let id = from_id(func.id);
         Ok(Func { id })
     }
 }
@@ -30,17 +25,12 @@ pub struct Local {
     pub val_type: ValType,
 }
 
-impl FromWast<WastLocal<'_>> for Local {
-    fn from_wast(local: &WastLocal) -> Result<Self> {
-        let id = Option::from_wast(&local.id)?;
-        let val_type = ValType::from_wast(&local.ty)?;
+impl TryFrom<&WastLocal<'_>> for Local {
+    type Error = Error;
+    fn try_from(local: &WastLocal) -> Result<Self> {
+        let id = from_id(local.id);
+        let val_type: ValType = (&local.ty).try_into()?;
         Ok(Local { id, val_type })
-    }
-}
-
-impl FromWast<Option<Id<'_>>> for Option<String> {
-    fn from_wast(id: &Option<Id>) -> Result<Self> {
-        Ok(id.map(|s| s.name().to_string()))
     }
 }
 
@@ -52,8 +42,9 @@ pub enum ValType {
     F64,
 }
 
-impl FromWast<WastValType<'_>> for ValType {
-    fn from_wast(val_type: &WastValType) -> Result<Self> {
+impl TryFrom<&WastValType<'_>> for ValType {
+    type Error = Error;
+    fn try_from(val_type: &WastValType) -> Result<Self> {
         match val_type {
             WastValType::I32 => Ok(ValType::I32),
             WastValType::I64 => Ok(ValType::I64),
@@ -68,12 +59,13 @@ pub struct Expression {
     pub instrs: Vec<Instruction>,
 }
 
-impl FromWast<WastExpression<'_>> for Expression {
-    fn from_wast(expr: &WastExpression) -> Result<Self> {
+impl TryFrom<&WastExpression<'_>> for Expression {
+    type Error = Error;
+    fn try_from(expr: &WastExpression) -> Result<Self> {
         let mut instrs = Vec::new();
 
         for instr in expr.instrs.iter() {
-            instrs.push(Instruction::from_wast(instr)?);
+            instrs.push(instr.try_into()?);
         }
         Ok(Expression { instrs })
     }
@@ -85,13 +77,18 @@ pub enum Index {
     Num(u32),
 }
 
-impl FromWast<WastIndex<'_>> for Index {
-    fn from_wast(index: &WastIndex) -> Result<Self> {
+impl TryFrom<&WastIndex<'_>> for Index {
+    type Error = Error;
+    fn try_from(index: &WastIndex) -> Result<Self> {
         match index {
             WastIndex::Id(id) => Ok(Index::Id(id.name().to_string())),
             WastIndex::Num(num, _) => Ok(Index::Num(*num)),
         }
     }
+}
+
+fn from_id(id: Option<Id>) -> Option<String> {
+    id.map(|id| id.name().to_string())
 }
 
 #[derive(PartialEq, Debug)]
@@ -170,9 +167,10 @@ pub enum Instruction {
     LocalTee(Index),
 }
 
-impl FromWast<WastInstruction<'_>> for Instruction {
-    fn from_wast(wast: &WastInstruction) -> Result<Self> {
-        match wast {
+impl TryFrom<&WastInstruction<'_>> for Instruction {
+    type Error = Error;
+    fn try_from(instruction: &WastInstruction) -> Result<Self> {
+        match instruction {
             WastInstruction::Drop => Ok(Instruction::Drop),
             WastInstruction::I32Const(i) => Ok(Instruction::I32Const(*i)),
             WastInstruction::I32Clz => Ok(Instruction::I32Clz),
@@ -242,9 +240,9 @@ impl FromWast<WastInstruction<'_>> for Instruction {
             WastInstruction::F64Min => Ok(Instruction::F64Min),
             WastInstruction::F64Max => Ok(Instruction::F64Max),
             WastInstruction::F64Copysign => Ok(Instruction::F64Copysign),
-            WastInstruction::LocalGet(index) => Ok(Instruction::LocalGet(Index::from_wast(index)?)),
-            WastInstruction::LocalSet(index) => Ok(Instruction::LocalSet(Index::from_wast(index)?)),
-            WastInstruction::LocalTee(index) => Ok(Instruction::LocalTee(Index::from_wast(index)?)),
+            WastInstruction::LocalGet(index) => Ok(Instruction::LocalGet(index.try_into()?)),
+            WastInstruction::LocalSet(index) => Ok(Instruction::LocalSet(index.try_into()?)),
+            WastInstruction::LocalTee(index) => Ok(Instruction::LocalTee(index.try_into()?)),
             _ => Err(Error::msg("Unsupported instruction")),
         }
     }
@@ -255,7 +253,7 @@ mod tests {
     use std::vec;
 
     use crate::{
-        model::{Expression, FromWast, Func, Index, Instruction, Local, ValType},
+        model::{Expression, Func, Index, Instruction, Local, ValType},
         test_utils::{float32_for, float64_for},
     };
     use wast::{
@@ -277,7 +275,7 @@ mod tests {
 
     #[test]
     fn test_from_wast_instruction() {
-        let instr = Instruction::from_wast(&WastInstruction::I32Const(2)).unwrap();
+        let instr = Instruction::try_from(&WastInstruction::I32Const(2)).unwrap();
         assert_eq!(instr, Instruction::I32Const(2));
     }
 
@@ -287,7 +285,7 @@ mod tests {
         let buf_f32 = ParseBuffer::new(&str_f32).unwrap();
 
         let instr =
-            Instruction::from_wast(&WastInstruction::F32Const(float32_for(&buf_f32))).unwrap();
+            Instruction::try_from(&WastInstruction::F32Const(float32_for(&buf_f32))).unwrap();
         assert_eq!(instr, Instruction::F32Const(3.14));
     }
 
@@ -297,13 +295,13 @@ mod tests {
         let buf_f64 = ParseBuffer::new(&str_f64).unwrap();
 
         let instr =
-            Instruction::from_wast(&WastInstruction::F64Const(float64_for(&buf_f64))).unwrap();
+            Instruction::try_from(&WastInstruction::F64Const(float64_for(&buf_f64))).unwrap();
         assert_eq!(instr, Instruction::F64Const(3.14));
     }
 
     #[test]
     fn test_from_wast_instruction_local_get() {
-        let instr = Instruction::from_wast(&WastInstruction::LocalGet(WastIndex::Num(
+        let instr = Instruction::try_from(&WastInstruction::LocalGet(WastIndex::Num(
             1,
             Span::from_offset(0),
         )))
@@ -313,13 +311,13 @@ mod tests {
 
     #[test]
     fn test_from_wast_instruction_error() {
-        let instr = Instruction::from_wast(&WastInstruction::Nop);
+        let instr = Instruction::try_from(&WastInstruction::Nop);
         assert!(instr.is_err());
     }
 
     #[test]
     fn test_from_wast_expression() {
-        let expr = Expression::from_wast(&WastExpression {
+        let expr = Expression::try_from(&WastExpression {
             instrs: Box::new([WastInstruction::I32Const(2)]),
         })
         .unwrap();
@@ -330,34 +328,25 @@ mod tests {
 
     #[test]
     fn test_from_val_type() {
-        let val_type = ValType::from_wast(&WastValType::I64).unwrap();
+        let val_type = ValType::try_from(&WastValType::I64).unwrap();
         assert_eq!(val_type, ValType::I64);
     }
 
     #[test]
     fn test_from_val_type_error() {
-        assert!(ValType::from_wast(&WastValType::V128).is_err());
-    }
-
-    #[test]
-    fn test_from_id() {
-        let str_id = String::from("$fun1");
-        let buf_id = ParseBuffer::new(&str_id).unwrap();
-        let id = Some(parser::parse::<Id>(&buf_id).unwrap());
-        let string = Option::from_wast(&id).unwrap();
-        assert_eq!(string, Some(String::from("fun1")));
+        assert!(ValType::try_from(&WastValType::V128).is_err());
     }
 
     #[test]
     fn test_from_wast_local() {
-        let local = Local::from_wast(&test_new_local_i32()).unwrap();
+        let local = Local::try_from(&test_new_local_i32()).unwrap();
         assert_eq!(local.id, None);
         assert_eq!(local.val_type, crate::model::ValType::I32);
     }
 
     #[test]
     fn test_from_wast_index() {
-        let index = Index::from_wast(&WastIndex::Num(1, Span::from_offset(0))).unwrap();
+        let index = Index::try_from(&WastIndex::Num(1, Span::from_offset(0))).unwrap();
         assert_eq!(index, Index::Num(1));
     }
 
@@ -367,7 +356,7 @@ mod tests {
         let buf_id = ParseBuffer::new(&str_id).unwrap();
         let id = parser::parse::<Id>(&buf_id).unwrap();
 
-        let index = Index::from_wast(&WastIndex::Id(id)).unwrap();
+        let index = Index::try_from(&WastIndex::Id(id)).unwrap();
         assert_eq!(index, Index::Id(String::from("id1")));
     }
 
@@ -378,7 +367,7 @@ mod tests {
         let id = parser::parse::<Id>(&buf_id).unwrap();
         let index = WastIndex::Id(id);
 
-        let func = Func::from_wast(&WastFunc {
+        let func = Func::try_from(&WastFunc {
             id: Some(id),
             name: None,
             exports: InlineExport { names: vec![] },
