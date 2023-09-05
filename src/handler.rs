@@ -23,36 +23,46 @@ impl<'a> Handler<'a> {
         Ok(())
     }
 
-    fn local_get(&mut self, index: u32) -> Result<()> {
-        let value = self.state.locals.get(index as usize)?;
-        self.state.stack.push(value.clone());
+    fn local_get(&mut self, index: &Index) -> Result<()> {
+        match index {
+            Index::Num(num) => {
+                let value = self.state.locals.get(*num as usize)?;
+                self.state.stack.push(value.clone());
+            }
+            Index::Id(id) => {
+                let val = self.state.locals.get_by_id(id)?;
+                self.state.stack.push(val.clone());
+            }
+        };
         Ok(())
     }
 
-    fn local_get_by_id(&mut self, id: &str) -> Result<()> {
-        let val = self.state.locals.get_by_id(id)?;
-        self.state.stack.push(val.clone());
+    fn local_set(&mut self, index: &Index) -> Result<()> {
+        match index {
+            Index::Num(num) => {
+                let value = self.state.stack.pop()?;
+                self.state.locals.set(*num as usize, value)?;
+            }
+            Index::Id(id) => {
+                let value = self.state.stack.pop()?;
+                self.state.locals.set_by_id(id, value)?;
+            }
+        };
         Ok(())
     }
 
-    fn local_set(&mut self, index: u32) -> Result<()> {
-        let value = self.state.stack.pop()?;
-        self.state.locals.set(index as usize, value)
-    }
-
-    fn local_set_by_id(&mut self, id: &str) -> Result<()> {
-        let value = self.state.stack.pop()?;
-        self.state.locals.set_by_id(id, value)
-    }
-
-    fn local_tee(&mut self, index: u32) -> Result<()> {
-        let value = self.state.stack.peek()?;
-        self.state.locals.set(index as usize, value)
-    }
-
-    fn local_tee_by_id(&mut self, id: &str) -> Result<()> {
-        let value = self.state.stack.peek()?;
-        self.state.locals.set_by_id(id, value)
+    fn local_tee(&mut self, index: &Index) -> Result<()> {
+        match index {
+            Index::Num(num) => {
+                let value = self.state.stack.peek()?;
+                self.state.locals.set(*num as usize, value)?;
+            }
+            Index::Id(id) => {
+                let value = self.state.stack.peek()?;
+                self.state.locals.set_by_id(id, value)?;
+            }
+        };
+        Ok(())
     }
 
     pub fn handle(&mut self, instr: &Instruction) -> Result<()> {
@@ -126,14 +136,9 @@ impl<'a> Handler<'a> {
             Instruction::F64Min => self.f64_min(),
             Instruction::F64Max => self.f64_max(),
             Instruction::F64Copysign => self.f64_copysign(),
-
-            // TODO: Combine these
-            Instruction::LocalGet(Index::Num(index)) => self.local_get(*index),
-            Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
-            Instruction::LocalSet(Index::Num(index)) => self.local_set(*index),
-            Instruction::LocalSet(Index::Id(id)) => self.local_set_by_id(id),
-            Instruction::LocalTee(Index::Num(index)) => self.local_tee(*index),
-            Instruction::LocalTee(Index::Id(id)) => self.local_tee_by_id(id),
+            Instruction::LocalGet(index) => self.local_get(index),
+            Instruction::LocalSet(index) => self.local_set(index),
+            Instruction::LocalTee(index) => self.local_tee(index),
         }
     }
 }
