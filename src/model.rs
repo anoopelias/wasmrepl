@@ -3,7 +3,6 @@
 // the string it is parsing. While for example our `func` has to live past the
 // string it is parsing for later execution.
 //
-// TODO: Does all these need to be pub?
 use wast::{
     core::{
         Expression as WastExpression, Func as WastFunc, Instruction as WastInstruction,

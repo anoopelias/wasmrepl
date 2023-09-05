@@ -22,3 +22,4 @@
 - [ ] Readme
 - [x] Update version of wast once [this](https://github.com/bytecodealliance/wasm-tools/issues/1156) issue is published.
 - [ ] Github Actions / Pipelines
+- [ ] Make everything public only within crate
