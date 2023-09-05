@@ -1,21 +1,25 @@
-use anyhow::Result;
 use std::ops::BitAnd;
 use std::ops::BitOr;
-use std::ops::{BitXor, Shl};
 
-use crate::executor::State;
-use crate::model::{Index, Instruction};
 use crate::ops::FloatOps;
 use crate::ops::IntOps;
 use crate::ops::NumOps;
+use anyhow::{Error, Result};
+use std::ops::{BitXor, Shl};
+use wast::{
+    core::Instruction,
+    token::{Id, Index},
+};
 
-pub struct Handler<'a> {
+use crate::executor::State;
+
+pub struct WastHandler<'a> {
     state: &'a mut State,
 }
 
-impl<'a> Handler<'a> {
+impl<'a> WastHandler<'a> {
     pub fn new(state: &'a mut State) -> Self {
-        Handler { state }
+        WastHandler { state }
     }
 
     fn drop(&mut self) -> Result<()> {
@@ -29,8 +33,8 @@ impl<'a> Handler<'a> {
         Ok(())
     }
 
-    fn local_get_by_id(&mut self, id: &str) -> Result<()> {
-        let val = self.state.locals.get_by_id(id)?;
+    fn local_get_by_id(&mut self, id: &Id) -> Result<()> {
+        let val = self.state.locals.get_by_id(id.name())?;
         self.state.stack.push(val.clone());
         Ok(())
     }
@@ -40,9 +44,9 @@ impl<'a> Handler<'a> {
         self.state.locals.set(index as usize, value)
     }
 
-    fn local_set_by_id(&mut self, id: &str) -> Result<()> {
+    fn local_set_by_id(&mut self, id: &Id) -> Result<()> {
         let value = self.state.stack.pop()?;
-        self.state.locals.set_by_id(id, value)
+        self.state.locals.set_by_id(id.name(), value)
     }
 
     fn local_tee(&mut self, index: u32) -> Result<()> {
@@ -50,9 +54,9 @@ impl<'a> Handler<'a> {
         self.state.locals.set(index as usize, value)
     }
 
-    fn local_tee_by_id(&mut self, id: &str) -> Result<()> {
+    fn local_tee_by_id(&mut self, id: &Id) -> Result<()> {
         let value = self.state.stack.peek()?;
-        self.state.locals.set_by_id(id, value)
+        self.state.locals.set_by_id(id.name(), value)
     }
 
     pub fn handle(&mut self, instr: &Instruction) -> Result<()> {
@@ -96,7 +100,7 @@ impl<'a> Handler<'a> {
             Instruction::I64ShrU => self.i64_shr_u(),
             Instruction::I64Rotl => self.i64_rotl(),
             Instruction::I64Rotr => self.i64_rotr(),
-            Instruction::F32Const(value) => self.f32_const(*value),
+            Instruction::F32Const(value) => self.f32_const(f32::from_bits(value.bits)),
             Instruction::F32Abs => self.f32_abs(),
             Instruction::F32Neg => self.f32_neg(),
             Instruction::F32Ceil => self.f32_ceil(),
@@ -111,7 +115,7 @@ impl<'a> Handler<'a> {
             Instruction::F32Min => self.f32_min(),
             Instruction::F32Max => self.f32_max(),
             Instruction::F32Copysign => self.f32_copysign(),
-            Instruction::F64Const(value) => self.f64_const(*value),
+            Instruction::F64Const(value) => self.f64_const(f64::from_bits(value.bits)),
             Instruction::F64Abs => self.f64_abs(),
             Instruction::F64Neg => self.f64_neg(),
             Instruction::F64Ceil => self.f64_ceil(),
@@ -126,21 +130,20 @@ impl<'a> Handler<'a> {
             Instruction::F64Min => self.f64_min(),
             Instruction::F64Max => self.f64_max(),
             Instruction::F64Copysign => self.f64_copysign(),
-
-            // TODO: Combine these
-            Instruction::LocalGet(Index::Num(index)) => self.local_get(*index),
+            Instruction::LocalGet(Index::Num(index, _)) => self.local_get(*index),
             Instruction::LocalGet(Index::Id(id)) => self.local_get_by_id(id),
-            Instruction::LocalSet(Index::Num(index)) => self.local_set(*index),
+            Instruction::LocalSet(Index::Num(index, _)) => self.local_set(*index),
             Instruction::LocalSet(Index::Id(id)) => self.local_set_by_id(id),
-            Instruction::LocalTee(Index::Num(index)) => self.local_tee(*index),
+            Instruction::LocalTee(Index::Num(index, _)) => self.local_tee(*index),
             Instruction::LocalTee(Index::Id(id)) => self.local_tee_by_id(id),
+            _ => Err(Error::msg("Unknown instruction")),
         }
     }
 }
 
 macro_rules! pop {
     ($fname:ident, $ty:ty) => {
-        impl<'a> Handler<'a> {
+        impl<'a> WastHandler<'a> {
             fn $fname(&mut self) -> Result<$ty> {
                 let val: $ty = self.state.stack.pop()?.try_into()?;
                 Ok(val)
@@ -156,7 +159,7 @@ pop!(f64_pop, f64);
 
 macro_rules! constant {
     ($fname:ident, $ty:ty) => {
-        impl<'a> Handler<'a> {
+        impl<'a> WastHandler<'a> {
             fn $fname(&mut self, value: $ty) -> Result<()> {
                 self.state.stack.push(value.into());
                 Ok(())
@@ -172,7 +175,7 @@ constant!(f64_const, f64);
 
 macro_rules! impl_binary_op {
     ($fname:ident, $pop:ident, $op:ident) => {
-        impl<'a> Handler<'a> {
+        impl<'a> WastHandler<'a> {
             fn $fname(&mut self) -> Result<()> {
                 let a = self.$pop()?;
                 let b = self.$pop()?;
@@ -225,7 +228,7 @@ impl_binary_op!(f64_copysign, f64_pop, copysign);
 
 macro_rules! impl_binary_res_op {
     ($fname:ident, $popper:ident, $op:ident) => {
-        impl<'a> Handler<'a> {
+        impl<'a> WastHandler<'a> {
             fn $fname(&mut self) -> Result<()> {
                 let a = self.$popper()?;
                 let b = self.$popper()?;
@@ -248,7 +251,7 @@ impl_binary_res_op!(i64_rem_u, i64_pop, rem_u);
 
 macro_rules! impl_unary_op {
     ($fname:ident, $popper:ident, $op:ident) => {
-        impl<'a> Handler<'a> {
+        impl<'a> WastHandler<'a> {
             fn $fname(&mut self) -> Result<()> {
                 let a = self.$popper()?;
                 self.state.stack.push(a.$op().into());
@@ -283,5 +286,5 @@ impl_unary_op!(f64_nearest, f64_pop, round);
 impl_unary_op!(f64_sqrt, f64_pop, sqrt);
 
 #[cfg(test)]
-#[path = "./handler_test.rs"]
-mod handler_test;
+#[path = "./wast_handler_test.rs"]
+mod wast_handler_test;

@@ -1,13 +1,33 @@
-use crate::{executor::State, value::Value};
+use crate::{
+    executor::State,
+    test_utils::{float32_for, float64_for},
+    value::Value,
+};
 use anyhow::Result;
 
-use crate::model::{Index, Instruction};
+use wast::{
+    core::Instruction,
+    parser::{self as wastparser, ParseBuffer},
+    token::{Id, Index, Span},
+};
 
-use super::Handler;
+use super::WastHandler;
+
+fn test_new_index_id<'a>(buf: &'a ParseBuffer) -> Index<'a> {
+    let id = wastparser::parse::<Id>(buf).unwrap();
+    Index::Id(id)
+}
 
 fn exec_instr_handler(instr: &Instruction, state: &mut State) -> Result<()> {
-    let mut handler = Handler::new(state);
+    let mut handler = WastHandler::new(state);
     handler.handle(instr)
+}
+
+#[test]
+fn test_unknown_instr() {
+    let mut state = State::new();
+    let mut handler = WastHandler::new(&mut state);
+    assert!(handler.handle(&Instruction::Nop).is_err());
 }
 
 #[test]
@@ -440,7 +460,9 @@ fn test_i64_rotr() {
 #[test]
 fn test_f32_const() {
     let mut state = State::new();
-    exec_instr_handler(&Instruction::F32Const(3.14), &mut state).unwrap();
+    let wat = "3.14";
+    let buf = ParseBuffer::new(wat).unwrap();
+    exec_instr_handler(&Instruction::F32Const(float32_for(&buf)), &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 3.14f32.into());
 }
 
@@ -566,7 +588,9 @@ fn test_f32_copysign() {
 #[test]
 fn test_f64_const() {
     let mut state = State::new();
-    exec_instr_handler(&Instruction::F64Const(3.14), &mut state).unwrap();
+    let wat = "3.14";
+    let buf = ParseBuffer::new(wat).unwrap();
+    exec_instr_handler(&Instruction::F64Const(float64_for(&buf)), &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 3.14f64.into());
 }
 
@@ -694,14 +718,22 @@ fn test_local_get() {
     let mut state = State::new();
     state.locals.grow(0.into());
     state.locals.set(0, 42.into()).unwrap();
-    exec_instr_handler(&Instruction::LocalGet(Index::Num(0)), &mut state).unwrap();
+    exec_instr_handler(
+        &Instruction::LocalGet(Index::Num(0, Span::from_offset(0))),
+        &mut state,
+    )
+    .unwrap();
     assert_eq!(state.stack.pop().unwrap(), 42.into());
 }
 
 #[test]
 fn test_local_get_error() {
     let mut state = State::new();
-    assert!(exec_instr_handler(&Instruction::LocalGet(Index::Num(0)), &mut state,).is_err());
+    assert!(exec_instr_handler(
+        &Instruction::LocalGet(Index::Num(0, Span::from_offset(0))),
+        &mut state,
+    )
+    .is_err());
 }
 
 #[test]
@@ -710,7 +742,11 @@ fn test_local_set() {
     state.stack.push(15.into());
     state.locals.grow(0.into());
     state.locals.grow(0.into());
-    exec_instr_handler(&Instruction::LocalSet(Index::Num(1)), &mut state).unwrap();
+    exec_instr_handler(
+        &Instruction::LocalSet(Index::Num(1, Span::from_offset(0))),
+        &mut state,
+    )
+    .unwrap();
     assert_eq!(state.locals.get(1).unwrap().clone(), 15.into());
     assert!(state.stack.pop().is_err());
 }
@@ -719,13 +755,21 @@ fn test_local_set() {
 fn test_local_set_locals_error() {
     let mut state = State::new();
     state.stack.push(15.into());
-    assert!(exec_instr_handler(&Instruction::LocalSet(Index::Num(0)), &mut state,).is_err());
+    assert!(exec_instr_handler(
+        &Instruction::LocalSet(Index::Num(0, Span::from_offset(0))),
+        &mut state,
+    )
+    .is_err());
 }
 
 #[test]
 fn test_local_set_stack_error() {
     let mut state = State::new();
-    assert!(exec_instr_handler(&Instruction::LocalSet(Index::Num(0)), &mut state,).is_err());
+    assert!(exec_instr_handler(
+        &Instruction::LocalSet(Index::Num(0, Span::from_offset(0))),
+        &mut state,
+    )
+    .is_err());
 }
 
 #[test]
@@ -734,7 +778,9 @@ fn test_local_get_by_id() {
     state.locals.grow_by_id("num", 0.into()).unwrap();
     state.locals.set(0, 42.into()).unwrap();
 
-    let id = Index::Id(String::from("num"));
+    let str_id = String::from("$num");
+    let buf_id = ParseBuffer::new(&str_id).unwrap();
+    let id = test_new_index_id(&buf_id);
 
     exec_instr_handler(&Instruction::LocalGet(id), &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 42.into());
@@ -746,7 +792,10 @@ fn test_local_get_by_id_error() {
     state.locals.grow_by_id("num", 0.into()).unwrap();
     state.locals.set(0, 42.into()).unwrap();
 
-    let id = Index::Id(String::from("num_other"));
+    let str_id = String::from("$num_other");
+    let buf_id = ParseBuffer::new(&str_id).unwrap();
+    let id = test_new_index_id(&buf_id);
+
     assert!(exec_instr_handler(&Instruction::LocalGet(id), &mut state).is_err());
 }
 
@@ -757,7 +806,9 @@ fn test_local_set_by_id() {
     state.locals.grow_by_id("num", 0.into()).unwrap();
     state.locals.grow_by_id("num_other", 0.into()).unwrap();
 
-    let id = Index::Id(String::from("num_other"));
+    let str_id = String::from("$num_other");
+    let buf_id = ParseBuffer::new(&str_id).unwrap();
+    let id = test_new_index_id(&buf_id);
 
     exec_instr_handler(&Instruction::LocalSet(id), &mut state).unwrap();
     assert_eq!(state.locals.get(1).unwrap().clone(), 15.into());
@@ -770,7 +821,9 @@ fn test_local_set_by_id_error() {
     state.stack.push(15.into());
     state.locals.grow_by_id("num", 0.into()).unwrap();
 
-    let id = Index::Id(String::from("num_other"));
+    let str_id = String::from("$num_other");
+    let buf_id = ParseBuffer::new(&str_id).unwrap();
+    let id = test_new_index_id(&buf_id);
 
     assert!(exec_instr_handler(&Instruction::LocalSet(id), &mut state).is_err());
 }
@@ -781,7 +834,11 @@ fn test_local_tee() {
     state.stack.push(15.into());
     state.locals.grow(0.into());
     state.locals.grow(0.into());
-    exec_instr_handler(&Instruction::LocalTee(Index::Num(1)), &mut state).unwrap();
+    exec_instr_handler(
+        &Instruction::LocalTee(Index::Num(1, Span::from_offset(0))),
+        &mut state,
+    )
+    .unwrap();
     assert_eq!(state.locals.get(1).unwrap().clone(), 15.into());
     assert_eq!(state.stack.pop().unwrap(), 15.into());
 }
@@ -789,7 +846,11 @@ fn test_local_tee() {
 #[test]
 fn test_local_tee_error() {
     let mut state = State::new();
-    assert!(exec_instr_handler(&Instruction::LocalTee(Index::Num(0)), &mut state,).is_err());
+    assert!(exec_instr_handler(
+        &Instruction::LocalTee(Index::Num(0, Span::from_offset(0))),
+        &mut state,
+    )
+    .is_err());
 }
 
 #[test]
@@ -799,7 +860,9 @@ fn test_local_tee_by_id() {
     state.locals.grow_by_id("num", 0.into()).unwrap();
     state.locals.grow_by_id("num_other", 0.into()).unwrap();
 
-    let id = Index::Id(String::from("num_other"));
+    let str_id = String::from("$num_other");
+    let buf_id = ParseBuffer::new(&str_id).unwrap();
+    let id = test_new_index_id(&buf_id);
 
     exec_instr_handler(&Instruction::LocalTee(id), &mut state).unwrap();
     assert_eq!(state.locals.get(1).unwrap().clone(), 15.into());
@@ -812,7 +875,9 @@ fn test_local_tee_by_id_error() {
     state.stack.push(15.into());
     state.locals.grow_by_id("num", 0.into()).unwrap();
 
-    let id = Index::Id(String::from("num_other"));
+    let str_id = String::from("$num_other");
+    let buf_id = ParseBuffer::new(&str_id).unwrap();
+    let id = test_new_index_id(&buf_id);
 
     assert!(exec_instr_handler(&Instruction::LocalTee(id), &mut state).is_err());
 }

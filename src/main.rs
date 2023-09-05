@@ -9,6 +9,7 @@ mod ops;
 mod parser;
 mod stack;
 mod value;
+mod wast_handler;
 
 #[cfg(test)]
 mod test_utils;
