@@ -58,7 +58,6 @@ fn parse_and_execute(executor: &mut Executor, line_str: &str) -> String {
                     format!("Error: {}", err.to_string())
                 }
             },
-            // TODO: Test this
             Err(err) => {
                 format!("Error: {}", err.to_string())
             }
@@ -84,6 +83,13 @@ mod tests {
     fn test_parse_error() {
         let mut executor = Executor::new();
         let resp = parse_and_execute(&mut executor, "(i32.const 1");
+        assert_eq!(&resp[..7], "Error: ");
+    }
+
+    #[test]
+    fn test_convert_error() {
+        let mut executor = Executor::new();
+        let resp = parse_and_execute(&mut executor, "(nop)");
         assert_eq!(&resp[..7], "Error: ");
     }
 
