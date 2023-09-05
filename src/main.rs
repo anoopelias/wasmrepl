@@ -9,16 +9,15 @@ mod ops;
 mod parser;
 mod stack;
 mod value;
-mod wast_handler;
 
 #[cfg(test)]
 mod test_utils;
 
 use executor::Executor;
-use parser::Line;
+use model::Line;
+use parser::parse_line;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
-use wast::parser::{self as wastparser, ParseBuffer};
 
 fn main() -> rustyline::Result<()> {
     let mut rl = DefaultEditor::new()?;
@@ -47,21 +46,25 @@ fn main() -> rustyline::Result<()> {
     Ok(())
 }
 
-fn parse_and_execute(executor: &mut Executor, str: &str) -> String {
-    let buf = ParseBuffer::new(str).unwrap();
-    let lp = wastparser::parse::<Line>(&buf);
-
-    match lp {
-        Ok(line) => match executor.execute(&line) {
-            Ok(_) => {
-                format!("{}", executor.to_state())
-            }
+fn parse_and_execute(executor: &mut Executor, line_str: &str) -> String {
+    let buf = wast::parser::ParseBuffer::new(line_str).unwrap();
+    match parse_line(&buf) {
+        Ok(wast_line) => match Line::try_from(&wast_line) {
+            Ok(line) => match executor.execute(&line) {
+                Ok(_) => {
+                    format!("{}", executor.to_state())
+                }
+                Err(err) => {
+                    format!("Error: {}", err.to_string())
+                }
+            },
+            // TODO: Test this
             Err(err) => {
                 format!("Error: {}", err.to_string())
             }
         },
         Err(err) => {
-            format!("Error: {}", err.message())
+            format!("Error: {}", err.to_string())
         }
     }
 }

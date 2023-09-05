@@ -4,8 +4,11 @@ use wast::core::Local;
 use wast::core::LocalParser;
 use wast::kw;
 use wast::parser::Parse;
+use wast::parser::ParseBuffer;
 use wast::parser::Parser;
 use wast::parser::Result;
+
+use anyhow::Result as AnyhowResult;
 
 pub enum Line<'a> {
     Expression(LineExpression<'a>),
@@ -39,6 +42,13 @@ impl<'a> Parse<'a> for Line<'a> {
     }
 }
 
+pub fn parse_line<'a>(buf: &'a ParseBuffer) -> AnyhowResult<Line<'a>> {
+    match wast::parser::parse::<Line>(&buf) {
+        Ok(line) => Ok(line),
+        Err(err) => Err(anyhow::anyhow!(err.to_string())),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use wast::{
@@ -46,7 +56,7 @@ mod tests {
         parser::{parse, ParseBuffer},
     };
 
-    use crate::parser::Line;
+    use crate::parser::{parse_line, Line};
 
     #[test]
     fn test_line_parse_expr() {
@@ -89,5 +99,18 @@ mod tests {
         } else {
             panic!("Expected Line::Expression");
         }
+    }
+
+    #[test]
+    fn test_parse_line() {
+        let buf = ParseBuffer::new("(i32.const 32)").unwrap();
+        parse_line(&buf).unwrap();
+    }
+
+    #[test]
+    fn test_parse_line_error() {
+        let buf = ParseBuffer::new("(i32.const 32").unwrap();
+        let line = parse_line(&buf);
+        assert!(line.is_err());
     }
 }
