@@ -1,3 +1,7 @@
+// We need to convert wast object to our own model objects prior to processing.
+// This is because wast objects have lifetime of `&'a` and this cannot go past
+// the string it is parsing. While for example our `func` has to live past the
+// string it is parsing for later execution.
 use wast::{
     core::{
         Expression as WastExpression, Func as WastFunc, Instruction as WastInstruction,
