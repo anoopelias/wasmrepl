@@ -113,7 +113,7 @@ fn default_value(local: &Local) -> Result<Value> {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{Expression, Index, Instruction, Local, ValType};
+    use crate::model::{Expression, Func, Index, Instruction, Local, ValType};
 
     use crate::executor::Executor;
     use crate::model::{Line, LineExpression};
@@ -322,5 +322,28 @@ mod tests {
             Instruction::LocalSet(Index::Num(0))
         )];
         assert!(executor.execute_line(&line).is_err());
+    }
+
+    #[test]
+    fn execute_func() {
+        let mut executor = Executor::new();
+        let func = Func {
+            id: Some(String::from("sq")),
+            params: vec![Local {
+                id: Some(String::from("num")),
+                val_type: ValType::I32,
+            }],
+            results: vec![ValType::I32],
+            line_expression: LineExpression {
+                locals: vec![],
+                expr: Expression {
+                    instrs: vec![
+                        Instruction::LocalGet(Index::Id(String::from("num"))),
+                        Instruction::LocalGet(Index::Id(String::from("num"))),
+                        Instruction::I32Mul,
+                    ],
+                },
+            },
+        };
     }
 }

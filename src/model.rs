@@ -5,7 +5,7 @@
 //
 use wast::{
     core::{
-        Expression as WastExpression, Func as WastFunc, Instruction as WastInstruction,
+        Expression as WastExpression, Func as WastFunc, FuncKind, Instruction as WastInstruction,
         Local as WastLocal, ValType as WastValType,
     },
     token::{Id, Index as WastIndex},
@@ -34,32 +34,58 @@ pub struct Func {
     pub id: Option<String>,
     pub params: Vec<Local>,
     pub results: Vec<ValType>,
+    pub line_expression: LineExpression,
 }
 
 impl TryFrom<&WastFunc<'_>> for Func {
     type Error = Error;
     fn try_from(func: &WastFunc) -> Result<Self> {
         let id = from_id(func.id);
-        let mut params = Vec::new();
-        let mut results = Vec::new();
-        if let Some(func_type) = &func.ty.inline {
-            for param in func_type.params.iter() {
-                params.push(Local {
-                    id: from_id(param.0),
-                    val_type: (&param.2).try_into()?,
-                });
-            }
 
-            for result in func_type.results.iter() {
-                results.push(result.try_into()?);
+        let (params, results) = match &func.ty.inline {
+            Some(func_type) => {
+                let mut params = Vec::new();
+                let mut results = Vec::new();
+
+                for param in func_type.params.iter() {
+                    params.push(Local {
+                        id: from_id(param.0),
+                        val_type: (&param.2).try_into()?,
+                    });
+                }
+
+                for result in func_type.results.iter() {
+                    results.push(result.try_into()?);
+                }
+                (params, results)
             }
-        }
+            None => (vec![], vec![]),
+        };
+
+        let line_expression = match &func.kind {
+            FuncKind::Inline { locals, expression } => {
+                let mut lcls = Vec::new();
+
+                for local in locals.iter() {
+                    lcls.push(local.try_into()?);
+                }
+
+                LineExpression {
+                    locals: lcls,
+                    expr: expression.try_into()?,
+                }
+            }
+            _ => {
+                return Err(Error::msg("Unsupported function kind"));
+            }
+        };
 
         // TODO: Return error for unsupported function types.
         Ok(Func {
             id,
             params,
             results,
+            line_expression,
         })
     }
 }
@@ -455,9 +481,9 @@ mod tests {
             },
             span: Span::from_offset(0),
             kind: wast::core::FuncKind::Inline {
-                locals: Box::new([]),
+                locals: Box::new([test_new_local_i32()]),
                 expression: WastExpression {
-                    instrs: Box::new([]),
+                    instrs: Box::new([WastInstruction::I32Const(2)]),
                 },
             },
         })
@@ -469,6 +495,13 @@ mod tests {
         assert_eq!(func.params[0].id, Some(String::from("param1")));
         assert_eq!(func.results.len(), 1);
         assert_eq!(func.results[0], ValType::I32);
+        assert_eq!(func.line_expression.locals.len(), 1);
+        assert_eq!(func.line_expression.locals[0].val_type, ValType::I32);
+        assert_eq!(func.line_expression.expr.instrs.len(), 1);
+        assert_eq!(
+            func.line_expression.expr.instrs[0],
+            Instruction::I32Const(2)
+        );
     }
 
     #[test]
