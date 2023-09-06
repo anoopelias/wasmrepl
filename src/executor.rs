@@ -2,16 +2,12 @@ use anyhow::{Error, Result};
 
 use crate::handler::Handler;
 use crate::locals::Locals;
-use crate::model::{Instruction, Local, ValType};
+use crate::model::{Index, Instruction, Local, ValType};
 use crate::value::Value;
 use crate::{
     model::{Line, LineExpression},
     stack::Stack,
 };
-
-pub struct Executor {
-    state: State,
-}
 
 pub struct State {
     pub stack: Stack,
@@ -38,10 +34,15 @@ impl State {
     }
 }
 
+pub struct Executor {
+    call_stack: Vec<State>,
+}
+
 impl Executor {
     pub fn new() -> Executor {
         Executor {
-            state: State::new(),
+            // Initialize with REPL's root state
+            call_stack: vec![State::new()],
         }
     }
 
@@ -53,7 +54,11 @@ impl Executor {
     }
 
     pub fn to_state(&self) -> String {
-        self.state.stack.to_string()
+        self.call_stack[0].stack.to_string()
+    }
+
+    fn execute_func(&self, _index: &Index) -> Result<()> {
+        Err(Error::msg("Func not supported yet"))
     }
 
     fn execute_line_expression(&mut self, line_expr: &LineExpression) -> Result<()> {
@@ -65,29 +70,35 @@ impl Executor {
             match self.execute_instruction(instr) {
                 Ok(_) => {}
                 Err(err) => {
-                    self.state.rollback();
+                    self.call_stack.last_mut().unwrap().rollback();
                     return Err(err);
                 }
             }
         }
 
-        self.state.commit()?;
+        self.call_stack.last_mut().unwrap().commit()?;
         Ok(())
     }
 
     fn execute_local(&mut self, lc: &Local) -> Result<()> {
+        let state = self.call_stack.last_mut().unwrap();
         match &lc.id {
-            Some(id) => self.state.locals.grow_by_id(&id, default_value(lc)?),
+            Some(id) => state.locals.grow_by_id(&id, default_value(lc)?),
             None => {
-                self.state.locals.grow(default_value(lc)?);
+                state.locals.grow(default_value(lc)?);
                 Ok(())
             }
         }
     }
 
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<()> {
-        let mut handler = Handler::new(&mut self.state);
-        handler.handle(instr)
+        match instr {
+            Instruction::Call(index) => self.execute_func(index),
+            _ => {
+                let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
+                handler.handle(instr)
+            }
+        }
     }
 }
 
@@ -159,7 +170,10 @@ mod tests {
         let line = test_line![()(Instruction::I32Const(42), TODO_INSTRUCTION)];
         assert!(executor.execute_line(&line).is_err());
         // Ensure rollback
-        assert_eq!(executor.state.stack.to_soft_string().unwrap(), "[55]");
+        assert_eq!(
+            executor.call_stack[0].stack.to_soft_string().unwrap(),
+            "[55]"
+        );
     }
 
     #[test]
