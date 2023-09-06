@@ -139,6 +139,7 @@ impl<'a> Handler<'a> {
             Instruction::LocalGet(index) => self.local_get(index),
             Instruction::LocalSet(index) => self.local_set(index),
             Instruction::LocalTee(index) => self.local_tee(index),
+            _ => Err(anyhow::anyhow!("Instruction not implemented")),
         }
     }
 }
