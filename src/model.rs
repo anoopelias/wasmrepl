@@ -30,6 +30,40 @@ impl TryFrom<&WastLine<'_>> for Line {
     }
 }
 
+pub struct Func {
+    pub id: Option<String>,
+    pub params: Vec<Local>,
+    pub results: Vec<ValType>,
+}
+
+impl TryFrom<&WastFunc<'_>> for Func {
+    type Error = Error;
+    fn try_from(func: &WastFunc) -> Result<Self> {
+        let id = from_id(func.id);
+        let mut params = Vec::new();
+        let mut results = Vec::new();
+        if let Some(func_type) = &func.ty.inline {
+            for param in func_type.params.iter() {
+                params.push(Local {
+                    id: from_id(param.0),
+                    val_type: (&param.2).try_into()?,
+                });
+            }
+
+            for result in func_type.results.iter() {
+                results.push(result.try_into()?);
+            }
+        }
+
+        // TODO: Return error for unsupported function types.
+        Ok(Func {
+            id,
+            params,
+            results,
+        })
+    }
+}
+
 pub struct LineExpression {
     pub locals: Vec<Local>,
     pub expr: Expression,
@@ -45,18 +79,6 @@ impl TryFrom<&WastLineExpression<'_>> for LineExpression {
 
         let expr: Expression = (&line_expr.expr).try_into()?;
         Ok(LineExpression { locals, expr })
-    }
-}
-
-pub struct Func {
-    pub id: Option<String>,
-}
-
-impl TryFrom<&WastFunc<'_>> for Func {
-    type Error = Error;
-    fn try_from(func: &WastFunc) -> Result<Self> {
-        let id = from_id(func.id);
-        Ok(Func { id })
     }
 }
 
@@ -301,12 +323,29 @@ mod tests {
     };
     use wast::{
         core::{
-            Expression as WastExpression, Func as WastFunc, InlineExport,
+            Expression as WastExpression, Func as WastFunc, FunctionType, InlineExport,
             Instruction as WastInstruction, Local as WastLocal, TypeUse, ValType as WastValType,
         },
         parser::{self, ParseBuffer},
         token::{Id, Index as WastIndex, Span},
     };
+
+    macro_rules! test_id {
+        ($var:ident, $id:expr) => {
+            let str_id = String::from($id);
+            let buf_id = ParseBuffer::new(&str_id).unwrap();
+            let $var = parser::parse::<Id>(&buf_id).unwrap();
+        };
+    }
+
+    macro_rules! test_index {
+        ($var:ident, $id:expr) => {
+            let str_id = String::from($id);
+            let buf_id = ParseBuffer::new(&str_id).unwrap();
+            let id = parser::parse::<Id>(&buf_id).unwrap();
+            let $var = Index::try_from(&WastIndex::Id(id)).unwrap();
+        };
+    }
 
     fn test_new_local_i32<'a>() -> WastLocal<'a> {
         WastLocal {
@@ -395,26 +434,25 @@ mod tests {
 
     #[test]
     fn test_from_wast_index_id() {
-        let str_id = String::from("$id1");
-        let buf_id = ParseBuffer::new(&str_id).unwrap();
-        let id = parser::parse::<Id>(&buf_id).unwrap();
-
-        let index = Index::try_from(&WastIndex::Id(id)).unwrap();
+        test_index!(index, "$id1");
         assert_eq!(index, Index::Id(String::from("id1")));
     }
 
     #[test]
     fn test_from_wast_func() {
-        let str_id = String::from("$fun1");
-        let buf_id = ParseBuffer::new(&str_id).unwrap();
-        let id = parser::parse::<Id>(&buf_id).unwrap();
-        let index = WastIndex::Id(id);
-
+        test_id!(fun_id, "$fun1");
+        test_id!(param_id, "$param1");
         let func = Func::try_from(&WastFunc {
-            id: Some(id),
+            id: Some(fun_id),
             name: None,
             exports: InlineExport { names: vec![] },
-            ty: TypeUse::new_with_index(index),
+            ty: TypeUse {
+                index: None,
+                inline: Some(FunctionType {
+                    params: Box::new([(Some(param_id), None, WastValType::I32)]),
+                    results: Box::new([WastValType::I32]),
+                }),
+            },
             span: Span::from_offset(0),
             kind: wast::core::FuncKind::Inline {
                 locals: Box::new([]),
@@ -426,6 +464,11 @@ mod tests {
         .unwrap();
 
         assert_eq!(func.id, Some(String::from("fun1")));
+        assert_eq!(func.params.len(), 1);
+        assert_eq!(func.params[0].val_type, ValType::I32);
+        assert_eq!(func.params[0].id, Some(String::from("param1")));
+        assert_eq!(func.results.len(), 1);
+        assert_eq!(func.results[0], ValType::I32);
     }
 
     #[test]
@@ -466,16 +509,15 @@ mod tests {
 
     #[test]
     fn test_from_wast_line_for_func() {
-        let str_id = String::from("$fun1");
-        let buf_id = ParseBuffer::new(&str_id).unwrap();
-        let id = parser::parse::<Id>(&buf_id).unwrap();
-        let index = WastIndex::Id(id);
-
+        test_id!(fun_id, "$fun1");
         let line_func = Line::try_from(&WastLine::Func(WastFunc {
-            id: Some(id),
+            id: Some(fun_id),
             name: None,
             exports: InlineExport { names: vec![] },
-            ty: TypeUse::new_with_index(index),
+            ty: TypeUse {
+                index: None,
+                inline: None,
+            },
             span: Span::from_offset(0),
             kind: wast::core::FuncKind::Inline {
                 locals: Box::new([]),
