@@ -45,7 +45,7 @@ impl Executor {
         }
     }
 
-    pub fn execute(&mut self, line: &Line) -> Result<()> {
+    pub fn execute_line(&mut self, line: &Line) -> Result<()> {
         match line {
             Line::Expression(line) => self.execute_line_expression(line),
             Line::Func(_) => Err(Error::msg("Func not supported yet")),
@@ -146,7 +146,7 @@ mod tests {
             Instruction::I32Const(58),
             Instruction::I32Add
         )];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
         assert_eq!(executor.to_state(), "[100]");
     }
 
@@ -154,10 +154,10 @@ mod tests {
     fn test_execute_error_rollback() {
         let mut executor = Executor::new();
         let line = test_line![()(Instruction::I32Const(55))];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
 
         let line = test_line![()(Instruction::I32Const(42), TODO_INSTRUCTION)];
-        assert!(executor.execute(&line).is_err());
+        assert!(executor.execute_line(&line).is_err());
         // Ensure rollback
         assert_eq!(executor.state.stack.to_soft_string().unwrap(), "[55]");
     }
@@ -170,7 +170,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
@@ -182,7 +182,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
 
         let line = test_line![()(
@@ -191,7 +191,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
         assert_eq!(executor.to_state(), "[55]");
     }
 
@@ -202,17 +202,17 @@ mod tests {
             Instruction::I32Const(42),
             Instruction::LocalSet(Index::Num(0))
         )];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
 
         let line = test_line![()(
             Instruction::I32Const(55),
             Instruction::LocalSet(Index::Num(0)),
             TODO_INSTRUCTION
         )];
-        assert!(executor.execute(&line).is_err());
+        assert!(executor.execute_line(&line).is_err());
 
         let line = test_line![(test_new_local_i32())(Instruction::LocalGet(Index::Num(0)))];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
@@ -233,7 +233,7 @@ mod tests {
             Instruction::LocalSet(set_index),
             Instruction::LocalGet(get_index)
         )];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
@@ -252,7 +252,7 @@ mod tests {
             Instruction::LocalSet(index),
             Instruction::LocalGet(Index::Num(1))
         )];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
@@ -264,7 +264,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
@@ -280,7 +280,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
         assert_eq!(executor.to_state(), "[3.14]");
     }
 
@@ -296,7 +296,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute(&line).unwrap();
+        executor.execute_line(&line).unwrap();
         assert_eq!(executor.to_state(), "[3.14]");
     }
 
@@ -307,6 +307,6 @@ mod tests {
             Instruction::I64Const(55),
             Instruction::LocalSet(Index::Num(0))
         )];
-        assert!(executor.execute(&line).is_err());
+        assert!(executor.execute_line(&line).is_err());
     }
 }
