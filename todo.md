@@ -12,11 +12,12 @@
 - [x] Lcocal tee
 - [x] Look at tests in `elements`, isn't these too much?
 - [x] Remove utils function `test_val_xx`
-- [ ] Functions
+- [x] Functions
 - [ ] Mutli line inputs
 - [ ] Print locals
 - [ ] Eq instructions
 - [ ] R/W memory
+- [ ] Types for functions
 - [ ] V128 instructions
 - [ ] Check if id already exists in `grow_by_id`
 - [ ] Readme
