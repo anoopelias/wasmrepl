@@ -172,9 +172,9 @@ mod tests {
     }
 
     macro_rules! test_func {
-        (($( $param:expr ),*)($( $res:expr ),*)($( $instr:expr ),*)) => {
+        ($fname:expr, ($( $param:expr ),*)($( $res:expr ),*)($( $instr:expr ),*)) => {
             Line::Func(Func {
-                id: Some(String::from("subtract")),
+                id: Some(String::from($fname)),
                 params: vec![
                     $( $param ),*
                 ],
@@ -379,15 +379,18 @@ mod tests {
     #[test]
     fn execute_func() {
         let mut executor = Executor::new();
-        let func = test_func!((
-            test_local_id!("first", ValType::I32),
-            test_local_id!("second", ValType::I32)
-        )(ValType::I32, ValType::I32)(
-            Instruction::LocalGet(Index::Id(String::from("first"))),
-            Instruction::LocalGet(Index::Id(String::from("first"))),
-            Instruction::LocalGet(Index::Id(String::from("second"))),
-            Instruction::I32Sub
-        ));
+        let func = test_func!(
+            "subtract",
+            (
+                test_local_id!("first", ValType::I32),
+                test_local_id!("second", ValType::I32)
+            )(ValType::I32, ValType::I32)(
+                Instruction::LocalGet(Index::Id(String::from("first"))),
+                Instruction::LocalGet(Index::Id(String::from("first"))),
+                Instruction::LocalGet(Index::Id(String::from("second"))),
+                Instruction::I32Sub
+            )
+        );
         executor.execute_line(func).unwrap();
 
         let call_sub = test_line![()(
@@ -402,7 +405,7 @@ mod tests {
     #[test]
     fn execute_func_error_number_of_inputs() {
         let mut executor = Executor::new();
-        let func = test_func!((test_local!(ValType::I32))()());
+        let func = test_func!("fun", (test_local!(ValType::I32))()());
         executor.execute_line(func).unwrap();
 
         let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
@@ -410,13 +413,13 @@ mod tests {
     }
 
     #[test]
-    fn execute_func_error_number_of_outputs() {
+    fn execute_func_error_less_number_of_outputs() {
         let mut executor = Executor::new();
-        let func = test_func!(()(ValType::I32, ValType::I32)(Instruction::I32Const(42)));
+        let func = test_func!("fun", ()(ValType::I32)());
         executor.execute_line(func).unwrap();
 
-        let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("subtract"))))];
-        // We expect two outputs but will get only one hence an error
+        let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        // We expect one output but will get only none hence an error
         assert!(executor.execute_line(call_sub).is_err());
     }
 }
