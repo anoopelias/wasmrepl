@@ -172,18 +172,11 @@ mod tests {
     }
 
     macro_rules! test_func {
-        (($( $res:expr ),*)($( $instr:expr ),*)) => {
+        (($( $param:expr ),*)($( $res:expr ),*)($( $instr:expr ),*)) => {
             Line::Func(Func {
                 id: Some(String::from("subtract")),
                 params: vec![
-                    Local {
-                        id: Some(String::from("first")),
-                        val_type: ValType::I32,
-                    },
-                    Local {
-                        id: Some(String::from("second")),
-                        val_type: ValType::I32,
-                    },
+                    $( $param ),*
                 ],
                 results: vec![$( $res ),*],
                 line_expression: LineExpression {
@@ -198,19 +191,23 @@ mod tests {
         };
     }
 
-    macro_rules! test_new_local {
-        ($fname:ident, $type:expr) => {
-            fn $fname() -> Local {
-                Local {
-                    id: None,
-                    val_type: $type,
-                }
+    macro_rules! test_local_id {
+        ($id:expr, $type:expr) => {
+            Local {
+                id: Some(String::from($id)),
+                val_type: $type,
             }
         };
     }
 
-    test_new_local!(test_new_local_i32, ValType::I32);
-    test_new_local!(test_new_local_i64, ValType::I64);
+    macro_rules! test_local {
+        ($type:expr) => {
+            Local {
+                id: None,
+                val_type: $type,
+            }
+        };
+    }
 
     #[test]
     fn test_execute_add() {
@@ -242,7 +239,7 @@ mod tests {
     #[test]
     fn test_local_set_get() {
         let mut executor = Executor::new();
-        let line = test_line![(test_new_local_i32())(
+        let line = test_line![(test_local!(ValType::I32))(
             Instruction::I32Const(42),
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
@@ -254,7 +251,7 @@ mod tests {
     #[test]
     fn test_local_set_commit() {
         let mut executor = Executor::new();
-        let line = test_line![(test_new_local_i32())(
+        let line = test_line![(test_local!(ValType::I32))(
             Instruction::I32Const(42),
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
@@ -275,7 +272,7 @@ mod tests {
     #[test]
     fn test_local_set_local_rollback() {
         let mut executor = Executor::new();
-        let line = test_line![(test_new_local_i32())(
+        let line = test_line![(test_local!(ValType::I32))(
             Instruction::I32Const(42),
             Instruction::LocalSet(Index::Num(0))
         )];
@@ -288,7 +285,9 @@ mod tests {
         )];
         assert!(executor.execute_line(line).is_err());
 
-        let line = test_line![(test_new_local_i32())(Instruction::LocalGet(Index::Num(0)))];
+        let line = test_line![(test_local!(ValType::I32))(Instruction::LocalGet(
+            Index::Num(0)
+        ))];
         executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
@@ -324,7 +323,7 @@ mod tests {
 
         let index = Index::Id(String::from("num"));
 
-        let line = test_line![(test_new_local_i32(), local)(
+        let line = test_line![(test_local!(ValType::I32), local)(
             Instruction::I32Const(42),
             Instruction::LocalSet(index),
             Instruction::LocalGet(Index::Num(1))
@@ -336,7 +335,7 @@ mod tests {
     #[test]
     fn test_local_set_get_i64() {
         let mut executor = Executor::new();
-        let line = test_line![(test_new_local_i64())(
+        let line = test_line![(test_local!(ValType::I64))(
             Instruction::I64Const(42),
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
@@ -380,7 +379,7 @@ mod tests {
     #[test]
     fn test_local_set_get_type_error() {
         let mut executor = Executor::new();
-        let line = test_line![(test_new_local_i32())(
+        let line = test_line![(test_local!(ValType::I32))(
             Instruction::I64Const(55),
             Instruction::LocalSet(Index::Num(0))
         )];
@@ -390,7 +389,10 @@ mod tests {
     #[test]
     fn execute_func() {
         let mut executor = Executor::new();
-        let func = test_func!((ValType::I32, ValType::I32)(
+        let func = test_func!((
+            test_local_id!("first", ValType::I32),
+            test_local_id!("second", ValType::I32)
+        )(ValType::I32, ValType::I32)(
             Instruction::LocalGet(Index::Id(String::from("first"))),
             Instruction::LocalGet(Index::Id(String::from("first"))),
             Instruction::LocalGet(Index::Id(String::from("second"))),
