@@ -412,21 +412,11 @@ mod tests {
     #[test]
     fn execute_func_error_number_of_outputs() {
         let mut executor = Executor::new();
-        let func = test_func!((
-            test_local_id!("first", ValType::I32),
-            test_local_id!("second", ValType::I32)
-        )(ValType::I32, ValType::I32)(
-            Instruction::LocalGet(Index::Id(String::from("first"))),
-            Instruction::LocalGet(Index::Id(String::from("second"))),
-            Instruction::I32Sub
-        ));
+        let func = test_func!(()(ValType::I32, ValType::I32)(Instruction::I32Const(42)));
         executor.execute_line(func).unwrap();
 
-        let call_sub = test_line![()(
-            Instruction::I32Const(7),
-            Instruction::I32Const(2),
-            Instruction::Call(Index::Id(String::from("subtract")))
-        )];
+        let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("subtract"))))];
+        // We expect two outputs but will get only one hence an error
         assert!(executor.execute_line(call_sub).is_err());
     }
 }
