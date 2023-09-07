@@ -13,7 +13,14 @@
 - [x] Look at tests in `elements`, isn't these too much?
 - [x] Remove utils function `test_val_xx`
 - [x] Functions
+- [ ] Test local for function
+- [ ] Pop should return option instead of result
+- [ ] Remove TODO_INSTRUCTION
+- [ ] Can we purge instruction during execution
+- [ ] return statement
+- [ ] call statement with values
 - [ ] Mutli line inputs
+- [ ] branch statements
 - [ ] Print locals
 - [ ] Eq instructions
 - [ ] R/W memory
