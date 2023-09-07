@@ -296,10 +296,7 @@ mod tests {
     fn test_local_by_id() {
         let mut executor = Executor::new();
 
-        let local = Local {
-            id: Some(String::from("num")),
-            val_type: ValType::I32,
-        };
+        let local = test_local_id!("num", ValType::I32);
 
         let set_index = Index::Id(String::from("num"));
         let get_index = Index::Id(String::from("num"));
@@ -316,11 +313,7 @@ mod tests {
     #[test]
     fn test_local_by_id_mix() {
         let mut executor = Executor::new();
-        let local = Local {
-            id: Some(String::from("num")),
-            val_type: ValType::I32,
-        };
-
+        let local = test_local_id!("num", ValType::I32);
         let index = Index::Id(String::from("num"));
 
         let line = test_line![(test_local!(ValType::I32), local)(
@@ -347,10 +340,7 @@ mod tests {
     #[test]
     fn test_local_set_get_f32() {
         let mut executor = Executor::new();
-        let local = Local {
-            id: None,
-            val_type: ValType::F32,
-        };
+        let local = test_local!(ValType::F32);
         let line = test_line![(local)(
             Instruction::F32Const(3.14),
             Instruction::LocalSet(Index::Num(0)),
@@ -412,18 +402,7 @@ mod tests {
     #[test]
     fn execute_func_error_number_of_inputs() {
         let mut executor = Executor::new();
-        let func = Line::Func(Func {
-            id: Some(String::from("fun")),
-            params: vec![Local {
-                id: Some(String::from("first")),
-                val_type: ValType::I32,
-            }],
-            results: vec![ValType::I32, ValType::I32],
-            line_expression: LineExpression {
-                locals: vec![],
-                expr: Expression { instrs: vec![] },
-            },
-        });
+        let func = test_func!((test_local!(ValType::I32))()());
         executor.execute_line(func).unwrap();
 
         let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
@@ -433,30 +412,14 @@ mod tests {
     #[test]
     fn execute_func_error_number_of_outputs() {
         let mut executor = Executor::new();
-        let func = Line::Func(Func {
-            id: Some(String::from("subtract")),
-            params: vec![
-                Local {
-                    id: Some(String::from("first")),
-                    val_type: ValType::I32,
-                },
-                Local {
-                    id: Some(String::from("second")),
-                    val_type: ValType::I32,
-                },
-            ],
-            results: vec![ValType::I32, ValType::I32],
-            line_expression: LineExpression {
-                locals: vec![],
-                expr: Expression {
-                    instrs: vec![
-                        Instruction::LocalGet(Index::Id(String::from("first"))),
-                        Instruction::LocalGet(Index::Id(String::from("second"))),
-                        Instruction::I32Sub,
-                    ],
-                },
-            },
-        });
+        let func = test_func!((
+            test_local_id!("first", ValType::I32),
+            test_local_id!("second", ValType::I32)
+        )(ValType::I32, ValType::I32)(
+            Instruction::LocalGet(Index::Id(String::from("first"))),
+            Instruction::LocalGet(Index::Id(String::from("second"))),
+            Instruction::I32Sub
+        ));
         executor.execute_line(func).unwrap();
 
         let call_sub = test_line![()(
