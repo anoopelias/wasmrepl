@@ -98,7 +98,9 @@ impl Executor {
             self.call_stack.last_mut().unwrap().stack.push(value);
         }
 
-        // TODO: Verify nothing is left in func_state
+        if values.len() > 0 {
+            return Err(Error::msg("Too many returns"));
+        }
 
         Ok(())
     }
@@ -419,7 +421,18 @@ mod tests {
         executor.execute_line(func).unwrap();
 
         let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
-        // We expect one output but will get only none hence an error
+        // We expect one output but will get none hence an error
+        assert!(executor.execute_line(call_sub).is_err());
+    }
+
+    #[test]
+    fn execute_func_error_more_number_of_outputs() {
+        let mut executor = Executor::new();
+        let func = test_func!("fun", ()()(Instruction::I32Const(5)));
+        executor.execute_line(func).unwrap();
+
+        let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        // We expect no output but will get one hence an error
         assert!(executor.execute_line(call_sub).is_err());
     }
 }
