@@ -68,9 +68,11 @@ impl Executor {
 
         while let Some(param) = func.params.pop() {
             let val = self.call_stack.last_mut().unwrap().stack.pop()?;
-            val.is_same_type(param.val_type)?;
+            val.is_same_type(&param.val_type)?;
             func_state.locals.grow(param.id.as_deref(), val)?;
         }
+
+        // TODO: Verify that the input stack is empty
 
         self.call_stack.push(func_state);
         self.execute_line_expression(&func.line_expression)?;
@@ -87,10 +89,12 @@ impl Executor {
         }
 
         // Validate results
-        for _ in &func.results {
-            // TODO: Verify its of same type
+        for result in &func.results {
             let value = match values.pop() {
-                Some(value) => value,
+                Some(value) => {
+                    value.is_same_type(result)?;
+                    value
+                }
                 None => return Err(Error::msg("Not enough returns")),
             };
             self.call_stack.last_mut().unwrap().stack.push(value);
@@ -465,6 +469,32 @@ mod tests {
             Instruction::I32Const(10),
             Instruction::Call(Index::Id(String::from("fun")))
         )];
+        assert!(executor.execute_line(call_fun).is_err());
+    }
+
+    #[test]
+    fn execute_func_output_type() {
+        let mut executor = Executor::new();
+        let func = test_func!(
+            "fun",
+            ()(ValType::I32, ValType::I64)(Instruction::I32Const(5), Instruction::I64Const(10))
+        );
+        executor.execute_line(func).unwrap();
+
+        let call_fun = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        executor.execute_line(call_fun).unwrap();
+    }
+
+    #[test]
+    fn execute_func_output_type_error() {
+        let mut executor = Executor::new();
+        let func = test_func!(
+            "fun",
+            ()(ValType::I32, ValType::I64)(Instruction::I64Const(10), Instruction::I32Const(5))
+        );
+        executor.execute_line(func).unwrap();
+
+        let call_fun = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
         assert!(executor.execute_line(call_fun).is_err());
     }
 }

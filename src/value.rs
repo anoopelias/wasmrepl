@@ -84,7 +84,7 @@ impl Value {
         }
     }
 
-    pub fn is_same_type(&self, ty: ValType) -> Result<()> {
+    pub fn is_same_type(&self, ty: &ValType) -> Result<()> {
         match (self, ty) {
             (Self::I32(_), ValType::I32) => Ok(()),
             (Self::I64(_), ValType::I64) => Ok(()),
@@ -175,16 +175,16 @@ mod tests {
 
     #[test]
     fn test_is_same_type() {
-        test_val_i32(1).is_same_type(ValType::I32).unwrap();
-        test_val_i64(3).is_same_type(ValType::I64).unwrap();
-        test_val_f32(1.1).is_same_type(ValType::F32).unwrap();
-        test_val_f64(1.1).is_same_type(ValType::F64).unwrap();
+        test_val_i32(1).is_same_type(&ValType::I32).unwrap();
+        test_val_i64(3).is_same_type(&ValType::I64).unwrap();
+        test_val_f32(1.1).is_same_type(&ValType::F32).unwrap();
+        test_val_f64(1.1).is_same_type(&ValType::F64).unwrap();
     }
 
     #[test]
     fn test_is_same_type_error() {
-        assert!(test_val_i32(1).is_same_type(ValType::I64).is_err());
-        assert!(test_val_i32(1).is_same_type(ValType::F32).is_err());
-        assert!(test_val_i64(1).is_same_type(ValType::F64).is_err());
+        assert!(test_val_i32(1).is_same_type(&ValType::I64).is_err());
+        assert!(test_val_i32(1).is_same_type(&ValType::F32).is_err());
+        assert!(test_val_i64(1).is_same_type(&ValType::F64).is_err());
     }
 }
