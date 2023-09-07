@@ -67,11 +67,9 @@ impl Executor {
         let mut func = self.funcs.get(index)?.clone();
 
         while let Some(param) = func.params.pop() {
-            // TODO: Verify its of same type
-            func_state.locals.grow(
-                param.id.as_deref(),
-                self.call_stack.last_mut().unwrap().stack.pop()?,
-            )?;
+            let val = self.call_stack.last_mut().unwrap().stack.pop()?;
+            val.is_same_type(param.val_type)?;
+            func_state.locals.grow(param.id.as_deref(), val)?;
         }
 
         self.call_stack.push(func_state);
@@ -410,8 +408,8 @@ mod tests {
         let func = test_func!("fun", (test_local!(ValType::I32))()());
         executor.execute_line(func).unwrap();
 
-        let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
-        assert!(executor.execute_line(call_sub).is_err());
+        let call_fun = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        assert!(executor.execute_line(call_fun).is_err());
     }
 
     #[test]
@@ -420,9 +418,9 @@ mod tests {
         let func = test_func!("fun", ()(ValType::I32)());
         executor.execute_line(func).unwrap();
 
-        let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        let call = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
         // We expect one output but will get none hence an error
-        assert!(executor.execute_line(call_sub).is_err());
+        assert!(executor.execute_line(call).is_err());
     }
 
     #[test]
@@ -431,8 +429,42 @@ mod tests {
         let func = test_func!("fun", ()()(Instruction::I32Const(5)));
         executor.execute_line(func).unwrap();
 
-        let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        let call = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
         // We expect no output but will get one hence an error
-        assert!(executor.execute_line(call_sub).is_err());
+        assert!(executor.execute_line(call).is_err());
+    }
+
+    #[test]
+    fn execute_func_input_type() {
+        let mut executor = Executor::new();
+        let func = test_func!(
+            "fun",
+            (test_local!(ValType::I32), test_local!(ValType::I64))()()
+        );
+        executor.execute_line(func).unwrap();
+
+        let call_fun = test_line![()(
+            Instruction::I32Const(5),
+            Instruction::I64Const(10),
+            Instruction::Call(Index::Id(String::from("fun")))
+        )];
+        executor.execute_line(call_fun).unwrap();
+    }
+
+    #[test]
+    fn execute_func_error_input_type() {
+        let mut executor = Executor::new();
+        let func = test_func!(
+            "fun",
+            (test_local!(ValType::I32), test_local!(ValType::I64))()()
+        );
+        executor.execute_line(func).unwrap();
+
+        let call_fun = test_line![()(
+            Instruction::I64Const(5),
+            Instruction::I32Const(10),
+            Instruction::Call(Index::Id(String::from("fun")))
+        )];
+        assert!(executor.execute_line(call_fun).is_err());
     }
 }

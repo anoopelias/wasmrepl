@@ -1,6 +1,8 @@
 use anyhow::{Error, Result};
 use std::fmt::{self, Display};
 
+use crate::model::ValType;
+
 #[derive(PartialEq, Debug)]
 pub enum Value {
     I32(i32),
@@ -81,10 +83,21 @@ impl Value {
             _ => Err(Error::msg("Type mismatch")),
         }
     }
+
+    pub fn is_same_type(&self, ty: ValType) -> Result<()> {
+        match (self, ty) {
+            (Self::I32(_), ValType::I32) => Ok(()),
+            (Self::I64(_), ValType::I64) => Ok(()),
+            (Self::F32(_), ValType::F32) => Ok(()),
+            (Self::F64(_), ValType::F64) => Ok(()),
+            _ => Err(Error::msg("Type mismatch")),
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::model::ValType;
     use crate::test_utils::{test_val_f32, test_val_f64, test_val_i32, test_val_i64};
     use crate::value::Value;
     use anyhow::Result;
@@ -158,5 +171,20 @@ mod tests {
         assert!(test_val_i32(1).is_same(&test_val_i64(2)).is_err());
         assert!(test_val_i32(1).is_same(&test_val_f32(2.0)).is_err());
         assert!(test_val_i64(1).is_same(&test_val_f64(2.0)).is_err());
+    }
+
+    #[test]
+    fn test_is_same_type() {
+        test_val_i32(1).is_same_type(ValType::I32).unwrap();
+        test_val_i64(3).is_same_type(ValType::I64).unwrap();
+        test_val_f32(1.1).is_same_type(ValType::F32).unwrap();
+        test_val_f64(1.1).is_same_type(ValType::F64).unwrap();
+    }
+
+    #[test]
+    fn test_is_same_type_error() {
+        assert!(test_val_i32(1).is_same_type(ValType::I64).is_err());
+        assert!(test_val_i32(1).is_same_type(ValType::F32).is_err());
+        assert!(test_val_i64(1).is_same_type(ValType::F64).is_err());
     }
 }
