@@ -52,15 +52,7 @@ impl Executor {
     pub fn execute_line(&mut self, line: Line) -> Result<()> {
         match line {
             Line::Expression(line) => self.execute_line_expression(&line),
-            Line::Func(func) => {
-                match func.to_id() {
-                    Some(id) => self.funcs.grow_by_id(&id, func)?,
-                    None => {
-                        self.funcs.grow(func);
-                    }
-                };
-                Ok(())
-            }
+            Line::Func(func) => self.funcs.grow(func.to_id().as_deref(), func),
         }
     }
 
@@ -93,13 +85,7 @@ impl Executor {
 
     fn execute_local(&mut self, lc: &Local) -> Result<()> {
         let state = self.call_stack.last_mut().unwrap();
-        match &lc.id {
-            Some(id) => state.locals.grow_by_id(&id, default_value(lc)?),
-            None => {
-                state.locals.grow(default_value(lc)?);
-                Ok(())
-            }
-        }
+        state.locals.grow(lc.id.as_deref(), default_value(lc)?)
     }
 
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<()> {
