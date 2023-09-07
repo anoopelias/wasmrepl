@@ -15,7 +15,7 @@
 - [x] Functions
 - [x] Can we purge instruction during execution
 - [x] Update version of wast once [this](https://github.com/bytecodealliance/wasm-tools/issues/1156) issue is published.
-- [ ] Remove TODO_INSTRUCTION
+- [x] Remove TODO_INSTRUCTION
 - [ ] Test local for function
 - [ ] return statement
 - [ ] call statement with values

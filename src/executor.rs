@@ -159,10 +159,6 @@ mod tests {
     use crate::executor::Executor;
     use crate::model::{Line, LineExpression};
 
-    // An instruction that is not implemented yet,
-    // to be used to force an error
-    const TODO_INSTRUCTION: Instruction = Instruction::F32Copysign;
-
     macro_rules! test_line {
         (($( $y:expr ),*)($( $x:expr ),*)) => {
             Line::Expression(LineExpression {
@@ -232,7 +228,7 @@ mod tests {
         let line = test_line![()(Instruction::I32Const(55))];
         executor.execute_line(line).unwrap();
 
-        let line = test_line![()(Instruction::I32Const(42), TODO_INSTRUCTION)];
+        let line = test_line![()(Instruction::I32Const(55), Instruction::F32Neg)];
         assert!(executor.execute_line(line).is_err());
         // Ensure rollback
         assert_eq!(
@@ -284,9 +280,11 @@ mod tests {
         executor.execute_line(line).unwrap();
 
         let line = test_line![()(
+            Instruction::I32Const(43),
             Instruction::I32Const(55),
             Instruction::LocalSet(Index::Num(0)),
-            TODO_INSTRUCTION
+            // Failing instruction
+            Instruction::F32Neg
         )];
         assert!(executor.execute_line(line).is_err());
 
