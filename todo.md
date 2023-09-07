@@ -13,21 +13,22 @@
 - [x] Look at tests in `elements`, isn't these too much?
 - [x] Remove utils function `test_val_xx`
 - [x] Functions
-- [ ] Test local for function
-- [ ] Pop should return option instead of result
-- [ ] Remove TODO_INSTRUCTION
 - [x] Can we purge instruction during execution
+- [x] Update version of wast once [this](https://github.com/bytecodealliance/wasm-tools/issues/1156) issue is published.
+- [ ] Remove TODO_INSTRUCTION
+- [ ] Test local for function
 - [ ] return statement
 - [ ] call statement with values
+- [ ] Check if id already exists in `grow_by_id`
 - [ ] Mutli line inputs
+- [ ] Readme
+- [ ] return success message from executor
 - [ ] branch statements
+- [ ] Pop should return option instead of result
 - [ ] Print locals
 - [ ] Eq instructions
 - [ ] R/W memory
 - [ ] Types for functions
 - [ ] V128 instructions
-- [ ] Check if id already exists in `grow_by_id`
-- [ ] Readme
-- [x] Update version of wast once [this](https://github.com/bytecodealliance/wasm-tools/issues/1156) issue is published.
 - [ ] Github Actions / Pipelines
 - [ ] Make everything public only within crate
