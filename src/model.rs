@@ -30,6 +30,7 @@ impl TryFrom<&WastLine<'_>> for Line {
     }
 }
 
+#[derive(Clone)]
 pub struct Func {
     pub id: Option<String>,
     pub params: Vec<Local>,
@@ -96,6 +97,7 @@ impl TryFrom<&WastFunc<'_>> for Func {
     }
 }
 
+#[derive(Clone)]
 pub struct LineExpression {
     pub locals: Vec<Local>,
     pub expr: Expression,
@@ -114,6 +116,7 @@ impl TryFrom<&WastLineExpression<'_>> for LineExpression {
     }
 }
 
+#[derive(Clone)]
 pub struct Local {
     pub id: Option<String>,
     pub val_type: ValType,
@@ -128,7 +131,7 @@ impl TryFrom<&WastLocal<'_>> for Local {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum ValType {
     I32,
     I64,
@@ -149,6 +152,7 @@ impl TryFrom<&WastValType<'_>> for ValType {
     }
 }
 
+#[derive(Clone)]
 pub struct Expression {
     pub instrs: Vec<Instruction>,
 }
@@ -165,7 +169,7 @@ impl TryFrom<&WastExpression<'_>> for Expression {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Index {
     Id(String),
     Num(u32),
@@ -185,7 +189,7 @@ fn from_id(id: Option<Id>) -> Option<String> {
     id.map(|id| id.name().to_string())
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Instruction {
     Drop,
     I32Const(i32),

@@ -60,8 +60,47 @@ impl Executor {
         self.call_stack[0].stack.to_string()
     }
 
-    fn execute_func(&mut self, _index: &Index) -> Result<()> {
-        Err(Error::msg("Func not supported yet"))
+    fn execute_func(&mut self, index: &Index) -> Result<()> {
+        let mut func_state = State::new();
+
+        // TODO: Can we get away without cloning?
+        let mut func = self.funcs.get(index)?.clone();
+
+        while let Some(param) = func.params.pop() {
+            // TODO: Verify its of same type
+            func_state.locals.grow(
+                param.id.as_deref(),
+                self.call_stack.last_mut().unwrap().stack.pop()?,
+            )?;
+        }
+
+        self.call_stack.push(func_state);
+        self.execute_line_expression(&func.line_expression)?;
+
+        let mut func_state = self.call_stack.pop().unwrap();
+        let mut values = vec![];
+
+        loop {
+            let value = match func_state.stack.pop() {
+                Ok(value) => value,
+                Err(_) => break,
+            };
+            values.push(value);
+        }
+
+        // Validate results
+        for _ in &func.results {
+            // TODO: Verify its of same type
+            let value = match values.pop() {
+                Some(value) => value,
+                None => return Err(Error::msg("Not enough returns")),
+            };
+            self.call_stack.last_mut().unwrap().stack.push(value);
+        }
+
+        // TODO: Verify nothing is left in func_state
+
+        Ok(())
     }
 
     fn execute_line_expression(&mut self, line_expr: &LineExpression) -> Result<()> {
@@ -325,30 +364,38 @@ mod tests {
     fn execute_func() {
         let mut executor = Executor::new();
         let func = Line::Func(Func {
-            id: Some(String::from("sq")),
-            params: vec![Local {
-                id: Some(String::from("num")),
-                val_type: ValType::I32,
-            }],
-            results: vec![ValType::I32],
+            id: Some(String::from("subtract")),
+            params: vec![
+                Local {
+                    id: Some(String::from("first")),
+                    val_type: ValType::I32,
+                },
+                Local {
+                    id: Some(String::from("second")),
+                    val_type: ValType::I32,
+                },
+            ],
+            results: vec![ValType::I32, ValType::I32],
             line_expression: LineExpression {
                 locals: vec![],
                 expr: Expression {
                     instrs: vec![
-                        Instruction::LocalGet(Index::Id(String::from("num"))),
-                        Instruction::LocalGet(Index::Id(String::from("num"))),
-                        Instruction::I32Mul,
+                        Instruction::LocalGet(Index::Id(String::from("first"))),
+                        Instruction::LocalGet(Index::Id(String::from("first"))),
+                        Instruction::LocalGet(Index::Id(String::from("second"))),
+                        Instruction::I32Sub,
                     ],
                 },
             },
         });
         executor.execute_line(func).unwrap();
 
-        // let call_square = test_line![()(
-        //     Instruction::I32Const(512),
-        //     Instruction::Call(Index::Id(String::from("sq")))
-        // )];
-        // executor.execute_line(call_square).unwrap();
-        // assert_eq!(executor.to_state(), "[144]");
+        let call_sub = test_line![()(
+            Instruction::I32Const(7),
+            Instruction::I32Const(2),
+            Instruction::Call(Index::Id(String::from("subtract")))
+        )];
+        executor.execute_line(call_sub).unwrap();
+        assert_eq!(executor.to_state(), "[7, 5]");
     }
 }

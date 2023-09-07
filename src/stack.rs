@@ -1,4 +1,4 @@
-use anyhow::{Error, Ok, Result};
+use anyhow::{Error, Result};
 
 use crate::value::Value;
 
@@ -68,6 +68,7 @@ impl Stack {
         self.soft_values.clear();
     }
 
+    // Used only for test
     #[allow(dead_code)]
     pub fn to_soft_string(&self) -> Result<String> {
         let mut strs = vec![];
