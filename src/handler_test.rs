@@ -693,7 +693,7 @@ fn test_f64_copysign() {
 fn test_local_get() {
     let mut state = State::new();
     state.locals.grow(0.into());
-    state.locals.set(0, 42.into()).unwrap();
+    state.locals.set(&Index::Num(0), 42.into()).unwrap();
     exec_instr_handler(&Instruction::LocalGet(Index::Num(0)), &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 42.into());
 }
@@ -711,7 +711,7 @@ fn test_local_set() {
     state.locals.grow(0.into());
     state.locals.grow(0.into());
     exec_instr_handler(&Instruction::LocalSet(Index::Num(1)), &mut state).unwrap();
-    assert_eq!(state.locals.get(1).unwrap().clone(), 15.into());
+    assert_eq!(state.locals.get(&Index::Num(1)).unwrap().clone(), 15.into());
     assert!(state.stack.pop().is_err());
 }
 
@@ -732,7 +732,7 @@ fn test_local_set_stack_error() {
 fn test_local_get_by_id() {
     let mut state = State::new();
     state.locals.grow_by_id("num", 0.into()).unwrap();
-    state.locals.set(0, 42.into()).unwrap();
+    state.locals.set(&Index::Num(0), 42.into()).unwrap();
 
     let id = Index::Id(String::from("num"));
 
@@ -744,7 +744,7 @@ fn test_local_get_by_id() {
 fn test_local_get_by_id_error() {
     let mut state = State::new();
     state.locals.grow_by_id("num", 0.into()).unwrap();
-    state.locals.set(0, 42.into()).unwrap();
+    state.locals.set(&Index::Num(0), 42.into()).unwrap();
 
     let id = Index::Id(String::from("num_other"));
     assert!(exec_instr_handler(&Instruction::LocalGet(id), &mut state).is_err());
@@ -760,7 +760,7 @@ fn test_local_set_by_id() {
     let id = Index::Id(String::from("num_other"));
 
     exec_instr_handler(&Instruction::LocalSet(id), &mut state).unwrap();
-    assert_eq!(state.locals.get(1).unwrap().clone(), 15.into());
+    assert_eq!(state.locals.get(&Index::Num(1)).unwrap().clone(), 15.into());
     assert!(state.stack.pop().is_err());
 }
 
@@ -782,7 +782,7 @@ fn test_local_tee() {
     state.locals.grow(0.into());
     state.locals.grow(0.into());
     exec_instr_handler(&Instruction::LocalTee(Index::Num(1)), &mut state).unwrap();
-    assert_eq!(state.locals.get(1).unwrap().clone(), 15.into());
+    assert_eq!(state.locals.get(&Index::Num(1)).unwrap().clone(), 15.into());
     assert_eq!(state.stack.pop().unwrap(), 15.into());
 }
 
@@ -802,7 +802,7 @@ fn test_local_tee_by_id() {
     let id = Index::Id(String::from("num_other"));
 
     exec_instr_handler(&Instruction::LocalTee(id), &mut state).unwrap();
-    assert_eq!(state.locals.get(1).unwrap().clone(), 15.into());
+    assert_eq!(state.locals.get(&Index::Num(1)).unwrap().clone(), 15.into());
     assert_eq!((state.stack.pop().unwrap()), 15.into());
 }
 

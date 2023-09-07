@@ -1,8 +1,9 @@
 use anyhow::{Error, Result};
 
+use crate::elements::Elements;
 use crate::handler::Handler;
 use crate::locals::Locals;
-use crate::model::{Index, Instruction, Local, ValType};
+use crate::model::{Func, Index, Instruction, Local, ValType};
 use crate::value::Value;
 use crate::{
     model::{Line, LineExpression},
@@ -36,6 +37,7 @@ impl State {
 
 pub struct Executor {
     call_stack: Vec<State>,
+    funcs: Elements<Func>,
 }
 
 impl Executor {
@@ -43,13 +45,22 @@ impl Executor {
         Executor {
             // Initialize with REPL's root state
             call_stack: vec![State::new()],
+            funcs: Elements::new(),
         }
     }
 
-    pub fn execute_line(&mut self, line: &Line) -> Result<()> {
+    pub fn execute_line(&mut self, line: Line) -> Result<()> {
         match line {
-            Line::Expression(line) => self.execute_line_expression(line),
-            Line::Func(_) => Err(Error::msg("Func not supported yet")),
+            Line::Expression(line) => self.execute_line_expression(&line),
+            Line::Func(func) => {
+                match func.to_id() {
+                    Some(id) => self.funcs.grow_by_id(&id, func)?,
+                    None => {
+                        self.funcs.grow(func);
+                    }
+                };
+                Ok(())
+            }
         }
     }
 
@@ -57,17 +68,17 @@ impl Executor {
         self.call_stack[0].stack.to_string()
     }
 
-    fn execute_func(&self, _index: &Index) -> Result<()> {
+    fn execute_func(&mut self, _index: &Index) -> Result<()> {
         Err(Error::msg("Func not supported yet"))
     }
 
     fn execute_line_expression(&mut self, line_expr: &LineExpression) -> Result<()> {
-        for lc in line_expr.locals.iter() {
+        for lc in &line_expr.locals {
             self.execute_local(lc)?
         }
 
-        for instr in line_expr.expr.instrs.iter() {
-            match self.execute_instruction(instr) {
+        for instr in &line_expr.expr.instrs {
+            match self.execute_instruction(&instr) {
                 Ok(_) => {}
                 Err(err) => {
                     self.call_stack.last_mut().unwrap().rollback();
@@ -96,7 +107,7 @@ impl Executor {
             Instruction::Call(index) => self.execute_func(index),
             _ => {
                 let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
-                handler.handle(instr)
+                handler.handle(&instr)
             }
         }
     }
@@ -157,7 +168,7 @@ mod tests {
             Instruction::I32Const(58),
             Instruction::I32Add
         )];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[100]");
     }
 
@@ -165,10 +176,10 @@ mod tests {
     fn test_execute_error_rollback() {
         let mut executor = Executor::new();
         let line = test_line![()(Instruction::I32Const(55))];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
 
         let line = test_line![()(Instruction::I32Const(42), TODO_INSTRUCTION)];
-        assert!(executor.execute_line(&line).is_err());
+        assert!(executor.execute_line(line).is_err());
         // Ensure rollback
         assert_eq!(
             executor.call_stack[0].stack.to_soft_string().unwrap(),
@@ -184,7 +195,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
@@ -196,7 +207,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
 
         let line = test_line![()(
@@ -205,7 +216,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[55]");
     }
 
@@ -216,17 +227,17 @@ mod tests {
             Instruction::I32Const(42),
             Instruction::LocalSet(Index::Num(0))
         )];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
 
         let line = test_line![()(
             Instruction::I32Const(55),
             Instruction::LocalSet(Index::Num(0)),
             TODO_INSTRUCTION
         )];
-        assert!(executor.execute_line(&line).is_err());
+        assert!(executor.execute_line(line).is_err());
 
         let line = test_line![(test_new_local_i32())(Instruction::LocalGet(Index::Num(0)))];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
@@ -247,7 +258,7 @@ mod tests {
             Instruction::LocalSet(set_index),
             Instruction::LocalGet(get_index)
         )];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
@@ -266,7 +277,7 @@ mod tests {
             Instruction::LocalSet(index),
             Instruction::LocalGet(Index::Num(1))
         )];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
@@ -278,7 +289,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[42]");
     }
 
@@ -294,7 +305,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[3.14]");
     }
 
@@ -310,7 +321,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(&line).unwrap();
+        executor.execute_line(line).unwrap();
         assert_eq!(executor.to_state(), "[3.14]");
     }
 
@@ -321,13 +332,13 @@ mod tests {
             Instruction::I64Const(55),
             Instruction::LocalSet(Index::Num(0))
         )];
-        assert!(executor.execute_line(&line).is_err());
+        assert!(executor.execute_line(line).is_err());
     }
 
     #[test]
     fn execute_func() {
         let mut executor = Executor::new();
-        let func = Func {
+        let func = Line::Func(Func {
             id: Some(String::from("sq")),
             params: vec![Local {
                 id: Some(String::from("num")),
@@ -344,6 +355,14 @@ mod tests {
                     ],
                 },
             },
-        };
+        });
+        executor.execute_line(func).unwrap();
+
+        // let call_square = test_line![()(
+        //     Instruction::I32Const(512),
+        //     Instruction::Call(Index::Id(String::from("sq")))
+        // )];
+        // executor.execute_line(call_square).unwrap();
+        // assert_eq!(executor.to_state(), "[144]");
     }
 }

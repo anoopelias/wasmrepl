@@ -37,6 +37,12 @@ pub struct Func {
     pub line_expression: LineExpression,
 }
 
+impl Func {
+    pub fn to_id(&self) -> Option<String> {
+        self.id.clone()
+    }
+}
+
 impl TryFrom<&WastFunc<'_>> for Func {
     type Error = Error;
     fn try_from(func: &WastFunc) -> Result<Self> {

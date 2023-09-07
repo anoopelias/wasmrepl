@@ -24,44 +24,20 @@ impl<'a> Handler<'a> {
     }
 
     fn local_get(&mut self, index: &Index) -> Result<()> {
-        match index {
-            Index::Num(num) => {
-                let value = self.state.locals.get(*num as usize)?;
-                self.state.stack.push(value.clone());
-            }
-            Index::Id(id) => {
-                let val = self.state.locals.get_by_id(id)?;
-                self.state.stack.push(val.clone());
-            }
-        };
+        let value = self.state.locals.get(index)?;
+        self.state.stack.push(value.clone());
         Ok(())
     }
 
     fn local_set(&mut self, index: &Index) -> Result<()> {
-        match index {
-            Index::Num(num) => {
-                let value = self.state.stack.pop()?;
-                self.state.locals.set(*num as usize, value)?;
-            }
-            Index::Id(id) => {
-                let value = self.state.stack.pop()?;
-                self.state.locals.set_by_id(id, value)?;
-            }
-        };
+        let value = self.state.stack.pop()?;
+        self.state.locals.set(index, value)?;
         Ok(())
     }
 
     fn local_tee(&mut self, index: &Index) -> Result<()> {
-        match index {
-            Index::Num(num) => {
-                let value = self.state.stack.peek()?;
-                self.state.locals.set(*num as usize, value)?;
-            }
-            Index::Id(id) => {
-                let value = self.state.stack.peek()?;
-                self.state.locals.set_by_id(id, value)?;
-            }
-        };
+        let value = self.state.stack.peek()?;
+        self.state.locals.set(index, value)?;
         Ok(())
     }
 
