@@ -171,6 +171,33 @@ mod tests {
         };
     }
 
+    macro_rules! test_func {
+        (($( $res:expr ),*)($( $instr:expr ),*)) => {
+            Line::Func(Func {
+                id: Some(String::from("subtract")),
+                params: vec![
+                    Local {
+                        id: Some(String::from("first")),
+                        val_type: ValType::I32,
+                    },
+                    Local {
+                        id: Some(String::from("second")),
+                        val_type: ValType::I32,
+                    },
+                ],
+                results: vec![$( $res ),*],
+                line_expression: LineExpression {
+                    locals: vec![],
+                    expr: Expression {
+                        instrs: vec![
+                            $( $instr ),*
+                        ],
+                    },
+                },
+            })
+        };
+    }
+
     macro_rules! test_new_local {
         ($fname:ident, $type:expr) => {
             fn $fname() -> Local {
@@ -363,6 +390,47 @@ mod tests {
     #[test]
     fn execute_func() {
         let mut executor = Executor::new();
+        let func = test_func!((ValType::I32, ValType::I32)(
+            Instruction::LocalGet(Index::Id(String::from("first"))),
+            Instruction::LocalGet(Index::Id(String::from("first"))),
+            Instruction::LocalGet(Index::Id(String::from("second"))),
+            Instruction::I32Sub
+        ));
+        executor.execute_line(func).unwrap();
+
+        let call_sub = test_line![()(
+            Instruction::I32Const(7),
+            Instruction::I32Const(2),
+            Instruction::Call(Index::Id(String::from("subtract")))
+        )];
+        executor.execute_line(call_sub).unwrap();
+        assert_eq!(executor.to_state(), "[7, 5]");
+    }
+
+    #[test]
+    fn execute_func_error_number_of_inputs() {
+        let mut executor = Executor::new();
+        let func = Line::Func(Func {
+            id: Some(String::from("fun")),
+            params: vec![Local {
+                id: Some(String::from("first")),
+                val_type: ValType::I32,
+            }],
+            results: vec![ValType::I32, ValType::I32],
+            line_expression: LineExpression {
+                locals: vec![],
+                expr: Expression { instrs: vec![] },
+            },
+        });
+        executor.execute_line(func).unwrap();
+
+        let call_sub = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        assert!(executor.execute_line(call_sub).is_err());
+    }
+
+    #[test]
+    fn execute_func_error_number_of_outputs() {
+        let mut executor = Executor::new();
         let func = Line::Func(Func {
             id: Some(String::from("subtract")),
             params: vec![
@@ -381,7 +449,6 @@ mod tests {
                 expr: Expression {
                     instrs: vec![
                         Instruction::LocalGet(Index::Id(String::from("first"))),
-                        Instruction::LocalGet(Index::Id(String::from("first"))),
                         Instruction::LocalGet(Index::Id(String::from("second"))),
                         Instruction::I32Sub,
                     ],
@@ -395,7 +462,6 @@ mod tests {
             Instruction::I32Const(2),
             Instruction::Call(Index::Id(String::from("subtract")))
         )];
-        executor.execute_line(call_sub).unwrap();
-        assert_eq!(executor.to_state(), "[7, 5]");
+        assert!(executor.execute_line(call_sub).is_err());
     }
 }
