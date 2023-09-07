@@ -731,7 +731,10 @@ fn test_local_set_stack_error() {
 #[test]
 fn test_local_get_by_id() {
     let mut state = State::new();
-    state.locals.grow(Some("num"), 0.into()).unwrap();
+    state
+        .locals
+        .grow(Some(String::from("num")), 0.into())
+        .unwrap();
     state.locals.set(&Index::Num(0), 42.into()).unwrap();
 
     let id = Index::Id(String::from("num"));
@@ -743,7 +746,10 @@ fn test_local_get_by_id() {
 #[test]
 fn test_local_get_by_id_error() {
     let mut state = State::new();
-    state.locals.grow(Some("num"), 0.into()).unwrap();
+    state
+        .locals
+        .grow(Some(String::from("num")), 0.into())
+        .unwrap();
     state.locals.set(&Index::Num(0), 42.into()).unwrap();
 
     let id = Index::Id(String::from("num_other"));
@@ -754,8 +760,14 @@ fn test_local_get_by_id_error() {
 fn test_local_set_by_id() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow(Some("num"), 0.into()).unwrap();
-    state.locals.grow(Some("num_other"), 0.into()).unwrap();
+    state
+        .locals
+        .grow(Some(String::from("num")), 0.into())
+        .unwrap();
+    state
+        .locals
+        .grow(Some(String::from("num_other")), 0.into())
+        .unwrap();
 
     let id = Index::Id(String::from("num_other"));
 
@@ -768,7 +780,10 @@ fn test_local_set_by_id() {
 fn test_local_set_by_id_error() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow(Some("num"), 0.into()).unwrap();
+    state
+        .locals
+        .grow(Some(String::from("num")), 0.into())
+        .unwrap();
 
     let id = Index::Id(String::from("num_other"));
 
@@ -796,8 +811,14 @@ fn test_local_tee_error() {
 fn test_local_tee_by_id() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow(Some("num"), 0.into()).unwrap();
-    state.locals.grow(Some("num_other"), 0.into()).unwrap();
+    state
+        .locals
+        .grow(Some(String::from("num")), 0.into())
+        .unwrap();
+    state
+        .locals
+        .grow(Some(String::from("num_other")), 0.into())
+        .unwrap();
 
     let id = Index::Id(String::from("num_other"));
 
@@ -810,7 +831,10 @@ fn test_local_tee_by_id() {
 fn test_local_tee_by_id_error() {
     let mut state = State::new();
     state.stack.push(15.into());
-    state.locals.grow(Some("num"), 0.into()).unwrap();
+    state
+        .locals
+        .grow(Some(String::from("num")), 0.into())
+        .unwrap();
 
     let id = Index::Id(String::from("num_other"));
 

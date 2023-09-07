@@ -17,7 +17,7 @@ impl<T: Copy> Dict<T> {
         }
     }
 
-    pub fn set(&mut self, key: &str, value: T) {
+    pub fn set(&mut self, key: String, value: T) {
         self.soft_values.insert(key.to_string(), value);
     }
 
@@ -49,9 +49,9 @@ mod tests {
     #[test]
     fn test_dict() {
         let mut dict = Dict::new();
-        dict.set("a", 1);
-        dict.set("b", 2);
-        dict.set("c", 3);
+        dict.set(String::from("a"), 1);
+        dict.set(String::from("b"), 2);
+        dict.set(String::from("c"), 3);
         dict.commit();
         assert_eq!(dict.get("a").unwrap(), 1);
         assert_eq!(dict.get("b").unwrap(), 2);
@@ -61,11 +61,11 @@ mod tests {
     #[test]
     fn test_commit() {
         let mut dict = Dict::new();
-        dict.set("a", 1);
-        dict.set("b", 2);
+        dict.set(String::from("a"), 1);
+        dict.set(String::from("b"), 2);
         dict.commit();
 
-        dict.set("c", 3);
+        dict.set(String::from("c"), 3);
         dict.commit();
         assert_eq!(dict.get("a").unwrap(), 1);
         assert_eq!(dict.get("b").unwrap(), 2);
@@ -74,11 +74,11 @@ mod tests {
     #[test]
     fn test_rollback() {
         let mut dict = Dict::new();
-        dict.set("a", 1);
-        dict.set("b", 2);
+        dict.set(String::from("a"), 1);
+        dict.set(String::from("b"), 2);
         dict.commit();
 
-        dict.set("c", 3);
+        dict.set(String::from("c"), 3);
         dict.rollback();
         assert_eq!(dict.get("a").unwrap(), 1);
         assert_eq!(dict.get("b").unwrap(), 2);

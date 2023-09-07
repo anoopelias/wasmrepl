@@ -16,7 +16,7 @@
 - [ ] Test local for function
 - [ ] Pop should return option instead of result
 - [ ] Remove TODO_INSTRUCTION
-- [ ] Can we purge instruction during execution
+- [x] Can we purge instruction during execution
 - [ ] return statement
 - [ ] call statement with values
 - [ ] Mutli line inputs

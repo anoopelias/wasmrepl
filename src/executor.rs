@@ -51,8 +51,8 @@ impl Executor {
 
     pub fn execute_line(&mut self, line: Line) -> Result<()> {
         match line {
-            Line::Expression(line) => self.execute_line_expression(&line),
-            Line::Func(func) => self.funcs.grow(func.to_id().as_deref(), func),
+            Line::Expression(line) => self.execute_line_expression(line),
+            Line::Func(func) => self.funcs.grow(func.id.clone(), func),
         }
     }
 
@@ -69,7 +69,7 @@ impl Executor {
         while let Some(param) = func.params.pop() {
             let val = self.call_stack.last_mut().unwrap().stack.pop()?;
             val.is_same_type(&param.val_type)?;
-            func_state.locals.grow(param.id.as_deref(), val)?;
+            func_state.locals.grow(param.id, val)?;
         }
         if !self.call_stack.last_mut().unwrap().stack.is_empty() {
             return Err(Error::msg("Too many inputs to func"));
@@ -77,7 +77,7 @@ impl Executor {
 
         // Make func call
         self.call_stack.push(func_state);
-        self.execute_line_expression(&func.line_expression)?;
+        self.execute_line_expression(func.line_expression)?;
 
         // Validate results
         let mut func_state = self.call_stack.pop().unwrap();
@@ -109,13 +109,13 @@ impl Executor {
         Ok(())
     }
 
-    fn execute_line_expression(&mut self, line_expr: &LineExpression) -> Result<()> {
-        for lc in &line_expr.locals {
-            self.execute_local(lc)?
+    fn execute_line_expression(&mut self, line_expr: LineExpression) -> Result<()> {
+        for lc in line_expr.locals.into_iter() {
+            self.execute_local(lc)?;
         }
 
-        for instr in &line_expr.expr.instrs {
-            match self.execute_instruction(&instr) {
+        for instr in line_expr.expr.instrs.into_iter() {
+            match self.execute_instruction(instr) {
                 Ok(_) => {}
                 Err(err) => {
                     self.call_stack.last_mut().unwrap().rollback();
@@ -124,18 +124,17 @@ impl Executor {
             }
         }
 
-        self.call_stack.last_mut().unwrap().commit()?;
-        Ok(())
+        self.call_stack.last_mut().unwrap().commit()
     }
 
-    fn execute_local(&mut self, lc: &Local) -> Result<()> {
+    fn execute_local(&mut self, lc: Local) -> Result<()> {
         let state = self.call_stack.last_mut().unwrap();
-        state.locals.grow(lc.id.as_deref(), default_value(lc)?)
+        state.locals.grow(lc.id.clone(), default_value(lc)?)
     }
 
-    fn execute_instruction(&mut self, instr: &Instruction) -> Result<()> {
+    fn execute_instruction(&mut self, instr: Instruction) -> Result<()> {
         match instr {
-            Instruction::Call(index) => self.execute_func(index),
+            Instruction::Call(index) => self.execute_func(&index),
             _ => {
                 let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
                 handler.handle(&instr)
@@ -144,7 +143,7 @@ impl Executor {
     }
 }
 
-fn default_value(local: &Local) -> Result<Value> {
+fn default_value(local: Local) -> Result<Value> {
     match local.val_type {
         ValType::I32 => Ok(Value::default_i32()),
         ValType::I64 => Ok(Value::default_i64()),

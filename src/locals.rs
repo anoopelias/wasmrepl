@@ -12,7 +12,7 @@ impl Locals {
         }
     }
 
-    pub fn grow(&mut self, id: Option<&str>, value: Value) -> Result<()> {
+    pub fn grow(&mut self, id: Option<String>, value: Value) -> Result<()> {
         self.elements.grow(id, value)
     }
 
@@ -63,7 +63,7 @@ mod tests {
     #[test]
     fn test_grow_get_set_by_id() {
         let mut locals = super::Locals::new();
-        locals.grow(Some("a"), 0.into()).unwrap();
+        locals.grow(Some(String::from("a")), 0.into()).unwrap();
         locals.set(&test_index("a"), 1.into()).unwrap();
 
         assert_eq!(locals.get(&test_index("a")).unwrap().clone(), 1.into());
@@ -73,7 +73,7 @@ mod tests {
     #[test]
     fn test_grow_get_set_by_index() {
         let mut locals = super::Locals::new();
-        locals.grow(Some("a"), 0.into()).unwrap();
+        locals.grow(Some(String::from("a")), 0.into()).unwrap();
         locals.set(&Index::Id(String::from("a")), 1.into()).unwrap();
 
         assert_eq!(locals.get(&test_index("a")).unwrap().clone(), 1.into());
@@ -83,7 +83,7 @@ mod tests {
     #[test]
     fn test_set_wrong_type_by_id() {
         let mut locals = super::Locals::new();
-        locals.grow(Some("a"), 0.into()).unwrap();
+        locals.grow(Some(String::from("a")), 0.into()).unwrap();
         assert!(locals.set(&test_index("a"), 1i64.into()).is_err());
     }
 
