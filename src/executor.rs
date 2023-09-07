@@ -63,20 +63,23 @@ impl Executor {
     fn execute_func(&mut self, index: &Index) -> Result<()> {
         let mut func_state = State::new();
 
+        // Prepare a state for func call
         // TODO: Can we get away without cloning?
         let mut func = self.funcs.get(index)?.clone();
-
         while let Some(param) = func.params.pop() {
             let val = self.call_stack.last_mut().unwrap().stack.pop()?;
             val.is_same_type(&param.val_type)?;
             func_state.locals.grow(param.id.as_deref(), val)?;
         }
+        if !self.call_stack.last_mut().unwrap().stack.is_empty() {
+            return Err(Error::msg("Too many inputs to func"));
+        }
 
-        // TODO: Verify that the input stack is empty
-
+        // Make func call
         self.call_stack.push(func_state);
         self.execute_line_expression(&func.line_expression)?;
 
+        // Validate results
         let mut func_state = self.call_stack.pop().unwrap();
         let mut values = vec![];
 
@@ -88,7 +91,6 @@ impl Executor {
             values.push(value);
         }
 
-        // Validate results
         for result in &func.results {
             let value = match values.pop() {
                 Some(value) => {
@@ -407,12 +409,26 @@ mod tests {
     }
 
     #[test]
-    fn execute_func_error_number_of_inputs() {
+    fn execute_func_error_less_number_of_inputs() {
         let mut executor = Executor::new();
         let func = test_func!("fun", (test_local!(ValType::I32))()());
         executor.execute_line(func).unwrap();
 
         let call_fun = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        assert!(executor.execute_line(call_fun).is_err());
+    }
+
+    #[test]
+    fn execute_func_more_number_of_inputs() {
+        let mut executor = Executor::new();
+        let func = test_func!("fun", (test_local!(ValType::I32))()());
+        executor.execute_line(func).unwrap();
+
+        let call_fun = test_line![()(
+            Instruction::I32Const(5),
+            Instruction::I32Const(10),
+            Instruction::Call(Index::Id(String::from("fun")))
+        )];
         assert!(executor.execute_line(call_fun).is_err());
     }
 
@@ -495,6 +511,7 @@ mod tests {
         executor.execute_line(func).unwrap();
 
         let call_fun = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+
         assert!(executor.execute_line(call_fun).is_err());
     }
 }

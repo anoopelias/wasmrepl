@@ -48,10 +48,15 @@ impl Stack {
     }
 
     fn check_underflow(&self) -> Result<()> {
+        // changing to i32 since usize won't go below zero
         if (self.values.len() as i32 - self.shrink_by as i32 - 1) < 0 {
             return Err(Error::msg("Stack underflow"));
         }
         Ok(())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        (self.values.len() as i32 - self.shrink_by as i32 + self.soft_values.len() as i32) == 0
     }
 
     pub fn commit(&mut self) -> Result<()> {
@@ -231,5 +236,17 @@ mod tests {
         stack.push(test_val_i32(3));
         assert_eq!(stack.to_string(), "[1, 2]");
         assert_eq!(stack.to_soft_string().unwrap(), "[1, 2, 3]");
+    }
+
+    #[test]
+    fn test_is_empty() {
+        let mut stack = Stack::new();
+        assert!(stack.is_empty());
+        stack.push(test_val_i32(1));
+        assert!(!stack.is_empty());
+        stack.commit().unwrap();
+        assert!(!stack.is_empty());
+        stack.pop().unwrap();
+        assert!(stack.is_empty());
     }
 }
