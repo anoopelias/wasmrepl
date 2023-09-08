@@ -139,7 +139,8 @@ impl Executor {
 
     fn execute_local(&mut self, lc: Local) -> Result<()> {
         let state = self.call_stack.last_mut().unwrap();
-        state.locals.grow(lc.id.clone(), default_value(lc)?)
+        state.locals.grow(lc.id.clone(), default_value(lc)?)?;
+        Ok(())
     }
 
     fn execute_instruction(&mut self, instr: Instruction) -> Result<()> {

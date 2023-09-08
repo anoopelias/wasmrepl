@@ -12,7 +12,7 @@ impl Locals {
         }
     }
 
-    pub fn grow(&mut self, id: Option<String>, value: Value) -> Result<()> {
+    pub fn grow(&mut self, id: Option<String>, value: Value) -> Result<usize> {
         self.elements.grow(id, value)
     }
 

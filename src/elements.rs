@@ -14,14 +14,14 @@ impl<T> Elements<T> {
         }
     }
 
-    pub fn grow(&mut self, id: Option<String>, value: T) -> Result<()> {
+    pub fn grow(&mut self, id: Option<String>, value: T) -> Result<usize> {
         // TODO: Check if id already exists
         let index = self.values.grow(value);
         match id {
             Some(id) => self.ids.set(id, index),
             None => {}
         }
-        Ok(())
+        Ok(index)
     }
 
     fn set_by_num(&mut self, index: usize, value: T) -> Result<()> {
