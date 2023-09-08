@@ -359,7 +359,6 @@ mod tests {
     use crate::{
         model::{Expression, Func, Index, Instruction, Line, LineExpression, Local, ValType},
         parser::{Line as WastLine, LineExpression as WastLineExpression},
-        test_utils::{float32_for, float64_for},
     };
     use wast::{
         core::{
@@ -367,7 +366,7 @@ mod tests {
             Instruction as WastInstruction, Local as WastLocal, TypeUse, ValType as WastValType,
         },
         parser::{self, ParseBuffer},
-        token::{Id, Index as WastIndex, Span},
+        token::{Float32, Float64, Id, Index as WastIndex, Span},
     };
 
     macro_rules! test_id {
@@ -386,6 +385,17 @@ mod tests {
             let $var = Index::try_from(&WastIndex::Id(id)).unwrap();
         };
     }
+
+    macro_rules! float_for {
+        ($fname:ident, $type:ty) => {
+            pub fn $fname(buf: &ParseBuffer) -> $type {
+                parser::parse::<$type>(&buf).unwrap()
+            }
+        };
+    }
+
+    float_for!(float32_for, Float32);
+    float_for!(float64_for, Float64);
 
     fn test_new_local_i32<'a>() -> WastLocal<'a> {
         WastLocal {
