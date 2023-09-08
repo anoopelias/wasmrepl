@@ -2,6 +2,7 @@ use crate::{executor::State, value::Value};
 use anyhow::Result;
 
 use crate::model::{Index, Instruction};
+use crate::test_utils::test_index;
 
 use super::Handler;
 
@@ -737,7 +738,7 @@ fn test_local_get_by_id() {
         .unwrap();
     state.locals.set(&Index::Num(0), 42.into()).unwrap();
 
-    let id = Index::Id(String::from("num"));
+    let id = test_index("num");
 
     exec_instr_handler(&Instruction::LocalGet(id), &mut state).unwrap();
     assert_eq!(state.stack.pop().unwrap(), 42.into());
@@ -752,7 +753,7 @@ fn test_local_get_by_id_error() {
         .unwrap();
     state.locals.set(&Index::Num(0), 42.into()).unwrap();
 
-    let id = Index::Id(String::from("num_other"));
+    let id = test_index("num_other");
     assert!(exec_instr_handler(&Instruction::LocalGet(id), &mut state).is_err());
 }
 
@@ -769,7 +770,7 @@ fn test_local_set_by_id() {
         .grow(Some(String::from("num_other")), 0.into())
         .unwrap();
 
-    let id = Index::Id(String::from("num_other"));
+    let id = test_index("num_other");
 
     exec_instr_handler(&Instruction::LocalSet(id), &mut state).unwrap();
     assert_eq!(state.locals.get(&Index::Num(1)).unwrap().clone(), 15.into());
@@ -785,7 +786,7 @@ fn test_local_set_by_id_error() {
         .grow(Some(String::from("num")), 0.into())
         .unwrap();
 
-    let id = Index::Id(String::from("num_other"));
+    let id = test_index("num_other");
 
     assert!(exec_instr_handler(&Instruction::LocalSet(id), &mut state).is_err());
 }
@@ -820,7 +821,7 @@ fn test_local_tee_by_id() {
         .grow(Some(String::from("num_other")), 0.into())
         .unwrap();
 
-    let id = Index::Id(String::from("num_other"));
+    let id = test_index("num_other");
 
     exec_instr_handler(&Instruction::LocalTee(id), &mut state).unwrap();
     assert_eq!(state.locals.get(&Index::Num(1)).unwrap().clone(), 15.into());
@@ -836,7 +837,6 @@ fn test_local_tee_by_id_error() {
         .grow(Some(String::from("num")), 0.into())
         .unwrap();
 
-    let id = Index::Id(String::from("num_other"));
-
+    let id = test_index("num_other");
     assert!(exec_instr_handler(&Instruction::LocalTee(id), &mut state).is_err());
 }

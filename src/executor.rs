@@ -172,6 +172,7 @@ mod tests {
 
     use crate::executor::Executor;
     use crate::model::{Line, LineExpression};
+    use crate::test_utils::test_index;
 
     macro_rules! test_line {
         (($( $y:expr ),*)($( $x:expr ),*)) => {
@@ -315,8 +316,8 @@ mod tests {
 
         let local = test_local_id!("num", ValType::I32);
 
-        let set_index = Index::Id(String::from("num"));
-        let get_index = Index::Id(String::from("num"));
+        let set_index = test_index("num");
+        let get_index = test_index("num");
 
         let line = test_line![(local)(
             Instruction::I32Const(42),
@@ -331,7 +332,7 @@ mod tests {
     fn test_local_by_id_mix() {
         let mut executor = Executor::new();
         let local = test_local_id!("num", ValType::I32);
-        let index = Index::Id(String::from("num"));
+        let index = test_index("num");
 
         let line = test_line![(test_local!(ValType::I32), local)(
             Instruction::I32Const(42),
@@ -402,9 +403,9 @@ mod tests {
                 test_local_id!("first", ValType::I32),
                 test_local_id!("second", ValType::I32)
             )(ValType::I32, ValType::I32)(
-                Instruction::LocalGet(Index::Id(String::from("first"))),
-                Instruction::LocalGet(Index::Id(String::from("first"))),
-                Instruction::LocalGet(Index::Id(String::from("second"))),
+                Instruction::LocalGet(test_index("first")),
+                Instruction::LocalGet(test_index("first")),
+                Instruction::LocalGet(test_index("second")),
                 Instruction::I32Sub
             )
         );
@@ -414,7 +415,7 @@ mod tests {
         let call_sub = test_line![()(
             Instruction::I32Const(7),
             Instruction::I32Const(2),
-            Instruction::Call(Index::Id(String::from("subtract")))
+            Instruction::Call(test_index("subtract"))
         )];
         executor.execute_line(call_sub).unwrap();
         assert_eq!(executor.to_state(), "[7, 5]");
@@ -426,7 +427,7 @@ mod tests {
         let func = test_func!("fun", (test_local!(ValType::I32))()());
         executor.execute_line(func).unwrap();
 
-        let call_fun = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        let call_fun = test_line![()(Instruction::Call(test_index("fun")))];
         assert!(executor.execute_line(call_fun).is_err());
     }
 
@@ -439,7 +440,7 @@ mod tests {
         let call_fun = test_line![()(
             Instruction::I32Const(5),
             Instruction::I32Const(10),
-            Instruction::Call(Index::Id(String::from("fun")))
+            Instruction::Call(test_index("fun"))
         )];
         assert!(executor.execute_line(call_fun).is_err());
     }
@@ -450,7 +451,7 @@ mod tests {
         let func = test_func!("fun", ()(ValType::I32)());
         executor.execute_line(func).unwrap();
 
-        let call = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        let call = test_line![()(Instruction::Call(test_index("fun")))];
         // We expect one output but will get none hence an error
         assert!(executor.execute_line(call).is_err());
     }
@@ -461,7 +462,7 @@ mod tests {
         let func = test_func!("fun", ()()(Instruction::I32Const(5)));
         executor.execute_line(func).unwrap();
 
-        let call = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        let call = test_line![()(Instruction::Call(test_index("fun")))];
         // We expect no output but will get one hence an error
         assert!(executor.execute_line(call).is_err());
     }
@@ -478,7 +479,7 @@ mod tests {
         let call_fun = test_line![()(
             Instruction::I32Const(5),
             Instruction::I64Const(10),
-            Instruction::Call(Index::Id(String::from("fun")))
+            Instruction::Call(test_index("fun"))
         )];
         executor.execute_line(call_fun).unwrap();
     }
@@ -495,7 +496,7 @@ mod tests {
         let call_fun = test_line![()(
             Instruction::I64Const(5),
             Instruction::I32Const(10),
-            Instruction::Call(Index::Id(String::from("fun")))
+            Instruction::Call(test_index("fun"))
         )];
         assert!(executor.execute_line(call_fun).is_err());
     }
@@ -509,7 +510,7 @@ mod tests {
         );
         executor.execute_line(func).unwrap();
 
-        let call_fun = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        let call_fun = test_line![()(Instruction::Call(test_index("fun")))];
         executor.execute_line(call_fun).unwrap();
     }
 
@@ -522,7 +523,7 @@ mod tests {
         );
         executor.execute_line(func).unwrap();
 
-        let call_fun = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
+        let call_fun = test_line![()(Instruction::Call(test_index("fun")))];
         assert!(executor.execute_line(call_fun).is_err());
     }
 

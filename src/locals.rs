@@ -38,10 +38,7 @@ impl Locals {
 mod tests {
 
     use crate::model::Index;
-
-    fn test_index(id: &str) -> Index {
-        Index::Id(String::from(id))
-    }
+    use crate::test_utils::test_index;
 
     #[test]
     fn test_grow_get_set() {
@@ -74,7 +71,7 @@ mod tests {
     fn test_grow_get_set_by_index() {
         let mut locals = super::Locals::new();
         locals.grow(Some(String::from("a")), 0.into()).unwrap();
-        locals.set(&Index::Id(String::from("a")), 1.into()).unwrap();
+        locals.set(&test_index("a"), 1.into()).unwrap();
 
         assert_eq!(locals.get(&test_index("a")).unwrap().clone(), 1.into());
         assert!(locals.get(&Index::Num(1)).is_err());

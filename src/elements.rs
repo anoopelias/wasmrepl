@@ -69,12 +69,13 @@ impl<T> Elements<T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::test_utils::test_index;
     use crate::{elements::Elements, model::Index};
 
     // TODO: Cleanup tests
 
     fn elements_get_by_id<T: Clone>(elements: &Elements<T>, id: &str) -> T {
-        elements.get(&Index::Id(String::from(id))).unwrap().clone()
+        elements.get(&test_index(id)).unwrap().clone()
     }
 
     fn elements_get<T: Clone>(elements: &Elements<T>, index: u32) -> T {
