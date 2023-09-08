@@ -3,7 +3,7 @@ use anyhow::{Error, Result};
 use crate::elements::Elements;
 use crate::handler::Handler;
 use crate::locals::Locals;
-use crate::model::{Func, Index, Instruction, Local, ValType};
+use crate::model::{Func, Index, Instruction, Local, Response, ValType};
 use crate::value::Value;
 use crate::{
     model::{Line, LineExpression},
@@ -49,15 +49,25 @@ impl Executor {
         }
     }
 
-    pub fn execute_line(&mut self, line: Line) -> Result<()> {
+    pub fn execute_line(&mut self, line: Line) -> Result<Response> {
         match line {
-            Line::Expression(line) => self.execute_line_expression(line),
-            Line::Func(func) => self.funcs.grow(func.id.clone(), func),
+            Line::Expression(line) => self.execute_repl_line(line),
+            Line::Func(func) => {
+                self.funcs.grow(func.id.clone(), func)?;
+                Ok(Response::new(String::from("Added func")))
+            }
         }
     }
 
     pub fn to_state(&self) -> String {
         self.call_stack[0].stack.to_string()
+    }
+
+    fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
+        match self.execute_line_expression(line) {
+            Ok(_) => Ok(Response::new(format!("{}", self.to_state()))),
+            Err(err) => Err(err),
+        }
     }
 
     fn execute_func(&mut self, index: &Index) -> Result<()> {

@@ -51,9 +51,7 @@ fn parse_and_execute(executor: &mut Executor, line_str: &str) -> String {
     match parse_line(&buf) {
         Ok(wast_line) => match Line::try_from(&wast_line) {
             Ok(line) => match executor.execute_line(line) {
-                Ok(_) => {
-                    format!("{}", executor.to_state())
-                }
+                Ok(response) => response.message,
                 Err(err) => {
                     format!("Error: {}", err.to_string())
                 }
