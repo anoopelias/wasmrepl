@@ -212,7 +212,4 @@ mod tests {
         assert_eq!(elements_get_by_id(&elements, "a"), 3);
         assert_eq!(elements_get_by_id(&elements, "c"), 0);
     }
-
-    #[test]
-    fn test_elements_get_by_index() {}
 }
