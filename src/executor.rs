@@ -64,10 +64,8 @@ impl Executor {
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
-        match self.execute_line_expression(line) {
-            Ok(_) => Ok(Response::new(format!("{}", self.to_state()))),
-            Err(err) => Err(err),
-        }
+        self.execute_line_expression(line)
+            .map(|()| Response::new(format!("{}", self.to_state())))
     }
 
     fn execute_func(&mut self, index: &Index) -> Result<()> {
