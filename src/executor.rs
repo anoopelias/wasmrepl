@@ -3,7 +3,8 @@ use anyhow::{Error, Result};
 use crate::elements::Elements;
 use crate::handler::Handler;
 use crate::locals::Locals;
-use crate::model::{Func, Index, Instruction, Local, Response, ValType};
+use crate::model::{Func, Index, Instruction, Local, ValType};
+use crate::response::Response;
 use crate::value::Value;
 use crate::{
     model::{Line, LineExpression},
@@ -168,10 +169,11 @@ fn default_value(local: Local) -> Result<Value> {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{Expression, Func, Index, Instruction, Local, Response, ValType};
+    use crate::model::{Expression, Func, Index, Instruction, Local, ValType};
 
     use crate::executor::Executor;
     use crate::model::{Line, LineExpression};
+    use crate::response::Response;
     use crate::test_utils::test_index;
 
     macro_rules! test_line {
