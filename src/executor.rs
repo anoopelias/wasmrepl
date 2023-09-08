@@ -52,15 +52,20 @@ impl Executor {
     pub fn execute_line(&mut self, line: Line) -> Result<Response> {
         match line {
             Line::Expression(line) => self.execute_repl_line(line),
-            Line::Func(func) => {
-                self.funcs.grow(func.id.clone(), func)?;
-                Ok(Response::new(String::from("Added func")))
-            }
+            Line::Func(func) => self.execute_add_func(func),
         }
     }
 
     pub fn to_state(&self) -> String {
         self.call_stack[0].stack.to_string()
+    }
+
+    fn execute_add_func(&mut self, func: Func) -> Result<Response> {
+        let id = func.id.clone();
+        self.funcs.grow(func.id.clone(), func).map(|i| match id {
+            Some(id) => Response::new(format!("Added func ;{}; {}", i, id)),
+            None => Response::new(format!("Added func ;{};", i)),
+        })
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
@@ -163,7 +168,7 @@ fn default_value(local: Local) -> Result<Value> {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{Expression, Func, Index, Instruction, Local, ValType};
+    use crate::model::{Expression, Func, Index, Instruction, Local, Response, ValType};
 
     use crate::executor::Executor;
     use crate::model::{Line, LineExpression};
@@ -403,7 +408,8 @@ mod tests {
                 Instruction::I32Sub
             )
         );
-        executor.execute_line(func).unwrap();
+        let Response { message } = executor.execute_line(func).unwrap();
+        assert_eq!(message, "Added func ;0; subtract");
 
         let call_sub = test_line![()(
             Instruction::I32Const(7),
@@ -517,7 +523,31 @@ mod tests {
         executor.execute_line(func).unwrap();
 
         let call_fun = test_line![()(Instruction::Call(Index::Id(String::from("fun"))))];
-
         assert!(executor.execute_line(call_fun).is_err());
+    }
+
+    #[test]
+    fn execute_func_no_id() {
+        let mut executor = Executor::new();
+        let func = Line::Func(Func {
+            id: None,
+            params: vec![test_local!(ValType::I32)],
+            results: vec![ValType::I32],
+            line_expression: LineExpression {
+                locals: vec![],
+                expr: Expression {
+                    instrs: vec![Instruction::LocalGet(Index::Num(0))],
+                },
+            },
+        });
+        let Response { message } = executor.execute_line(func).unwrap();
+        assert_eq!(message, "Added func ;0;");
+
+        let call_fun = test_line![()(
+            Instruction::I32Const(2),
+            Instruction::Call(Index::Num(0))
+        )];
+        let Response { message } = executor.execute_line(call_fun).unwrap();
+        assert_eq!(message, "[2]");
     }
 }
