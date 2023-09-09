@@ -1,9 +1,15 @@
 pub struct Response {
-    pub message: String,
+    messages: Vec<String>,
 }
 
 impl Response {
     pub fn new(message: String) -> Response {
-        Response { message }
+        Response {
+            messages: vec![message],
+        }
+    }
+
+    pub fn message(&self) -> String {
+        self.messages.join("\n")
     }
 }

@@ -173,7 +173,6 @@ mod tests {
 
     use crate::executor::Executor;
     use crate::model::{Line, LineExpression};
-    use crate::response::Response;
     use crate::test_utils::test_index;
 
     macro_rules! test_line {
@@ -411,8 +410,8 @@ mod tests {
                 Instruction::I32Sub
             )
         );
-        let Response { message } = executor.execute_line(func).unwrap();
-        assert_eq!(message, "Added func ;0; subtract");
+        let response = executor.execute_line(func).unwrap();
+        assert_eq!(response.message(), "Added func ;0; subtract");
 
         let call_sub = test_line![()(
             Instruction::I32Const(7),
@@ -543,14 +542,14 @@ mod tests {
                 },
             },
         });
-        let Response { message } = executor.execute_line(func).unwrap();
-        assert_eq!(message, "Added func ;0;");
+        let response = executor.execute_line(func).unwrap();
+        assert_eq!(response.message(), "Added func ;0;");
 
         let call_fun = test_line![()(
             Instruction::I32Const(2),
             Instruction::Call(Index::Num(0))
         )];
-        let Response { message } = executor.execute_line(call_fun).unwrap();
-        assert_eq!(message, "[2]");
+        let response = executor.execute_line(call_fun).unwrap();
+        assert_eq!(response.message(), "[2]");
     }
 }
