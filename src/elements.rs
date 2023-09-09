@@ -73,46 +73,36 @@ mod tests {
     use crate::test_utils::test_index;
     use crate::{elements::Elements, model::Index};
 
-    // TODO: Cleanup tests
-
-    fn elements_get_by_id<T: Clone>(elements: &Elements<T>, id: &str) -> T {
-        elements.get(&test_index(id)).unwrap().clone()
-    }
-
-    fn elements_get<T: Clone>(elements: &Elements<T>, index: u32) -> T {
-        elements.get(&Index::Num(index)).unwrap().clone()
-    }
-
     #[test]
     fn test_elements_grow_set_get() {
         let mut elements = Elements::new();
         elements.grow(None, 0).unwrap();
-        elements.set_by_num(0, 1).unwrap();
-        assert_eq!(elements_get(&elements, 0), 1);
+        elements.set(&Index::Num(0), 1).unwrap();
+        assert_eq!(elements.get(&Index::Num(0)).unwrap().clone(), 1);
     }
 
     #[test]
     fn test_elements_set_get_by_id() {
         let mut elements = Elements::new();
         elements.grow(Some(String::from("a")), 0).unwrap();
-        elements.set_by_id("a", 1).unwrap();
-        assert_eq!(elements_get_by_id(&elements, "a"), 1);
+        elements.set(&test_index("a"), 1).unwrap();
+        assert_eq!(elements.get(&test_index("a")).unwrap().clone(), 1);
     }
 
     #[test]
     fn test_elements_gid_set_get() {
         let mut elements = Elements::new();
         elements.grow(Some(String::from("a")), 0).unwrap();
-        elements.set_by_num(0, 1).unwrap();
+        elements.set(&Index::Num(0), 1).unwrap();
 
-        assert_eq!(elements_get(&elements, 0), 1);
+        assert_eq!(elements.get(&Index::Num(0)).unwrap().clone(), 1);
     }
 
     #[test]
     fn test_elements_set_by_id_error() {
         let mut elements = Elements::new();
         elements.grow(Some(String::from("a")), 0).unwrap();
-        elements.set_by_id("a", 1).unwrap();
+        elements.set(&test_index("a"), 1).unwrap();
 
         assert!(elements.set_by_id("b", 2).is_err());
     }
@@ -121,26 +111,26 @@ mod tests {
     fn test_elements_get_by_id_error() {
         let mut elements = Elements::new();
         elements.grow(Some(String::from("a")), 0).unwrap();
-        elements.set_by_id("a", 1).unwrap();
+        elements.set(&test_index("a"), 1).unwrap();
 
-        assert!(elements.get_by_id("b").is_err());
+        assert!(elements.get(&test_index("b")).is_err());
     }
 
     #[test]
     fn test_elements_commit() {
         let mut elements = Elements::new();
         elements.grow(None, 0).unwrap();
-        elements.set_by_num(0, 1).unwrap();
+        elements.set(&Index::Num(0), 1).unwrap();
         elements.commit();
 
         elements.grow(None, 0).unwrap();
-        elements.set_by_num(0, 2).unwrap();
-        elements.set_by_num(1, 4).unwrap();
+        elements.set(&Index::Num(0), 2).unwrap();
+        elements.set(&Index::Num(1), 4).unwrap();
         elements.commit();
 
-        assert_eq!(elements_get(&elements, 0), 2);
-        assert_eq!(elements_get(&elements, 1), 4);
-        assert!(elements.get_by_num(2).is_err());
+        assert_eq!(elements.get(&Index::Num(0)).unwrap().clone(), 2);
+        assert_eq!(elements.get(&Index::Num(1)).unwrap().clone(), 4);
+        assert!(elements.get(&Index::Num(2)).is_err());
     }
 
     #[test]
@@ -148,18 +138,18 @@ mod tests {
         let mut elements = Elements::new();
         elements.grow(None, 0).unwrap();
         elements.grow(None, 0).unwrap();
-        elements.set_by_num(0, 1).unwrap();
-        elements.set_by_num(1, 2).unwrap();
+        elements.set(&Index::Num(0), 1).unwrap();
+        elements.set(&Index::Num(1), 2).unwrap();
         elements.commit();
 
         elements.grow(None, 0).unwrap();
-        elements.set_by_num(0, 3).unwrap();
+        elements.set(&Index::Num(0), 3).unwrap();
         elements.set_by_num(2, 4).unwrap();
         elements.rollback();
 
-        assert_eq!(elements_get(&elements, 0), 1);
-        assert_eq!(elements_get(&elements, 1), 2);
-        assert!(elements.get_by_num(2).is_err());
+        assert_eq!(elements.get(&Index::Num(0)).unwrap().clone(), 1);
+        assert_eq!(elements.get(&Index::Num(1)).unwrap().clone(), 2);
+        assert!(elements.get(&Index::Num(2)).is_err());
     }
 
     #[test]
@@ -167,17 +157,17 @@ mod tests {
         let mut elements = Elements::new();
         elements.grow(Some(String::from("a")), 0).unwrap();
         elements.grow(Some(String::from("b")), 0).unwrap();
-        elements.set_by_id("a", 1).unwrap();
-        elements.set_by_id("b", 2).unwrap();
+        elements.set(&test_index("a"), 1).unwrap();
+        elements.set(&test_index("b"), 2).unwrap();
         elements.commit();
 
         elements.grow(Some(String::from("c")), 0).unwrap();
-        elements.set_by_id("a", 3).unwrap();
-        elements.set_by_id("c", 4).unwrap();
+        elements.set(&test_index("a"), 3).unwrap();
+        elements.set(&test_index("c"), 4).unwrap();
         elements.rollback();
 
-        assert_eq!(elements_get_by_id(&elements, "a"), 1);
-        assert_eq!(elements_get_by_id(&elements, "b"), 2);
+        assert_eq!(elements.get(&test_index("a")).unwrap().clone(), 1);
+        assert_eq!(elements.get(&test_index("b")).unwrap().clone(), 2);
         assert!(elements.get_by_id("c").is_err());
     }
 
@@ -185,33 +175,33 @@ mod tests {
     fn test_elements_rollback_recovery() {
         let mut elements = Elements::new();
         elements.grow(None, 0).unwrap();
-        elements.set_by_num(0, 1).unwrap();
+        elements.set(&Index::Num(0), 1).unwrap();
         elements.commit();
 
         elements.grow(None, 0).unwrap();
-        elements.set_by_num(1, 2).unwrap();
+        elements.set(&Index::Num(1), 2).unwrap();
         elements.rollback();
 
         elements.grow(None, 0).unwrap();
-        elements.set_by_num(0, 3).unwrap();
-        assert_eq!(elements_get(&elements, 0), 3);
-        assert_eq!(elements_get(&elements, 1), 0);
+        elements.set(&Index::Num(0), 3).unwrap();
+        assert_eq!(elements.get(&Index::Num(0)).unwrap().clone(), 3);
+        assert_eq!(elements.get(&Index::Num(1)).unwrap().clone(), 0);
     }
 
     #[test]
     fn test_elements_rollback_recovery_id() {
         let mut elements = Elements::new();
         elements.grow(Some(String::from("a")), 0).unwrap();
-        elements.set_by_id("a", 1).unwrap();
+        elements.set(&test_index("a"), 1).unwrap();
         elements.commit();
 
         elements.grow(Some(String::from("b")), 0).unwrap();
-        elements.set_by_id("b", 2).unwrap();
+        elements.set(&test_index("b"), 2).unwrap();
         elements.rollback();
 
         elements.grow(Some(String::from("c")), 0).unwrap();
-        elements.set_by_id("a", 3).unwrap();
-        assert_eq!(elements_get_by_id(&elements, "a"), 3);
-        assert_eq!(elements_get_by_id(&elements, "c"), 0);
+        elements.set(&test_index("a"), 3).unwrap();
+        assert_eq!(elements.get(&test_index("a")).unwrap().clone(), 3);
+        assert_eq!(elements.get(&test_index("c")).unwrap().clone(), 0);
     }
 }
