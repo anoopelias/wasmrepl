@@ -15,10 +15,15 @@ impl<T> Elements<T> {
     }
 
     pub fn grow(&mut self, id: Option<String>, value: T) -> Result<usize> {
-        // TODO: Check if id already exists
         let index = self.values.grow(value);
         match id {
-            Some(id) => self.ids.set(id, index),
+            Some(id) => {
+                match self.ids.get(&id) {
+                    Ok(_) => return Err(anyhow::anyhow!("Id already exists")),
+                    Err(_) => {}
+                }
+                self.ids.set(id, index)
+            }
             None => {}
         }
         Ok(index)
@@ -78,6 +83,13 @@ mod tests {
         assert_eq!(elements.grow(None, 0).unwrap(), 0);
         elements.set(&Index::Num(0), 1).unwrap();
         assert_eq!(elements.get(&Index::Num(0)).unwrap().clone(), 1);
+    }
+
+    #[test]
+    fn test_grow_same_key_error() {
+        let mut elements = Elements::new();
+        elements.grow(Some(String::from("a")), 0).unwrap();
+        assert!(elements.grow(Some(String::from("a")), 0).is_err());
     }
 
     #[test]
