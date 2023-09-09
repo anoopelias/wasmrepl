@@ -9,9 +9,10 @@ impl Response {
         }
     }
 
-    pub fn new_message(message: String) -> Response {
-        Response {
-            messages: vec![message],
+    pub fn new_index(ty: &str, i: usize, id: Option<String>) -> Response {
+        match id {
+            Some(id) => Response::new_message(format!("{} ;{}; {}", ty, i, id)),
+            None => Response::new_message(format!("{} ;{};", ty, i)),
         }
     }
 
@@ -25,5 +26,11 @@ impl Response {
 
     pub fn message(&self) -> String {
         self.messages.join("\n")
+    }
+
+    fn new_message(message: String) -> Response {
+        Response {
+            messages: vec![message],
+        }
     }
 }

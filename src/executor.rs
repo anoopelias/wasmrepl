@@ -63,10 +63,9 @@ impl Executor {
 
     fn execute_add_func(&mut self, func: Func) -> Result<Response> {
         let id = func.id.clone();
-        self.funcs.grow(func.id.clone(), func).map(|i| match id {
-            Some(id) => Response::new_message(format!("func ;{}; {}", i, id)),
-            None => Response::new_message(format!("func ;{};", i)),
-        })
+        self.funcs
+            .grow(func.id.clone(), func)
+            .map(|i| Response::new_index("func", i, id))
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
@@ -168,10 +167,7 @@ impl Executor {
         state
             .locals
             .grow(lc.id.clone(), default_value(lc)?)
-            .map(|i| match id {
-                Some(id) => Response::new_message(format!("local ;{}; {}", i, id)),
-                None => Response::new_message(format!("local ;{};", i)),
-            })
+            .map(|i| Response::new_index("local", i, id))
     }
 
     fn execute_instruction(&mut self, instr: Instruction) -> Result<()> {
