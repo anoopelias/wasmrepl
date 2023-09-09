@@ -57,21 +57,23 @@ impl Executor {
         }
     }
 
-    pub fn to_state(&self) -> String {
+    fn to_state(&self) -> String {
         self.call_stack[0].stack.to_string()
     }
 
     fn execute_add_func(&mut self, func: Func) -> Result<Response> {
         let id = func.id.clone();
         self.funcs.grow(func.id.clone(), func).map(|i| match id {
-            Some(id) => Response::new(format!("Added func ;{}; {}", i, id)),
-            None => Response::new(format!("Added func ;{};", i)),
+            Some(id) => Response::new_message(format!("Added func ;{}; {}", i, id)),
+            None => Response::new_message(format!("Added func ;{};", i)),
         })
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
-        self.execute_line_expression(line)
-            .map(|()| Response::new(format!("{}", self.to_state())))
+        self.execute_line_expression(line).map(|mut resp| {
+            resp.add_message(format!("{}", self.to_state()));
+            resp
+        })
     }
 
     fn execute_func(&mut self, index: &Index) -> Result<()> {
@@ -91,6 +93,9 @@ impl Executor {
 
         // Make func call
         self.call_stack.push(func_state);
+
+        // Ignoring the response messages from function execution
+        // to reduce noise in REPL
         self.execute_line_expression(func.line_expression)?;
 
         // Validate results
@@ -123,9 +128,10 @@ impl Executor {
         Ok(())
     }
 
-    fn execute_line_expression(&mut self, line_expr: LineExpression) -> Result<()> {
+    fn execute_line_expression(&mut self, line_expr: LineExpression) -> Result<Response> {
+        let mut response = Response::new();
         for lc in line_expr.locals.into_iter() {
-            self.execute_local(lc)?;
+            self.execute_local(lc).map(|resp| response.extend(resp))?
         }
 
         for instr in line_expr.expr.instrs.into_iter() {
@@ -138,13 +144,20 @@ impl Executor {
             }
         }
 
-        self.call_stack.last_mut().unwrap().commit()
+        self.call_stack.last_mut().unwrap().commit()?;
+        Ok(response)
     }
 
-    fn execute_local(&mut self, lc: Local) -> Result<()> {
+    fn execute_local(&mut self, lc: Local) -> Result<Response> {
+        let id = lc.id.clone();
         let state = self.call_stack.last_mut().unwrap();
-        state.locals.grow(lc.id.clone(), default_value(lc)?)?;
-        Ok(())
+        state
+            .locals
+            .grow(lc.id.clone(), default_value(lc)?)
+            .map(|i| match id {
+                Some(id) => Response::new_message(format!("Added local ;{}; {}", i, id)),
+                None => Response::new_message(format!("Added local ;{};", i)),
+            })
     }
 
     fn execute_instruction(&mut self, instr: Instruction) -> Result<()> {
@@ -234,8 +247,8 @@ mod tests {
             Instruction::I32Const(58),
             Instruction::I32Add
         )];
-        executor.execute_line(line).unwrap();
-        assert_eq!(executor.to_state(), "[100]");
+        let response = executor.execute_line(line).unwrap();
+        assert_eq!(response.message(), "[100]");
     }
 
     #[test]
@@ -261,8 +274,10 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(line).unwrap();
-        assert_eq!(executor.to_state(), "[42]");
+        assert_eq!(
+            executor.execute_line(line).unwrap().message(),
+            "Added local ;0;\n[42]"
+        );
     }
 
     #[test]
@@ -273,8 +288,10 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(line).unwrap();
-        assert_eq!(executor.to_state(), "[42]");
+        assert_eq!(
+            executor.execute_line(line).unwrap().message(),
+            "Added local ;0;\n[42]"
+        );
 
         let line = test_line![()(
             Instruction::Drop,
@@ -282,8 +299,7 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(line).unwrap();
-        assert_eq!(executor.to_state(), "[55]");
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[55]");
     }
 
     #[test]
@@ -307,8 +323,10 @@ mod tests {
         let line = test_line![(test_local!(ValType::I32))(Instruction::LocalGet(
             Index::Num(0)
         ))];
-        executor.execute_line(line).unwrap();
-        assert_eq!(executor.to_state(), "[42]");
+        assert_eq!(
+            executor.execute_line(line).unwrap().message(),
+            "Added local ;1;\n[42]"
+        );
     }
 
     #[test]
@@ -325,8 +343,10 @@ mod tests {
             Instruction::LocalSet(set_index),
             Instruction::LocalGet(get_index)
         )];
-        executor.execute_line(line).unwrap();
-        assert_eq!(executor.to_state(), "[42]");
+        assert_eq!(
+            executor.execute_line(line).unwrap().message(),
+            "Added local ;0; num\n[42]"
+        );
     }
 
     #[test]
@@ -340,8 +360,10 @@ mod tests {
             Instruction::LocalSet(index),
             Instruction::LocalGet(Index::Num(1))
         )];
-        executor.execute_line(line).unwrap();
-        assert_eq!(executor.to_state(), "[42]");
+        assert_eq!(
+            executor.execute_line(line).unwrap().message(),
+            "Added local ;0;\nAdded local ;1; num\n[42]"
+        );
     }
 
     #[test]
@@ -352,8 +374,10 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(line).unwrap();
-        assert_eq!(executor.to_state(), "[42]");
+        assert_eq!(
+            executor.execute_line(line).unwrap().message(),
+            "Added local ;0;\n[42]"
+        );
     }
 
     #[test]
@@ -365,8 +389,10 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(line).unwrap();
-        assert_eq!(executor.to_state(), "[3.14]");
+        assert_eq!(
+            executor.execute_line(line).unwrap().message(),
+            "Added local ;0;\n[3.14]"
+        );
     }
 
     #[test]
@@ -381,8 +407,10 @@ mod tests {
             Instruction::LocalSet(Index::Num(0)),
             Instruction::LocalGet(Index::Num(0))
         )];
-        executor.execute_line(line).unwrap();
-        assert_eq!(executor.to_state(), "[3.14]");
+        assert_eq!(
+            executor.execute_line(line).unwrap().message(),
+            "Added local ;0;\n[3.14]"
+        );
     }
 
     #[test]
@@ -418,8 +446,7 @@ mod tests {
             Instruction::I32Const(2),
             Instruction::Call(test_index("subtract"))
         )];
-        executor.execute_line(call_sub).unwrap();
-        assert_eq!(executor.to_state(), "[7, 5]");
+        assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[7, 5]");
     }
 
     #[test]

@@ -65,6 +65,7 @@ impl Stack {
         self.shrink_by = 0;
         self.soft_values.clear();
 
+        // TODO:  Remove Result. Commit cannot throw error.
         Ok(())
     }
 

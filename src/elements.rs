@@ -21,6 +21,7 @@ impl<T> Elements<T> {
             Some(id) => self.ids.set(id, index),
             None => {}
         }
+        // TODO: assert index in tests
         Ok(index)
     }
 
