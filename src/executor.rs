@@ -64,8 +64,8 @@ impl Executor {
     fn execute_add_func(&mut self, func: Func) -> Result<Response> {
         let id = func.id.clone();
         self.funcs.grow(func.id.clone(), func).map(|i| match id {
-            Some(id) => Response::new_message(format!("Added func ;{}; {}", i, id)),
-            None => Response::new_message(format!("Added func ;{};", i)),
+            Some(id) => Response::new_message(format!("func ;{}; {}", i, id)),
+            None => Response::new_message(format!("func ;{};", i)),
         })
     }
 
@@ -155,8 +155,8 @@ impl Executor {
             .locals
             .grow(lc.id.clone(), default_value(lc)?)
             .map(|i| match id {
-                Some(id) => Response::new_message(format!("Added local ;{}; {}", i, id)),
-                None => Response::new_message(format!("Added local ;{};", i)),
+                Some(id) => Response::new_message(format!("local ;{}; {}", i, id)),
+                None => Response::new_message(format!("local ;{};", i)),
             })
     }
 
@@ -276,7 +276,7 @@ mod tests {
         )];
         assert_eq!(
             executor.execute_line(line).unwrap().message(),
-            "Added local ;0;\n[42]"
+            "local ;0;\n[42]"
         );
     }
 
@@ -290,7 +290,7 @@ mod tests {
         )];
         assert_eq!(
             executor.execute_line(line).unwrap().message(),
-            "Added local ;0;\n[42]"
+            "local ;0;\n[42]"
         );
 
         let line = test_line![()(
@@ -325,7 +325,7 @@ mod tests {
         ))];
         assert_eq!(
             executor.execute_line(line).unwrap().message(),
-            "Added local ;1;\n[42]"
+            "local ;1;\n[42]"
         );
     }
 
@@ -345,7 +345,7 @@ mod tests {
         )];
         assert_eq!(
             executor.execute_line(line).unwrap().message(),
-            "Added local ;0; num\n[42]"
+            "local ;0; num\n[42]"
         );
     }
 
@@ -362,7 +362,7 @@ mod tests {
         )];
         assert_eq!(
             executor.execute_line(line).unwrap().message(),
-            "Added local ;0;\nAdded local ;1; num\n[42]"
+            "local ;0;\nlocal ;1; num\n[42]"
         );
     }
 
@@ -376,7 +376,7 @@ mod tests {
         )];
         assert_eq!(
             executor.execute_line(line).unwrap().message(),
-            "Added local ;0;\n[42]"
+            "local ;0;\n[42]"
         );
     }
 
@@ -391,7 +391,7 @@ mod tests {
         )];
         assert_eq!(
             executor.execute_line(line).unwrap().message(),
-            "Added local ;0;\n[3.14]"
+            "local ;0;\n[3.14]"
         );
     }
 
@@ -409,7 +409,7 @@ mod tests {
         )];
         assert_eq!(
             executor.execute_line(line).unwrap().message(),
-            "Added local ;0;\n[3.14]"
+            "local ;0;\n[3.14]"
         );
     }
 
@@ -439,7 +439,7 @@ mod tests {
             )
         );
         let response = executor.execute_line(func).unwrap();
-        assert_eq!(response.message(), "Added func ;0; subtract");
+        assert_eq!(response.message(), "func ;0; subtract");
 
         let call_sub = test_line![()(
             Instruction::I32Const(7),
@@ -570,7 +570,7 @@ mod tests {
             },
         });
         let response = executor.execute_line(func).unwrap();
-        assert_eq!(response.message(), "Added func ;0;");
+        assert_eq!(response.message(), "func ;0;");
 
         let call_fun = test_line![()(
             Instruction::I32Const(2),
