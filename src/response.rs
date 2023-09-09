@@ -34,3 +34,43 @@ impl Response {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use crate::response::Response;
+
+    #[test]
+    fn test_new() {
+        let resp = Response::new();
+        assert_eq!(resp.message(), "");
+    }
+
+    #[test]
+    fn test_new_index() {
+        let resp = Response::new_index("local", 0, None);
+        assert_eq!(resp.message(), "local ;0;");
+    }
+
+    #[test]
+    fn test_new_index_with_id() {
+        let resp = Response::new_index("local", 0, Some("foo".to_string()));
+        assert_eq!(resp.message(), "local ;0; foo");
+    }
+
+    #[test]
+    fn test_extend() {
+        let mut resp1 = Response::new_index("local", 0, None);
+        let resp2 = Response::new_index("local", 1, None);
+        resp1.extend(resp2);
+        assert_eq!(resp1.message(), "local ;0;\nlocal ;1;");
+    }
+
+    #[test]
+    fn test_add_messages() {
+        let mut resp = Response::new();
+        resp.add_message("foo".to_string());
+        resp.add_message("bar".to_string());
+        assert_eq!(resp.message(), "foo\nbar");
+    }
+}

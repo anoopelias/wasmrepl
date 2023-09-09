@@ -63,9 +63,7 @@ impl Executor {
 
     fn execute_add_func(&mut self, func: Func) -> Result<Response> {
         let id = func.id.clone();
-        self.funcs
-            .grow(func.id.clone(), func)
-            .map(|i| Response::new_index("func", i, id))
+        self.funcs.grow(func.id.clone(), func).map(|i| Response::new_index("func", i, id))
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
