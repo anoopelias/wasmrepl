@@ -77,40 +77,24 @@ impl Executor {
     }
 
     fn execute_func(&mut self, index: &Index) -> Result<()> {
-        let mut func_state = State::new();
-
-        // Prepare a state for func call
-        // TODO: Can we get away without cloning?
-        let mut func = self.funcs.get(index)?.clone();
-        while let Some(param) = func.params.pop() {
-            let val = self.call_stack.last_mut().unwrap().stack.pop()?;
-            val.is_same_type(&param.val_type)?;
-            func_state.locals.grow(param.id, val)?;
-        }
-        if !self.call_stack.last_mut().unwrap().stack.is_empty() {
-            return Err(Error::msg("Too many inputs to func"));
-        }
-
-        // Make func call
+        let (func_state, func) = self.prepare_func_call(index)?;
+        let func_results = &func.results;
         self.call_stack.push(func_state);
 
         // Ignoring the response messages from function execution
         // to reduce noise in REPL
         self.execute_line_expression(func.line_expression)?;
 
-        // Validate results
-        let mut func_state = self.call_stack.pop().unwrap();
-        let mut values = vec![];
+        let values = self.fetch_results();
+        self.validate_results(func_results, values)
+    }
 
-        loop {
-            let value = match func_state.stack.pop() {
-                Ok(value) => value,
-                Err(_) => break,
-            };
-            values.push(value);
-        }
-
-        for result in &func.results {
+    fn validate_results(
+        &mut self,
+        func_results: &Vec<ValType>,
+        mut values: Vec<Value>,
+    ) -> Result<()> {
+        for result in func_results {
             let value = match values.pop() {
                 Some(value) => {
                     value.is_same_type(result)?;
@@ -126,6 +110,36 @@ impl Executor {
         }
 
         Ok(())
+    }
+
+    fn fetch_results(&mut self) -> Vec<Value> {
+        let mut func_state = self.call_stack.pop().unwrap();
+        let mut values = vec![];
+
+        loop {
+            // TODO: `pop` should return an `Option` instead of `Result`
+            // so that we can properly iterate.
+            let value = match func_state.stack.pop() {
+                Ok(value) => value,
+                Err(_) => break,
+            };
+            values.push(value);
+        }
+        values
+    }
+
+    fn prepare_func_call(&mut self, index: &Index) -> Result<(State, Func)> {
+        let mut func_state = State::new();
+        let mut func = self.funcs.get(index)?.clone();
+        while let Some(param) = func.params.pop() {
+            let val = self.call_stack.last_mut().unwrap().stack.pop()?;
+            val.is_same_type(&param.val_type)?;
+            func_state.locals.grow(param.id, val)?;
+        }
+        if !self.call_stack.last_mut().unwrap().stack.is_empty() {
+            return Err(Error::msg("Too many inputs to func"));
+        }
+        Ok((func_state, func))
     }
 
     fn execute_line_expression(&mut self, line_expr: LineExpression) -> Result<Response> {
