@@ -21,7 +21,6 @@ impl<T> Elements<T> {
             Some(id) => self.ids.set(id, index),
             None => {}
         }
-        // TODO: assert index in tests
         Ok(index)
     }
 
@@ -76,7 +75,7 @@ mod tests {
     #[test]
     fn test_elements_grow_set_get() {
         let mut elements = Elements::new();
-        elements.grow(None, 0).unwrap();
+        assert_eq!(elements.grow(None, 0).unwrap(), 0);
         elements.set(&Index::Num(0), 1).unwrap();
         assert_eq!(elements.get(&Index::Num(0)).unwrap().clone(), 1);
     }
@@ -84,7 +83,7 @@ mod tests {
     #[test]
     fn test_elements_set_get_by_id() {
         let mut elements = Elements::new();
-        elements.grow(Some(String::from("a")), 0).unwrap();
+        assert_eq!(elements.grow(Some(String::from("a")), 0).unwrap(), 0);
         elements.set(&test_index("a"), 1).unwrap();
         assert_eq!(elements.get(&test_index("a")).unwrap().clone(), 1);
     }
@@ -123,7 +122,7 @@ mod tests {
         elements.set(&Index::Num(0), 1).unwrap();
         elements.commit();
 
-        elements.grow(None, 0).unwrap();
+        assert_eq!(elements.grow(None, 0).unwrap(), 1);
         elements.set(&Index::Num(0), 2).unwrap();
         elements.set(&Index::Num(1), 4).unwrap();
         elements.commit();
