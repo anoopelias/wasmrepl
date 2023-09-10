@@ -63,7 +63,9 @@ impl Executor {
 
     fn execute_add_func(&mut self, func: Func) -> Result<Response> {
         let id = func.id.clone();
-        self.funcs.grow(func.id.clone(), func).map(|i| Response::new_index("func", i, id))
+        self.funcs
+            .grow(func.id.clone(), func)
+            .map(|i| Response::new_index("func", i, id))
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
@@ -142,7 +144,13 @@ impl Executor {
     fn execute_line_expression(&mut self, line_expr: LineExpression) -> Result<Response> {
         let mut response = Response::new();
         for lc in line_expr.locals.into_iter() {
-            self.execute_local(lc).map(|resp| response.extend(resp))?
+            match self.execute_local(lc).map(|resp| response.extend(resp)) {
+                Ok(response) => response,
+                Err(err) => {
+                    self.call_stack.last_mut().unwrap().rollback();
+                    return Err(err);
+                }
+            }
         }
 
         for instr in line_expr.expr.instrs.into_iter() {
@@ -311,7 +319,7 @@ mod tests {
     }
 
     #[test]
-    fn test_local_set_local_rollback() {
+    fn test_local_set_local_value_rollback() {
         let mut executor = Executor::new();
         let line = test_line![(test_local!(ValType::I32))(
             Instruction::I32Const(42),
@@ -334,6 +342,24 @@ mod tests {
         assert_eq!(
             executor.execute_line(line).unwrap().message(),
             "local ;1;\n[42]"
+        );
+    }
+
+    #[test]
+    fn test_local_rollback() {
+        let mut executor = Executor::new();
+        let line = test_line![(test_local_id!("num", ValType::I32))()];
+        assert_eq!(
+            executor.execute_line(line).unwrap().message(),
+            "local ;0; num\n[]"
+        );
+        let line = test_line![(test_local_id!("num", ValType::I32))()];
+        assert!(executor.execute_line(line).is_err());
+
+        let line = test_line![(test_local_id!("num2", ValType::I32))()];
+        assert_eq!(
+            executor.execute_line(line).unwrap().message(),
+            "local ;1; num2\n[]"
         );
     }
 
