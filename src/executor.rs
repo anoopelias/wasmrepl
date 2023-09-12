@@ -75,7 +75,7 @@ impl Executor {
         })
     }
 
-    fn execute_func(&mut self, index: &Index) -> Result<()> {
+    fn execute_func(&mut self, index: &Index) -> Result<Response> {
         let (func_state, func) = self.prepare_func_call(index)?;
         let func_results = &func.results;
         self.call_stack.push(func_state);
@@ -92,7 +92,7 @@ impl Executor {
         &mut self,
         func_results: &Vec<ValType>,
         mut values: Vec<Value>,
-    ) -> Result<()> {
+    ) -> Result<Response> {
         for result in func_results {
             let value = match values.pop() {
                 Some(value) => {
@@ -108,7 +108,7 @@ impl Executor {
             return Err(Error::msg("Too many returns"));
         }
 
-        Ok(())
+        Ok(Response::new())
     }
 
     fn fetch_results(&mut self) -> Vec<Value> {
@@ -155,7 +155,9 @@ impl Executor {
 
         for instr in line_expr.expr.instrs.into_iter() {
             match self.execute_instruction(instr) {
-                Ok(_) => {}
+                Ok(resp) => {
+                    response.extend(resp);
+                }
                 Err(err) => {
                     self.call_stack.last_mut().unwrap().rollback();
                     return Err(err);
@@ -176,12 +178,13 @@ impl Executor {
             .map(|i| Response::new_index("local", i, id))
     }
 
-    fn execute_instruction(&mut self, instr: Instruction) -> Result<()> {
+    fn execute_instruction(&mut self, instr: Instruction) -> Result<Response> {
         match instr {
             Instruction::Call(index) => self.execute_func(&index),
             _ => {
                 let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
-                handler.handle(&instr)
+                handler.handle(&instr)?;
+                Ok(Response::new())
             }
         }
     }
