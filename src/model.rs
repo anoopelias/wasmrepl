@@ -258,6 +258,7 @@ pub enum Instruction {
     LocalSet(Index),
     LocalTee(Index),
     Call(Index),
+    Return,
 }
 
 impl TryFrom<&WastInstruction<'_>> for Instruction {
@@ -337,6 +338,7 @@ impl TryFrom<&WastInstruction<'_>> for Instruction {
             WastInstruction::LocalSet(index) => Ok(Instruction::LocalSet(index.try_into()?)),
             WastInstruction::LocalTee(index) => Ok(Instruction::LocalTee(index.try_into()?)),
             WastInstruction::Call(index) => Ok(Instruction::Call(index.try_into()?)),
+            WastInstruction::Return => Ok(Instruction::Return),
             _ => Err(Error::msg("Unsupported instruction")),
         }
     }

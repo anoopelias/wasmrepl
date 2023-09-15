@@ -1,4 +1,4 @@
-use anyhow::{Error, Result};
+use anyhow::{anyhow, Error, Result};
 
 use crate::elements::Elements;
 use crate::handler::Handler;
@@ -76,55 +76,32 @@ impl Executor {
     }
 
     fn execute_func(&mut self, index: &Index) -> Result<Response> {
-        let (func_state, func) = self.prepare_func_call(index)?;
-        let func_results = &func.results;
+        let (func_state, mut func) = self.prepare_func_call(index)?;
         self.call_stack.push(func_state);
 
         // Ignoring the response messages from function execution
         // to reduce noise in REPL
-        self.execute_line_expression(func.line_expression)?;
+        let response = self.execute_line_expression(func.line_expression)?;
 
-        let values = self.fetch_results();
-        self.validate_results(func_results, values)
-    }
-
-    fn validate_results(
-        &mut self,
-        func_results: &Vec<ValType>,
-        mut values: Vec<Value>,
-    ) -> Result<Response> {
-        for result in func_results {
-            let value = match values.pop() {
-                Some(value) => {
-                    value.is_same_type(result)?;
-                    value
-                }
-                None => return Err(Error::msg("Not enough returns")),
-            };
-            self.call_stack.last_mut().unwrap().stack.push(value);
+        let mut func_state = self.call_stack.pop().unwrap();
+        let mut values = vec![];
+        while func.results.len() > 0 {
+            let value = func_state.stack.pop()?;
+            let result = func.results.pop().unwrap();
+            value.is_same_type(&result)?;
+            values.push(value);
         }
 
-        if values.len() > 0 {
-            return Err(Error::msg("Too many returns"));
+        let prev_stack = &mut self.call_stack.last_mut().unwrap().stack;
+        while values.len() > 0 {
+            prev_stack.push(values.pop().unwrap());
+        }
+
+        if !response.is_return && !func_state.stack.is_empty() {
+            return Err(anyhow!("Too many returns"));
         }
 
         Ok(Response::new())
-    }
-
-    fn fetch_results(&mut self) -> Vec<Value> {
-        let mut func_state = self.call_stack.pop().unwrap();
-        let mut values = vec![];
-
-        loop {
-            // TODO: `pop` should return an `Option` instead of `Result`
-            // so that we can properly iterate.
-            let value = match func_state.stack.pop() {
-                Ok(value) => value,
-                Err(_) => break,
-            };
-            values.push(value);
-        }
-        values
     }
 
     fn prepare_func_call(&mut self, index: &Index) -> Result<(State, Func)> {
@@ -156,7 +133,12 @@ impl Executor {
         for instr in line_expr.expr.instrs.into_iter() {
             match self.execute_instruction(instr) {
                 Ok(resp) => {
+                    let is_return = resp.is_return;
                     response.extend(resp);
+                    if is_return {
+                        response.is_return = true;
+                        break;
+                    }
                 }
                 Err(err) => {
                     self.call_stack.last_mut().unwrap().rollback();
@@ -181,6 +163,7 @@ impl Executor {
     fn execute_instruction(&mut self, instr: Instruction) -> Result<Response> {
         match instr {
             Instruction::Call(index) => self.execute_func(&index),
+            Instruction::Return => Ok(Response::new_return()),
             _ => {
                 let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
                 handler.handle(&instr)?;
@@ -615,5 +598,43 @@ mod tests {
         )];
         let response = executor.execute_line(call_fun).unwrap();
         assert_eq!(response.message(), "[2]");
+    }
+
+    #[test]
+    fn test_func_return() {
+        let mut executor = Executor::new();
+        let func = test_func!(
+            "fun",
+            ()(ValType::I32)(
+                Instruction::I32Const(5),
+                Instruction::Return,
+                Instruction::Drop,
+                Instruction::I32Const(6)
+            )
+        );
+        executor.execute_line(func).unwrap();
+
+        let call_fun = test_line![()(Instruction::Call(test_index("fun")))];
+        let response = executor.execute_line(call_fun).unwrap();
+        assert_eq!(response.message(), "[5]");
+    }
+
+    #[test]
+    fn test_func_return_too_many() {
+        let mut executor = Executor::new();
+        let func = test_func!(
+            "fun",
+            ()(ValType::I32, ValType::I64)(
+                Instruction::I32Const(10),
+                Instruction::I32Const(20),
+                Instruction::I64Const(30),
+                Instruction::Return
+            )
+        );
+        executor.execute_line(func).unwrap();
+
+        let call_fun = test_line![()(Instruction::Call(test_index("fun")))];
+        let response = executor.execute_line(call_fun).unwrap();
+        assert_eq!(response.message(), "[20, 30]");
     }
 }

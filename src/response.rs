@@ -1,11 +1,13 @@
 pub struct Response {
     messages: Vec<String>,
+    pub is_return: bool,
 }
 
 impl Response {
     pub fn new() -> Response {
         Response {
             messages: Vec::new(),
+            is_return: false,
         }
     }
 
@@ -28,9 +30,17 @@ impl Response {
         self.messages.join("\n")
     }
 
+    pub fn new_return() -> Response {
+        Response {
+            messages: Vec::new(),
+            is_return: true,
+        }
+    }
+
     fn new_message(message: String) -> Response {
         Response {
             messages: vec![message],
+            is_return: false,
         }
     }
 }
@@ -44,12 +54,14 @@ mod tests {
     fn test_new() {
         let resp = Response::new();
         assert_eq!(resp.message(), "");
+        assert!(!resp.is_return);
     }
 
     #[test]
     fn test_new_index() {
         let resp = Response::new_index("local", 0, None);
         assert_eq!(resp.message(), "local ;0;");
+        assert!(!resp.is_return);
     }
 
     #[test]
@@ -72,5 +84,12 @@ mod tests {
         resp.add_message("foo".to_string());
         resp.add_message("bar".to_string());
         assert_eq!(resp.message(), "foo\nbar");
+    }
+
+    #[test]
+    fn test_new_return() {
+        let resp = Response::new_return();
+        assert_eq!(resp.message(), "");
+        assert!(resp.is_return);
     }
 }
