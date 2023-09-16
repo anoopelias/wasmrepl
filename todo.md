@@ -21,7 +21,7 @@
 - [x] Check if id already exists in `grow_by_id`
 - [x] return success message from executor
 - [x] call statement with values
-- [ ] Mutli line inputs
+- [x] Mutli line inputs
 - [ ] Readme
 - [ ] branch statements
 - [ ] Pop should return option instead of result
