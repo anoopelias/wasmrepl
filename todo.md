@@ -20,7 +20,7 @@
 - [x] return statement
 - [x] Check if id already exists in `grow_by_id`
 - [x] return success message from executor
-- [ ] call statement with values
+- [x] call statement with values
 - [ ] Mutli line inputs
 - [ ] Readme
 - [ ] branch statements

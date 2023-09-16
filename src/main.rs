@@ -98,4 +98,16 @@ mod tests {
         let resp = parse_and_execute(&mut executor, "(i32.add)");
         assert_eq!(&resp[..7], "Error: ");
     }
+
+    #[test]
+    fn test_call_with_args() {
+        let mut executor = Executor::new();
+        parse_and_execute(
+            &mut executor,
+            "(func $sq (param i32) (result i32) local.get 0 local.get 0 i32.mul)",
+        );
+
+        let resp = parse_and_execute(&mut executor, "(call $sq (i32.const 12))");
+        assert_eq!(resp, "[144]");
+    }
 }
