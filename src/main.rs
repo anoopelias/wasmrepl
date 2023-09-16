@@ -2,6 +2,7 @@ mod dict;
 mod elements;
 mod executor;
 mod handler;
+mod lines;
 mod list;
 mod locals;
 mod model;
@@ -17,14 +18,25 @@ mod test_utils;
 use executor::Executor;
 use model::Line;
 use parser::parse_line;
-use rustyline::error::ReadlineError;
-use rustyline::DefaultEditor;
+use rustyline::validate::MatchingBracketValidator;
+use rustyline::{error::ReadlineError, Editor};
+use rustyline::{Cmd, EventHandler, KeyCode, KeyEvent, Modifiers};
+use rustyline_derive::{Completer, Helper, Highlighter, Hinter, Validator};
 
 fn main() -> rustyline::Result<()> {
-    let mut rl = DefaultEditor::new()?;
+    let mut rl = Editor::new()?;
     let mut executor = Executor::new();
+
     loop {
         let readline = rl.readline(">> ");
+        let h = InputValidator {
+            brackets: MatchingBracketValidator::new(),
+        };
+        rl.bind_sequence(
+            KeyEvent(KeyCode::Char('s'), Modifiers::CTRL),
+            EventHandler::Simple(Cmd::Newline),
+        );
+        rl.set_helper(Some(h));
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str())?;
@@ -65,6 +77,12 @@ fn parse_and_execute(executor: &mut Executor, line_str: &str) -> String {
             format!("Error: {}", err.to_string())
         }
     }
+}
+
+#[derive(Completer, Helper, Highlighter, Hinter, Validator)]
+struct InputValidator {
+    #[rustyline(Validator)]
+    brackets: MatchingBracketValidator,
 }
 
 #[cfg(test)]
