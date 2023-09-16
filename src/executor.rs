@@ -24,10 +24,9 @@ impl State {
         }
     }
 
-    fn commit(&mut self) -> Result<()> {
-        self.stack.commit()?;
+    fn commit(&mut self) {
+        self.stack.commit();
         self.locals.commit();
-        Ok(())
     }
 
     fn rollback(&mut self) {
@@ -147,7 +146,7 @@ impl Executor {
             }
         }
 
-        self.call_stack.last_mut().unwrap().commit()?;
+        self.call_stack.last_mut().unwrap().commit();
         Ok(response)
     }
 

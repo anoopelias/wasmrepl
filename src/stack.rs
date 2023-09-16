@@ -59,14 +59,11 @@ impl Stack {
         (self.values.len() as i32 - self.shrink_by as i32 + self.soft_values.len() as i32) == 0
     }
 
-    pub fn commit(&mut self) -> Result<()> {
+    pub fn commit(&mut self) {
         self.values.truncate(self.values.len() - self.shrink_by);
         self.values.append(&mut self.soft_values);
         self.shrink_by = 0;
         self.soft_values.clear();
-
-        // TODO:  Remove Result. Commit cannot throw error.
-        Ok(())
     }
 
     pub fn rollback(&mut self) {
@@ -120,7 +117,7 @@ mod tests {
         let mut stack = Stack::new();
         stack.push(test_val_i32(1));
         stack.push(test_val_i32(2));
-        stack.commit().unwrap();
+        stack.commit();
         assert_eq!(stack.peek().unwrap(), test_val_i32(2));
         assert_eq!(stack.pop().unwrap(), test_val_i32(2));
         assert_eq!(stack.pop().unwrap(), test_val_i32(1));
@@ -142,7 +139,7 @@ mod tests {
         stack.push(test_val_i32(1));
         stack.push(test_val_i32(2));
         stack.push(test_val_i32(3));
-        stack.commit().unwrap();
+        stack.commit();
         stack.push(test_val_i32(4));
         stack.push(test_val_i32(5));
         stack.rollback();
@@ -158,11 +155,11 @@ mod tests {
         stack.push(test_val_i32(1));
         stack.push(test_val_i32(2));
         stack.push(test_val_i32(3));
-        stack.commit().unwrap();
+        stack.commit();
 
         stack.push(test_val_i32(4));
         stack.push(test_val_i32(5));
-        stack.commit().unwrap();
+        stack.commit();
         assert_eq!(stack.pop().unwrap(), test_val_i32(5));
         assert_eq!(stack.pop().unwrap(), test_val_i32(4));
         assert_eq!(stack.pop().unwrap(), test_val_i32(3));
@@ -177,7 +174,7 @@ mod tests {
         stack.push(test_val_i32(1));
         stack.push(test_val_i32(2));
         stack.push(test_val_i32(3));
-        stack.commit().unwrap();
+        stack.commit();
 
         stack.pop().unwrap();
         stack.pop().unwrap();
@@ -195,28 +192,26 @@ mod tests {
         stack.push(test_val_i32(1));
         stack.push(test_val_i32(2));
         stack.push(test_val_i32(3));
-        stack.commit().unwrap();
+        stack.commit();
 
         stack.pop().unwrap();
         stack.pop().unwrap();
-        stack.commit().unwrap();
+        stack.commit();
 
         assert_eq!(stack.pop().unwrap(), test_val_i32(1));
         assert!(stack.pop().is_err());
     }
 
     #[test]
-    fn test_stack_underflow_and_commit() {
+    fn test_stack_underflow() {
         let mut stack = Stack::new();
         stack.push(test_val_i32(1));
         stack.push(test_val_i32(2));
-        stack.commit().unwrap();
+        stack.commit();
 
         stack.pop().unwrap();
         stack.pop().unwrap();
         assert!(stack.pop().is_err());
-
-        assert!(stack.commit().is_ok());
     }
 
     #[test]
@@ -224,7 +219,7 @@ mod tests {
         let mut stack = Stack::new();
         stack.push(test_val_i32(1));
         stack.push(test_val_i32(2));
-        stack.commit().unwrap();
+        stack.commit();
         assert_eq!(stack.to_string(), "[1, 2]");
     }
 
@@ -233,7 +228,7 @@ mod tests {
         let mut stack = Stack::new();
         stack.push(test_val_i32(1));
         stack.push(test_val_i32(2));
-        stack.commit().unwrap();
+        stack.commit();
         stack.push(test_val_i32(3));
         assert_eq!(stack.to_string(), "[1, 2]");
         assert_eq!(stack.to_soft_string().unwrap(), "[1, 2, 3]");
@@ -245,7 +240,7 @@ mod tests {
         assert!(stack.is_empty());
         stack.push(test_val_i32(1));
         assert!(!stack.is_empty());
-        stack.commit().unwrap();
+        stack.commit();
         assert!(!stack.is_empty());
         stack.pop().unwrap();
         assert!(stack.is_empty());
