@@ -68,7 +68,25 @@ impl Executor {
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
-        self.execute_line_expression(line).map(|mut resp| {
+        let result = self.execute_line_expression(line);
+        let stack = self.call_stack.last_mut().unwrap();
+
+        match result {
+            Ok(response) => {
+                if response.is_return {
+                    stack.rollback();
+                    Err(anyhow!("return is allowed only in func"))
+                } else {
+                    stack.commit();
+                    Ok(response)
+                }
+            }
+            Err(err) => {
+                stack.rollback();
+                Err(err)
+            }
+        }
+        .map(|mut resp| {
             resp.add_message(format!("{}", self.to_state()));
             resp
         })
@@ -123,7 +141,6 @@ impl Executor {
             match self.execute_local(lc).map(|resp| response.extend(resp)) {
                 Ok(response) => response,
                 Err(err) => {
-                    self.call_stack.last_mut().unwrap().rollback();
                     return Err(err);
                 }
             }
@@ -140,13 +157,11 @@ impl Executor {
                     }
                 }
                 Err(err) => {
-                    self.call_stack.last_mut().unwrap().rollback();
                     return Err(err);
                 }
             }
         }
 
-        self.call_stack.last_mut().unwrap().commit();
         Ok(response)
     }
 
@@ -635,5 +650,15 @@ mod tests {
         let call_fun = test_line![()(Instruction::Call(test_index("fun")))];
         let response = executor.execute_line(call_fun).unwrap();
         assert_eq!(response.message(), "[20, 30]");
+    }
+
+    #[test]
+    fn test_return_line() {
+        let mut executor = Executor::new();
+        let line = test_line![()(Instruction::I32Const(5), Instruction::Return)];
+        assert!(executor.execute_line(line).is_err());
+
+        // Ensure rollback
+        assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
     }
 }
