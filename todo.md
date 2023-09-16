@@ -17,12 +17,12 @@
 - [x] Update version of wast once [this](https://github.com/bytecodealliance/wasm-tools/issues/1156) issue is published.
 - [x] Remove TODO_INSTRUCTION
 - [x] Test local for function
-- [ ] return statement
+- [x] return statement
+- [x] Check if id already exists in `grow_by_id`
+- [x] return success message from executor
 - [ ] call statement with values
-- [ ] Check if id already exists in `grow_by_id`
 - [ ] Mutli line inputs
 - [ ] Readme
-- [ ] return success message from executor
 - [ ] branch statements
 - [ ] Pop should return option instead of result
 - [ ] Print locals
