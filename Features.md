@@ -35,7 +35,7 @@ Supported features from [Wasm spec](https://webassembly.github.io/spec/core/synt
     - [ ] Table Instructions
     - [ ] Memory Instructions
     - [ ] Control Instructions
-        - [ ] `nop`
+        - [x] `nop`
         - [ ] `unreachable`
         - [ ] `block` .. `end`
         - [ ] `loop` .. `end`
