@@ -24,6 +24,7 @@
 - [x] Mutli line inputs
 - [x] Readme
 - [x] Cleanup rustyline implementation
+- [ ] Stack overflow
 - [ ] Control statements
 - [ ] Github Actions / Pipelines
 - [ ] Improve speed of asciinema demo
