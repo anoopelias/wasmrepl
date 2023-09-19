@@ -17,36 +17,27 @@ mod test_utils;
 use executor::Executor;
 use model::Line;
 use parser::parse_line;
+use rustyline::history::FileHistory;
 use rustyline::validate::MatchingBracketValidator;
 use rustyline::{error::ReadlineError, Editor};
 use rustyline::{Cmd, EventHandler, KeyCode, KeyEvent, Modifiers};
 use rustyline_derive::{Completer, Helper, Highlighter, Hinter, Validator};
 
 fn main() -> rustyline::Result<()> {
-    let mut rl = Editor::new()?;
+    let mut rl = new_editor()?;
     let mut executor = Executor::new();
 
     loop {
         let readline = rl.readline(">> ");
-        let h = InputValidator {
-            brackets: MatchingBracketValidator::new(),
-        };
-        rl.bind_sequence(
-            KeyEvent(KeyCode::Char('s'), Modifiers::CTRL),
-            EventHandler::Simple(Cmd::Newline),
-        );
-        rl.set_helper(Some(h));
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str())?;
                 println!("{}", parse_and_execute(&mut executor, line.as_str()));
             }
             Err(ReadlineError::Interrupted) => {
-                println!("CTRL-C");
                 break;
             }
             Err(ReadlineError::Eof) => {
-                println!("CTRL-D");
                 break;
             }
             Err(err) => {
@@ -76,6 +67,19 @@ fn parse_and_execute(executor: &mut Executor, line_str: &str) -> String {
             format!("Error: {}", err.to_string())
         }
     }
+}
+
+fn new_editor() -> rustyline::Result<Editor<InputValidator, FileHistory>> {
+    let mut rl = Editor::new()?;
+    let h = InputValidator {
+        brackets: MatchingBracketValidator::new(),
+    };
+    rl.bind_sequence(
+        KeyEvent(KeyCode::Enter, Modifiers::CTRL),
+        EventHandler::Simple(Cmd::Newline),
+    );
+    rl.set_helper(Some(h));
+    Ok(rl)
 }
 
 #[derive(Completer, Helper, Highlighter, Hinter, Validator)]
