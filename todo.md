@@ -23,12 +23,14 @@
 - [x] call statement with values
 - [x] Mutli line inputs
 - [ ] Readme
-- [ ] branch statements
+- [ ] Cleanup rustyline implementation
+- [ ] Control statements
+- [ ] Github Actions / Pipelines
+- [ ] Improve speed of asciinema demo
 - [ ] Pop should return option instead of result
 - [ ] Print locals
 - [ ] Eq instructions
 - [ ] R/W memory
 - [ ] Types for functions
 - [ ] V128 instructions
-- [ ] Github Actions / Pipelines
 - [ ] Make everything public only within crate
