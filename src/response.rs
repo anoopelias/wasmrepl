@@ -1,6 +1,14 @@
+use crate::model::Index;
+
 pub struct Response {
-    messages: Vec<String>,
+    pub contd: Exec,
     pub is_return: bool,
+    messages: Vec<String>,
+}
+
+pub enum Exec {
+    None,
+    CallFunc(Index),
 }
 
 impl Response {
@@ -8,6 +16,7 @@ impl Response {
         Response {
             messages: Vec::new(),
             is_return: false,
+            contd: Exec::None,
         }
     }
 
@@ -34,6 +43,15 @@ impl Response {
         Response {
             messages: Vec::new(),
             is_return: true,
+            contd: Exec::None,
+        }
+    }
+
+    pub fn new_exec_func(index: Index) -> Response {
+        Response {
+            messages: vec![],
+            is_return: false,
+            contd: Exec::CallFunc(index),
         }
     }
 
@@ -41,6 +59,7 @@ impl Response {
         Response {
             messages: vec![message],
             is_return: false,
+            contd: Exec::None,
         }
     }
 }
@@ -48,7 +67,10 @@ impl Response {
 #[cfg(test)]
 mod tests {
 
-    use crate::response::Response;
+    use crate::{
+        model::Index,
+        response::{Exec, Response},
+    };
 
     #[test]
     fn test_new() {
@@ -91,5 +113,16 @@ mod tests {
         let resp = Response::new_return();
         assert_eq!(resp.message(), "");
         assert!(resp.is_return);
+    }
+
+    #[test]
+    fn test_new_exec_func() {
+        let resp = Response::new_exec_func(Index::Id(String::from("fn")));
+        assert_eq!(resp.message(), "");
+        assert!(!resp.is_return);
+        match resp.contd {
+            Exec::CallFunc(Index::Id(str)) => assert_eq!(str, "fn"),
+            _ => panic!("expected CallFunc"),
+        }
     }
 }

@@ -259,6 +259,7 @@ pub enum Instruction {
     LocalTee(Index),
     Call(Index),
     Return,
+    Nop,
 }
 
 impl TryFrom<&WastInstruction<'_>> for Instruction {
@@ -339,6 +340,7 @@ impl TryFrom<&WastInstruction<'_>> for Instruction {
             WastInstruction::LocalTee(index) => Ok(Instruction::LocalTee(index.try_into()?)),
             WastInstruction::Call(index) => Ok(Instruction::Call(index.try_into()?)),
             WastInstruction::Return => Ok(Instruction::Return),
+            WastInstruction::Nop => Ok(Instruction::Nop),
             _ => Err(Error::msg("Unsupported instruction")),
         }
     }
@@ -435,7 +437,7 @@ mod tests {
 
     #[test]
     fn test_from_wast_instruction_error() {
-        let instr = Instruction::try_from(&WastInstruction::Nop);
+        let instr = Instruction::try_from(&WastInstruction::RefI31);
         assert!(instr.is_err());
     }
 

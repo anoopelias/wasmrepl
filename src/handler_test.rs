@@ -1,3 +1,4 @@
+use crate::response::{Exec, Response};
 use crate::{executor::State, value::Value};
 use anyhow::Result;
 
@@ -6,7 +7,7 @@ use crate::test_utils::test_index;
 
 use super::Handler;
 
-fn exec_instr_handler(instr: &Instruction, state: &mut State) -> Result<()> {
+fn exec_instr_handler(instr: &Instruction, state: &mut State) -> Result<Response> {
     let mut handler = Handler::new(state);
     handler.handle(instr)
 }
@@ -839,4 +840,30 @@ fn test_local_tee_by_id_error() {
 
     let id = test_index("num_other");
     assert!(exec_instr_handler(&Instruction::LocalTee(id), &mut state).is_err());
+}
+
+#[test]
+fn test_return_instr() {
+    let response = exec_instr_handler(&Instruction::Return, &mut State::new()).unwrap();
+    assert!(response.is_return)
+}
+
+#[test]
+fn test_nop() {
+    let response = exec_instr_handler(&Instruction::Nop, &mut State::new()).unwrap();
+    assert!(!response.is_return)
+}
+
+#[test]
+fn test_call_func() {
+    let response = exec_instr_handler(
+        &Instruction::Call(Index::Id(String::from("fn"))),
+        &mut State::new(),
+    )
+    .unwrap();
+
+    match response.contd {
+        Exec::CallFunc(id) => assert_eq!(id, test_index("fn")),
+        _ => panic!("Expected Exec::Call"),
+    }
 }

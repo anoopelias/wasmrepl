@@ -177,11 +177,9 @@ impl Executor {
     fn execute_instruction(&mut self, instr: Instruction) -> Result<Response> {
         match instr {
             Instruction::Call(index) => self.execute_func(&index),
-            Instruction::Return => Ok(Response::new_return()),
             _ => {
                 let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
-                handler.handle(&instr)?;
-                Ok(Response::new())
+                handler.handle(&instr)
             }
         }
     }

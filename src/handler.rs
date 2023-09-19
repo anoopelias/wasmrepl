@@ -8,6 +8,7 @@ use crate::model::{Index, Instruction};
 use crate::ops::FloatOps;
 use crate::ops::IntOps;
 use crate::ops::NumOps;
+use crate::response::Response;
 
 pub struct Handler<'a> {
     state: &'a mut State,
@@ -18,30 +19,42 @@ impl<'a> Handler<'a> {
         Handler { state }
     }
 
-    fn drop(&mut self) -> Result<()> {
+    fn drop(&mut self) -> Result<Response> {
         self.state.stack.pop()?;
-        Ok(())
+        Ok(Response::new())
     }
 
-    fn local_get(&mut self, index: &Index) -> Result<()> {
+    fn local_get(&mut self, index: &Index) -> Result<Response> {
         let value = self.state.locals.get(index)?;
         self.state.stack.push(value.clone());
-        Ok(())
+        Ok(Response::new())
     }
 
-    fn local_set(&mut self, index: &Index) -> Result<()> {
+    fn local_set(&mut self, index: &Index) -> Result<Response> {
         let value = self.state.stack.pop()?;
         self.state.locals.set(index, value)?;
-        Ok(())
+        Ok(Response::new())
     }
 
-    fn local_tee(&mut self, index: &Index) -> Result<()> {
+    fn local_tee(&mut self, index: &Index) -> Result<Response> {
         let value = self.state.stack.peek()?;
         self.state.locals.set(index, value)?;
-        Ok(())
+        Ok(Response::new())
     }
 
-    pub fn handle(&mut self, instr: &Instruction) -> Result<()> {
+    fn return_instr(&mut self) -> Result<Response> {
+        Ok(Response::new_return())
+    }
+
+    fn nop(&mut self) -> Result<Response> {
+        Ok(Response::new())
+    }
+
+    fn call_func(&mut self, index: Index) -> Result<Response> {
+        Ok(Response::new_exec_func(index))
+    }
+
+    pub fn handle(&mut self, instr: &Instruction) -> Result<Response> {
         match instr {
             Instruction::I32Const(value) => self.i32_const(*value),
             Instruction::Drop => self.drop(),
@@ -115,7 +128,10 @@ impl<'a> Handler<'a> {
             Instruction::LocalGet(index) => self.local_get(index),
             Instruction::LocalSet(index) => self.local_set(index),
             Instruction::LocalTee(index) => self.local_tee(index),
-            _ => Err(anyhow::anyhow!("Instruction not implemented")),
+            Instruction::Return => self.return_instr(),
+            Instruction::Nop => self.nop(),
+            // TODO: Avoid clone
+            Instruction::Call(index) => self.call_func(index.clone()),
         }
     }
 }
@@ -139,9 +155,9 @@ pop!(f64_pop, f64);
 macro_rules! constant {
     ($fname:ident, $ty:ty) => {
         impl<'a> Handler<'a> {
-            fn $fname(&mut self, value: $ty) -> Result<()> {
+            fn $fname(&mut self, value: $ty) -> Result<Response> {
                 self.state.stack.push(value.into());
-                Ok(())
+                Ok(Response::new())
             }
         }
     };
@@ -155,11 +171,11 @@ constant!(f64_const, f64);
 macro_rules! impl_binary_op {
     ($fname:ident, $pop:ident, $op:ident) => {
         impl<'a> Handler<'a> {
-            fn $fname(&mut self) -> Result<()> {
+            fn $fname(&mut self) -> Result<Response> {
                 let a = self.$pop()?;
                 let b = self.$pop()?;
                 self.state.stack.push(b.$op(a).into());
-                Ok(())
+                Ok(Response::new())
             }
         }
     };
@@ -208,11 +224,11 @@ impl_binary_op!(f64_copysign, f64_pop, copysign);
 macro_rules! impl_binary_res_op {
     ($fname:ident, $popper:ident, $op:ident) => {
         impl<'a> Handler<'a> {
-            fn $fname(&mut self) -> Result<()> {
+            fn $fname(&mut self) -> Result<Response> {
                 let a = self.$popper()?;
                 let b = self.$popper()?;
                 self.state.stack.push(b.$op(a)?.into());
-                Ok(())
+                Ok(Response::new())
             }
         }
     };
@@ -231,10 +247,10 @@ impl_binary_res_op!(i64_rem_u, i64_pop, rem_u);
 macro_rules! impl_unary_op {
     ($fname:ident, $popper:ident, $op:ident) => {
         impl<'a> Handler<'a> {
-            fn $fname(&mut self) -> Result<()> {
+            fn $fname(&mut self) -> Result<Response> {
                 let a = self.$popper()?;
                 self.state.stack.push(a.$op().into());
-                Ok(())
+                Ok(Response::new())
             }
         }
     };

@@ -109,7 +109,7 @@ mod tests {
     #[test]
     fn test_convert_error() {
         let mut executor = Executor::new();
-        let resp = parse_and_execute(&mut executor, "(nop)");
+        let resp = parse_and_execute(&mut executor, "(ref i31)");
         assert_eq!(&resp[..7], "Error: ");
     }
 
