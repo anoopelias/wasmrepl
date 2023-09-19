@@ -1,4 +1,4 @@
-use crate::response::{Exec, Response};
+use crate::response::{Control, Response};
 use crate::{executor::State, value::Value};
 use anyhow::Result;
 
@@ -863,7 +863,7 @@ fn test_call_func() {
     .unwrap();
 
     match response.contd {
-        Exec::CallFunc(id) => assert_eq!(id, test_index("fn")),
+        Control::ExecFunc(id) => assert_eq!(id, test_index("fn")),
         _ => panic!("Expected Exec::Call"),
     }
 }

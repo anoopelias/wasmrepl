@@ -1,14 +1,14 @@
 use crate::model::Index;
 
 pub struct Response {
-    pub contd: Exec,
+    pub contd: Control,
     pub is_return: bool,
     messages: Vec<String>,
 }
 
-pub enum Exec {
+pub enum Control {
+    ExecFunc(Index),
     None,
-    CallFunc(Index),
 }
 
 impl Response {
@@ -16,7 +16,7 @@ impl Response {
         Response {
             messages: Vec::new(),
             is_return: false,
-            contd: Exec::None,
+            contd: Control::None,
         }
     }
 
@@ -43,7 +43,7 @@ impl Response {
         Response {
             messages: Vec::new(),
             is_return: true,
-            contd: Exec::None,
+            contd: Control::None,
         }
     }
 
@@ -51,7 +51,7 @@ impl Response {
         Response {
             messages: vec![],
             is_return: false,
-            contd: Exec::CallFunc(index),
+            contd: Control::ExecFunc(index),
         }
     }
 
@@ -59,7 +59,7 @@ impl Response {
         Response {
             messages: vec![message],
             is_return: false,
-            contd: Exec::None,
+            contd: Control::None,
         }
     }
 }
@@ -69,7 +69,7 @@ mod tests {
 
     use crate::{
         model::Index,
-        response::{Exec, Response},
+        response::{Control, Response},
     };
 
     #[test]
@@ -121,7 +121,7 @@ mod tests {
         assert_eq!(resp.message(), "");
         assert!(!resp.is_return);
         match resp.contd {
-            Exec::CallFunc(Index::Id(str)) => assert_eq!(str, "fn"),
+            Control::ExecFunc(Index::Id(str)) => assert_eq!(str, "fn"),
             _ => panic!("expected CallFunc"),
         }
     }

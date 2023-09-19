@@ -4,7 +4,7 @@ use crate::elements::Elements;
 use crate::handler::Handler;
 use crate::locals::Locals;
 use crate::model::{Func, Index, Instruction, Local, ValType};
-use crate::response::Response;
+use crate::response::{Control, Response};
 use crate::value::Value;
 use crate::{
     model::{Line, LineExpression},
@@ -175,12 +175,15 @@ impl Executor {
     }
 
     fn execute_instruction(&mut self, instr: Instruction) -> Result<Response> {
-        match instr {
-            Instruction::Call(index) => self.execute_func(&index),
-            _ => {
-                let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
-                handler.handle(instr)
-            }
+        let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
+        let result = handler.handle(instr);
+
+        match result {
+            Ok(response) => match response.contd {
+                Control::None => Ok(response),
+                Control::ExecFunc(index) => self.execute_func(&index),
+            },
+            Err(err) => Err(err),
         }
     }
 }
