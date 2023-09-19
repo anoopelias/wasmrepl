@@ -46,3 +46,14 @@ Supported features from [Wasm spec](https://webassembly.github.io/spec/core/synt
         - [x] `return`
         - [x] `call`
         - [ ] `call_indirect`
+- [ ] Modules
+    - [ ] types
+    - [x] funcs
+    - [ ] tables
+    - [ ] mems
+    - [ ] globals
+    - [ ] elems
+    - [ ] datas
+    - [ ] start
+    - [ ] imports
+    - [ ] exports
