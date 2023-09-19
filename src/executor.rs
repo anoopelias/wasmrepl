@@ -179,7 +179,7 @@ impl Executor {
             Instruction::Call(index) => self.execute_func(&index),
             _ => {
                 let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
-                handler.handle(&instr)
+                handler.handle(instr)
             }
         }
     }

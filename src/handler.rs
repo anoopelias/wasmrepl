@@ -54,9 +54,9 @@ impl<'a> Handler<'a> {
         Ok(Response::new_exec_func(index))
     }
 
-    pub fn handle(&mut self, instr: &Instruction) -> Result<Response> {
+    pub fn handle(&mut self, instr: Instruction) -> Result<Response> {
         match instr {
-            Instruction::I32Const(value) => self.i32_const(*value),
+            Instruction::I32Const(value) => self.i32_const(value),
             Instruction::Drop => self.drop(),
             Instruction::I32Clz => self.i32_clz(),
             Instruction::I32Ctz => self.i32_ctz(),
@@ -76,7 +76,7 @@ impl<'a> Handler<'a> {
             Instruction::I32ShrU => self.i32_shr_u(),
             Instruction::I32Rotl => self.i32_rotl(),
             Instruction::I32Rotr => self.i32_rotr(),
-            Instruction::I64Const(value) => self.i64_const(*value),
+            Instruction::I64Const(value) => self.i64_const(value),
             Instruction::I64Clz => self.i64_clz(),
             Instruction::I64Ctz => self.i64_ctz(),
             Instruction::I64Popcnt => self.i64_popcnt(),
@@ -95,7 +95,7 @@ impl<'a> Handler<'a> {
             Instruction::I64ShrU => self.i64_shr_u(),
             Instruction::I64Rotl => self.i64_rotl(),
             Instruction::I64Rotr => self.i64_rotr(),
-            Instruction::F32Const(value) => self.f32_const(*value),
+            Instruction::F32Const(value) => self.f32_const(value),
             Instruction::F32Abs => self.f32_abs(),
             Instruction::F32Neg => self.f32_neg(),
             Instruction::F32Ceil => self.f32_ceil(),
@@ -110,7 +110,7 @@ impl<'a> Handler<'a> {
             Instruction::F32Min => self.f32_min(),
             Instruction::F32Max => self.f32_max(),
             Instruction::F32Copysign => self.f32_copysign(),
-            Instruction::F64Const(value) => self.f64_const(*value),
+            Instruction::F64Const(value) => self.f64_const(value),
             Instruction::F64Abs => self.f64_abs(),
             Instruction::F64Neg => self.f64_neg(),
             Instruction::F64Ceil => self.f64_ceil(),
@@ -125,13 +125,12 @@ impl<'a> Handler<'a> {
             Instruction::F64Min => self.f64_min(),
             Instruction::F64Max => self.f64_max(),
             Instruction::F64Copysign => self.f64_copysign(),
-            Instruction::LocalGet(index) => self.local_get(index),
-            Instruction::LocalSet(index) => self.local_set(index),
-            Instruction::LocalTee(index) => self.local_tee(index),
+            Instruction::LocalGet(index) => self.local_get(&index),
+            Instruction::LocalSet(index) => self.local_set(&index),
+            Instruction::LocalTee(index) => self.local_tee(&index),
             Instruction::Return => self.return_instr(),
             Instruction::Nop => self.nop(),
-            // TODO: Avoid clone
-            Instruction::Call(index) => self.call_func(index.clone()),
+            Instruction::Call(index) => self.call_func(index),
         }
     }
 }
