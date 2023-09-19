@@ -23,7 +23,7 @@
 - [x] call statement with values
 - [x] Mutli line inputs
 - [x] Readme
-- [ ] Cleanup rustyline implementation
+- [x] Cleanup rustyline implementation
 - [ ] Control statements
 - [ ] Github Actions / Pipelines
 - [ ] Improve speed of asciinema demo
