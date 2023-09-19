@@ -22,7 +22,7 @@
 - [x] return success message from executor
 - [x] call statement with values
 - [x] Mutli line inputs
-- [ ] Readme
+- [x] Readme
 - [ ] Cleanup rustyline implementation
 - [ ] Control statements
 - [ ] Github Actions / Pipelines

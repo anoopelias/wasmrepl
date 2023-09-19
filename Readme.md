@@ -10,3 +10,20 @@ Demo:
 ## Notes
 - The goal of this project is _not_ to provide a fully compatible Wasm interpreter, rather help everyone understand and visualize how Wasm in general works.
 - Wasm features that are supported as of now are documented [here](./Features.md).
+
+## Installation
+
+To install, follow the below command,
+
+```
+$ cargo install wasmrepl
+```
+
+To check if installation is complete,
+
+```
+$ wasmrepl
+>>
+```
+
+It should give you the REPL prompt. To exit the prompt, use Ctrl+D or Ctrl+C
