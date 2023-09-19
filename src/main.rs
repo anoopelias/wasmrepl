@@ -2,7 +2,6 @@ mod dict;
 mod elements;
 mod executor;
 mod handler;
-mod lines;
 mod list;
 mod locals;
 mod model;
