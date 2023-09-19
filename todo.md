@@ -26,6 +26,7 @@
 - [x] Cleanup rustyline implementation
 - [ ] Stack overflow
 - [ ] Control statements
+- [ ] Setup coverage measurement
 - [ ] Github Actions / Pipelines
 - [ ] Improve speed of asciinema demo
 - [ ] Pop should return option instead of result
