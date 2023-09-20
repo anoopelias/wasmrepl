@@ -147,7 +147,7 @@ impl Executor {
         }
 
         for instr in line_expr.expr.instrs.into_iter() {
-            match self.execute_instruction(instr) {
+            match self.execute_instruction(&instr) {
                 Ok(resp) => {
                     let is_return = resp.is_return;
                     response.extend(resp);
@@ -174,7 +174,7 @@ impl Executor {
             .map(|i| Response::new_index("local", i, id))
     }
 
-    fn execute_instruction(&mut self, instr: Instruction) -> Result<Response> {
+    fn execute_instruction(&mut self, instr: &Instruction) -> Result<Response> {
         let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
         let result = handler.handle(instr);
 

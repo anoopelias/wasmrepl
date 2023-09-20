@@ -54,7 +54,7 @@ impl<'a> Handler<'a> {
         Ok(Response::new_exec_func(index))
     }
 
-    pub fn handle(&mut self, instr: Instruction) -> Result<Response> {
+    pub fn handle(&mut self, instr: &Instruction) -> Result<Response> {
         match instr {
             Instruction::I32Const(value) => self.i32_const(value),
             Instruction::Drop => self.drop(),
@@ -130,7 +130,7 @@ impl<'a> Handler<'a> {
             Instruction::LocalTee(index) => self.local_tee(&index),
             Instruction::Return => self.return_instr(),
             Instruction::Nop => self.nop(),
-            Instruction::Call(index) => self.call_func(index),
+            Instruction::Call(index) => self.call_func(index.clone()),
         }
     }
 }
@@ -154,8 +154,8 @@ pop!(f64_pop, f64);
 macro_rules! constant {
     ($fname:ident, $ty:ty) => {
         impl<'a> Handler<'a> {
-            fn $fname(&mut self, value: $ty) -> Result<Response> {
-                self.state.stack.push(value.into());
+            fn $fname(&mut self, value: &$ty) -> Result<Response> {
+                self.state.stack.push(value.clone().into());
                 Ok(Response::new())
             }
         }
