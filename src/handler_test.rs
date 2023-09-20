@@ -867,3 +867,36 @@ fn test_call_func() {
         _ => panic!("Expected Exec::Call"),
     }
 }
+
+#[test]
+fn test_if_instr() {
+    let mut state = State::new();
+    state.stack.push(1.into());
+    let response = exec_instr_handler(&Instruction::If, &mut state).unwrap();
+    assert_eq!(response.control, Control::If(true));
+}
+
+#[test]
+fn test_if_else() {
+    let mut state = State::new();
+    state.stack.push(0.into());
+    let response = exec_instr_handler(&Instruction::If, &mut state).unwrap();
+    assert_eq!(response.control, Control::If(false));
+}
+
+#[test]
+fn test_if_error() {
+    assert!(exec_instr_handler(&Instruction::If, &mut State::new()).is_err());
+}
+
+#[test]
+fn test_else() {
+    let response = exec_instr_handler(&Instruction::Else, &mut State::new()).unwrap();
+    assert_eq!(response.control, Control::Else);
+}
+
+#[test]
+fn test_end() {
+    let response = exec_instr_handler(&Instruction::End, &mut State::new()).unwrap();
+    assert_eq!(response.control, Control::End);
+}

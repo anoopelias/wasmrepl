@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Error, Result};
 
+use crate::analyzer::skip_block;
 use crate::elements::Elements;
 use crate::handler::Handler;
 use crate::locals::Locals;
@@ -146,21 +147,60 @@ impl Executor {
             }
         }
 
-        self.execute_block(&line_expr.expr.instrs)
+        self.execute_block(&line_expr.expr.instrs, &mut 0)
             .map(|resp| response.extend(resp))?;
 
         Ok(response)
     }
 
-    fn execute_block(&mut self, instrs: &Vec<Instruction>) -> Result<Response> {
+    // TODO: This is un-necessarily tricky.
+    // Maybe we can pre-process and execute to simplify this.
+    fn execute_block(
+        &mut self,
+        instrs: &Vec<Instruction>,
+        instr_ptr: &mut usize,
+    ) -> Result<Response> {
         let mut response = Response::new();
-        for instr in instrs.iter() {
-            let resp = self.execute_instruction(instr)?;
+        while *instr_ptr < instrs.len() {
+            let resp = self.execute_instruction(&instrs[*instr_ptr])?;
             response.extend(resp);
 
+            // We will handle any control flow changes here.
             match &response.control {
-                Control::ExecFunc(index) => response.extend(self.execute_func(&index)?),
-                Control::None => (),
+                Control::None => *instr_ptr = *instr_ptr + 1,
+                Control::If(b) => {
+                    // Do we want if block or else block?
+                    if *b {
+                        *instr_ptr = *instr_ptr + 1
+                    } else {
+                        // Skip if block
+                        *instr_ptr = skip_block(instrs, *instr_ptr);
+                    }
+                    // Recursive call to execute block so that we can handle nested
+                    // blocks
+                    response.extend(self.execute_block(instrs, instr_ptr)?);
+                }
+                Control::Else => {
+                    // If we hit `else` block its possibly because we finished executing
+                    // `if` block. Let us skip `else`
+                    *instr_ptr = skip_block(instrs, *instr_ptr);
+                    response.control = Control::None;
+                    // break from recursive call
+                    break;
+                }
+                Control::End => {
+                    response.control = Control::None;
+                    *instr_ptr = *instr_ptr + 1;
+                    // Let us break from recursive call
+                    break;
+                }
+                Control::ExecFunc(index) => {
+                    response.extend(self.execute_func(&index)?);
+                    response.control = Control::None;
+                    *instr_ptr = *instr_ptr + 1;
+                }
+                // Return statement break all recursive blocks
+                // returning to calling function
                 Control::Return => break,
             };
         }
@@ -655,5 +695,151 @@ mod tests {
 
         // Ensure rollback
         assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    }
+
+    #[test]
+    fn test_if() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(1),
+            Instruction::If,
+            Instruction::I32Const(2),
+            Instruction::Else,
+            Instruction::I32Const(3),
+            Instruction::End,
+            Instruction::I32Const(4)
+        )];
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[2, 4]");
+    }
+
+    #[test]
+    fn test_if_error() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(1),
+            Instruction::If,
+            Instruction::I32Add,
+            Instruction::Else,
+            Instruction::I32Const(3),
+            Instruction::End,
+            Instruction::I32Const(4)
+        )];
+        assert!(executor.execute_line(line).is_err());
+    }
+
+    #[test]
+    fn test_else() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(0),
+            Instruction::If,
+            Instruction::I32Const(2),
+            Instruction::Else,
+            Instruction::I32Const(3),
+            Instruction::End,
+            Instruction::I32Const(4)
+        )];
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[3, 4]");
+    }
+
+    #[test]
+    fn test_nested_if() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(1),
+            Instruction::If,
+            Instruction::I32Const(2),
+            Instruction::If,
+            Instruction::I32Const(3),
+            Instruction::Else,
+            Instruction::I32Const(4),
+            Instruction::End,
+            Instruction::Else,
+            Instruction::I32Const(5),
+            Instruction::End,
+            Instruction::I32Const(6)
+        )];
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[3, 6]");
+    }
+
+    #[test]
+    fn test_skip_nested_if() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(-1),
+            Instruction::If,
+            Instruction::I32Const(2),
+            Instruction::If,
+            Instruction::I32Const(3),
+            Instruction::Else,
+            Instruction::I32Const(4),
+            Instruction::End,
+            Instruction::Else,
+            Instruction::I32Const(5),
+            Instruction::End,
+            Instruction::I32Const(6)
+        )];
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[5, 6]");
+    }
+
+    #[test]
+    fn test_no_if() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(3),
+            Instruction::If,
+            Instruction::Else,
+            Instruction::I32Const(1),
+            Instruction::End,
+            Instruction::I32Const(2)
+        )];
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[2]");
+    }
+
+    #[test]
+    fn test_no_else() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(-2),
+            Instruction::If,
+            Instruction::I32Const(1),
+            Instruction::End,
+            Instruction::I32Const(2)
+        )];
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[2]");
+    }
+
+    #[test]
+    fn execute_nested_return() {
+        let mut executor = Executor::new();
+        let func = test_func!(
+            "fn",
+            (test_local!(ValType::I32))(ValType::I32)(
+                Instruction::LocalGet(Index::Num(0)),
+                Instruction::If,
+                Instruction::I32Const(1),
+                Instruction::Return,
+                Instruction::I32Const(2),
+                Instruction::Else,
+                Instruction::I32Const(3),
+                Instruction::End,
+                Instruction::I32Const(4),
+                Instruction::Return
+            )
+        );
+        executor.execute_line(func).unwrap();
+
+        let call_sub = test_line![()(
+            Instruction::I32Const(1),
+            Instruction::Call(test_index("fn"))
+        )];
+        assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[1]");
+
+        let call_sub = test_line![()(
+            Instruction::Drop,
+            Instruction::I32Const(-1),
+            Instruction::Call(test_index("fn"))
+        )];
+        assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[4]");
     }
 }

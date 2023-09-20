@@ -10,6 +10,9 @@ pub enum Control {
     ExecFunc(Index),
     Return,
     None,
+    If(bool),
+    Else,
+    End,
 }
 
 impl Response {

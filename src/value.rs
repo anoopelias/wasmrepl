@@ -93,6 +93,15 @@ impl Value {
             _ => Err(Error::msg("Type mismatch")),
         }
     }
+
+    pub fn is_true(&self) -> bool {
+        match self {
+            Self::I32(n) => *n > 0,
+            Self::I64(n) => *n > 0,
+            Self::F32(n) => *n > 0.0,
+            Self::F64(n) => *n > 0.0,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -186,5 +195,29 @@ mod tests {
         assert!(test_val_i32(1).is_same_type(&ValType::I64).is_err());
         assert!(test_val_i32(1).is_same_type(&ValType::F32).is_err());
         assert!(test_val_i64(1).is_same_type(&ValType::F64).is_err());
+    }
+
+    #[test]
+    fn test_is_true_i32() {
+        assert!(test_val_i32(1).is_true());
+        assert!(!test_val_i32(0).is_true());
+    }
+
+    #[test]
+    fn test_is_true_i64() {
+        assert!(test_val_i64(1).is_true());
+        assert!(!test_val_i64(0).is_true());
+    }
+
+    #[test]
+    fn test_is_true_f32() {
+        assert!(test_val_f32(1.0).is_true());
+        assert!(!test_val_f32(0.0).is_true());
+    }
+
+    #[test]
+    fn test_is_true_f64() {
+        assert!(test_val_f64(1.0).is_true());
+        assert!(!test_val_f64(0.0).is_true());
     }
 }
