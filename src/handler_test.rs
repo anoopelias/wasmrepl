@@ -845,13 +845,13 @@ fn test_local_tee_by_id_error() {
 #[test]
 fn test_return_instr() {
     let response = exec_instr_handler(&Instruction::Return, &mut State::new()).unwrap();
-    assert_eq!(response.contd, Control::Return);
+    assert_eq!(response.control, Control::Return);
 }
 
 #[test]
 fn test_nop() {
     let response = exec_instr_handler(&Instruction::Nop, &mut State::new()).unwrap();
-    assert_eq!(response.contd, Control::None);
+    assert_eq!(response.control, Control::None);
 }
 
 #[test]
@@ -862,7 +862,7 @@ fn test_call_func() {
     )
     .unwrap();
 
-    match response.contd {
+    match response.control {
         Control::ExecFunc(id) => assert_eq!(id, test_index("fn")),
         _ => panic!("Expected Exec::Call"),
     }

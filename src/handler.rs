@@ -8,6 +8,7 @@ use crate::model::{Index, Instruction};
 use crate::ops::FloatOps;
 use crate::ops::IntOps;
 use crate::ops::NumOps;
+use crate::response::Control;
 use crate::response::Response;
 
 pub struct Handler<'a> {
@@ -43,7 +44,7 @@ impl<'a> Handler<'a> {
     }
 
     fn return_instr(&mut self) -> Result<Response> {
-        Ok(Response::new_return())
+        Ok(Response::new_ctrl(Control::Return))
     }
 
     fn nop(&mut self) -> Result<Response> {
@@ -51,7 +52,7 @@ impl<'a> Handler<'a> {
     }
 
     fn call_func(&mut self, index: Index) -> Result<Response> {
-        Ok(Response::new_exec_func(index))
+        Ok(Response::new_ctrl(Control::ExecFunc(index)))
     }
 
     pub fn handle(&mut self, instr: &Instruction) -> Result<Response> {

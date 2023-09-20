@@ -1,7 +1,7 @@
 use crate::model::Index;
 
 pub struct Response {
-    pub contd: Control,
+    pub control: Control,
     messages: Vec<String>,
 }
 
@@ -16,7 +16,7 @@ impl Response {
     pub fn new() -> Response {
         Response {
             messages: Vec::new(),
-            contd: Control::None,
+            control: Control::None,
         }
     }
 
@@ -29,7 +29,7 @@ impl Response {
 
     pub fn extend(&mut self, other: Response) {
         self.messages.extend(other.messages);
-        self.contd = other.contd;
+        self.control = other.control;
     }
 
     pub fn add_message(&mut self, message: String) {
@@ -40,24 +40,17 @@ impl Response {
         self.messages.join("\n")
     }
 
-    pub fn new_return() -> Response {
+    pub fn new_ctrl(ctrl: Control) -> Response {
         Response {
             messages: Vec::new(),
-            contd: Control::Return,
-        }
-    }
-
-    pub fn new_exec_func(index: Index) -> Response {
-        Response {
-            messages: vec![],
-            contd: Control::ExecFunc(index),
+            control: ctrl,
         }
     }
 
     fn new_message(message: String) -> Response {
         Response {
             messages: vec![message],
-            contd: Control::None,
+            control: Control::None,
         }
     }
 }
@@ -74,7 +67,7 @@ mod tests {
     fn test_new() {
         let resp = Response::new();
         assert_eq!(resp.message(), "");
-        assert_eq!(resp.contd, Control::None);
+        assert_eq!(resp.control, Control::None);
     }
 
     #[test]
@@ -107,16 +100,16 @@ mod tests {
 
     #[test]
     fn test_new_return() {
-        let resp = Response::new_return();
+        let resp = Response::new_ctrl(Control::Return);
         assert_eq!(resp.message(), "");
-        assert_eq!(resp.contd, Control::Return);
+        assert_eq!(resp.control, Control::Return);
     }
 
     #[test]
     fn test_new_exec_func() {
-        let resp = Response::new_exec_func(Index::Id(String::from("fn")));
+        let resp = Response::new_ctrl(Control::ExecFunc(Index::Id(String::from("fn"))));
         assert_eq!(resp.message(), "");
-        match resp.contd {
+        match resp.control {
             Control::ExecFunc(Index::Id(str)) => assert_eq!(str, "fn"),
             _ => panic!("expected ExecFunc"),
         }

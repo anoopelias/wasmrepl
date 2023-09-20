@@ -73,7 +73,7 @@ impl Executor {
 
         match result {
             Ok(response) => {
-                if response.contd == Control::Return {
+                if response.control == Control::Return {
                     stack.rollback();
                     Err(anyhow!("return is allowed only in func"))
                 } else {
@@ -96,8 +96,6 @@ impl Executor {
         let (func_state, mut func) = self.prepare_func_call(index)?;
         self.call_stack.push(func_state);
 
-        // Ignoring the response messages from function execution
-        // to reduce noise in REPL
         let response = self.execute_line_expression(func.line_expression)?;
 
         let mut func_state = self.call_stack.pop().unwrap();
@@ -114,10 +112,12 @@ impl Executor {
             prev_stack.push(values.pop().unwrap());
         }
 
-        if response.contd != Control::Return && !func_state.stack.is_empty() {
+        if response.control != Control::Return && !func_state.stack.is_empty() {
             return Err(anyhow!("Too many returns"));
         }
 
+        // Ignoring the response messages from function execution
+        // to reduce noise in REPL
         Ok(Response::new())
     }
 
@@ -158,7 +158,7 @@ impl Executor {
             let resp = self.execute_instruction(instr)?;
             response.extend(resp);
 
-            match &response.contd {
+            match &response.control {
                 Control::ExecFunc(index) => response.extend(self.execute_func(&index)?),
                 Control::None => (),
                 Control::Return => break,
