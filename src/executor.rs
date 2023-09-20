@@ -146,13 +146,19 @@ impl Executor {
             }
         }
 
-        for instr in line_expr.expr.instrs.into_iter() {
+        self.execute_block(&line_expr.expr.instrs)
+            .map(|resp| response.extend(resp))?;
+
+        Ok(response)
+    }
+
+    fn execute_block(&mut self, instrs: &Vec<Instruction>) -> Result<Response> {
+        let mut response = Response::new();
+        for instr in instrs.into_iter() {
             match self.execute_instruction(&instr) {
                 Ok(resp) => {
-                    let is_return = resp.is_return;
                     response.extend(resp);
-                    if is_return {
-                        response.is_return = true;
+                    if response.is_return {
                         break;
                     }
                 }
@@ -161,7 +167,6 @@ impl Executor {
                 }
             }
         }
-
         Ok(response)
     }
 

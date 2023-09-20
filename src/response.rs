@@ -29,6 +29,7 @@ impl Response {
 
     pub fn extend(&mut self, other: Response) {
         self.messages.extend(other.messages);
+        self.is_return = other.is_return;
     }
 
     pub fn add_message(&mut self, message: String) {
