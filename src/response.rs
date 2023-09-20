@@ -2,12 +2,13 @@ use crate::model::Index;
 
 pub struct Response {
     pub contd: Control,
-    pub is_return: bool,
     messages: Vec<String>,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum Control {
     ExecFunc(Index),
+    Return,
     None,
 }
 
@@ -15,7 +16,6 @@ impl Response {
     pub fn new() -> Response {
         Response {
             messages: Vec::new(),
-            is_return: false,
             contd: Control::None,
         }
     }
@@ -29,7 +29,7 @@ impl Response {
 
     pub fn extend(&mut self, other: Response) {
         self.messages.extend(other.messages);
-        self.is_return = other.is_return;
+        self.contd = other.contd;
     }
 
     pub fn add_message(&mut self, message: String) {
@@ -43,15 +43,13 @@ impl Response {
     pub fn new_return() -> Response {
         Response {
             messages: Vec::new(),
-            is_return: true,
-            contd: Control::None,
+            contd: Control::Return,
         }
     }
 
     pub fn new_exec_func(index: Index) -> Response {
         Response {
             messages: vec![],
-            is_return: false,
             contd: Control::ExecFunc(index),
         }
     }
@@ -59,7 +57,6 @@ impl Response {
     fn new_message(message: String) -> Response {
         Response {
             messages: vec![message],
-            is_return: false,
             contd: Control::None,
         }
     }
@@ -77,14 +74,13 @@ mod tests {
     fn test_new() {
         let resp = Response::new();
         assert_eq!(resp.message(), "");
-        assert!(!resp.is_return);
+        assert_eq!(resp.contd, Control::None);
     }
 
     #[test]
     fn test_new_index() {
         let resp = Response::new_index("local", 0, None);
         assert_eq!(resp.message(), "local ;0;");
-        assert!(!resp.is_return);
     }
 
     #[test]
@@ -113,17 +109,16 @@ mod tests {
     fn test_new_return() {
         let resp = Response::new_return();
         assert_eq!(resp.message(), "");
-        assert!(resp.is_return);
+        assert_eq!(resp.contd, Control::Return);
     }
 
     #[test]
     fn test_new_exec_func() {
         let resp = Response::new_exec_func(Index::Id(String::from("fn")));
         assert_eq!(resp.message(), "");
-        assert!(!resp.is_return);
         match resp.contd {
             Control::ExecFunc(Index::Id(str)) => assert_eq!(str, "fn"),
-            _ => panic!("expected CallFunc"),
+            _ => panic!("expected ExecFunc"),
         }
     }
 }

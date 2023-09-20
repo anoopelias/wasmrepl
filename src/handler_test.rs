@@ -845,13 +845,13 @@ fn test_local_tee_by_id_error() {
 #[test]
 fn test_return_instr() {
     let response = exec_instr_handler(&Instruction::Return, &mut State::new()).unwrap();
-    assert!(response.is_return)
+    assert_eq!(response.contd, Control::Return);
 }
 
 #[test]
 fn test_nop() {
     let response = exec_instr_handler(&Instruction::Nop, &mut State::new()).unwrap();
-    assert!(!response.is_return)
+    assert_eq!(response.contd, Control::None);
 }
 
 #[test]

@@ -73,7 +73,7 @@ impl Executor {
 
         match result {
             Ok(response) => {
-                if response.is_return {
+                if response.contd == Control::Return {
                     stack.rollback();
                     Err(anyhow!("return is allowed only in func"))
                 } else {
@@ -114,7 +114,7 @@ impl Executor {
             prev_stack.push(values.pop().unwrap());
         }
 
-        if !response.is_return && !func_state.stack.is_empty() {
+        if response.contd != Control::Return && !func_state.stack.is_empty() {
             return Err(anyhow!("Too many returns"));
         }
 
@@ -154,18 +154,15 @@ impl Executor {
 
     fn execute_block(&mut self, instrs: &Vec<Instruction>) -> Result<Response> {
         let mut response = Response::new();
-        for instr in instrs.into_iter() {
-            match self.execute_instruction(&instr) {
-                Ok(resp) => {
-                    response.extend(resp);
-                    if response.is_return {
-                        break;
-                    }
-                }
-                Err(err) => {
-                    return Err(err);
-                }
-            }
+        for instr in instrs.iter() {
+            let resp = self.execute_instruction(instr)?;
+            response.extend(resp);
+
+            match &response.contd {
+                Control::ExecFunc(index) => response.extend(self.execute_func(&index)?),
+                Control::None => (),
+                Control::Return => break,
+            };
         }
         Ok(response)
     }
@@ -181,15 +178,7 @@ impl Executor {
 
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<Response> {
         let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
-        let result = handler.handle(instr);
-
-        match result {
-            Ok(response) => match response.contd {
-                Control::None => Ok(response),
-                Control::ExecFunc(index) => self.execute_func(&index),
-            },
-            Err(err) => Err(err),
-        }
+        handler.handle(instr)
     }
 }
 
