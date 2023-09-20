@@ -55,6 +55,19 @@ impl<'a> Handler<'a> {
         Ok(Response::new_ctrl(Control::ExecFunc(index)))
     }
 
+    fn if_instr(&mut self) -> Result<Response> {
+        let value = self.state.stack.pop()?;
+        Ok(Response::new_ctrl(Control::If(value.is_true())))
+    }
+
+    fn else_instr(&mut self) -> Result<Response> {
+        Ok(Response::new_ctrl(Control::Else))
+    }
+
+    fn end(&mut self) -> Result<Response> {
+        Ok(Response::new_ctrl(Control::End))
+    }
+
     pub fn handle(&mut self, instr: &Instruction) -> Result<Response> {
         match instr {
             Instruction::I32Const(value) => self.i32_const(value),
@@ -132,6 +145,9 @@ impl<'a> Handler<'a> {
             Instruction::Return => self.return_instr(),
             Instruction::Nop => self.nop(),
             Instruction::Call(index) => self.call_func(index.clone()),
+            Instruction::If => self.if_instr(),
+            Instruction::Else => self.else_instr(),
+            Instruction::End => self.end(),
         }
     }
 }

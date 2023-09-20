@@ -260,6 +260,9 @@ pub enum Instruction {
     Call(Index),
     Return,
     Nop,
+    If,
+    Else,
+    End,
 }
 
 impl TryFrom<&WastInstruction<'_>> for Instruction {
@@ -341,6 +344,9 @@ impl TryFrom<&WastInstruction<'_>> for Instruction {
             WastInstruction::Call(index) => Ok(Instruction::Call(index.try_into()?)),
             WastInstruction::Return => Ok(Instruction::Return),
             WastInstruction::Nop => Ok(Instruction::Nop),
+            WastInstruction::If(_) => Ok(Instruction::If),
+            WastInstruction::Else(_) => Ok(Instruction::Else),
+            WastInstruction::End(_) => Ok(Instruction::End),
             _ => Err(Error::msg("Unsupported instruction")),
         }
     }

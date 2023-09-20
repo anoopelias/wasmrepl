@@ -1,3 +1,4 @@
+mod analyzer;
 mod dict;
 mod elements;
 mod executor;
