@@ -12,6 +12,8 @@ use crate::{
     stack::Stack,
 };
 
+const MAX_STACK_SIZE: i32 = 100;
+
 pub struct State {
     pub stack: Stack,
     pub locals: Locals,
@@ -94,6 +96,10 @@ impl Executor {
     }
 
     fn execute_func(&mut self, index: &Index) -> Result<Response> {
+        if self.call_stack.len() > MAX_STACK_SIZE as usize {
+            return Err(anyhow!("Stack overflow"));
+        }
+
         let (func_state, mut func) = self.prepare_func_call(index)?;
         self.call_stack.push(func_state);
 
@@ -685,6 +691,19 @@ mod tests {
         let call_fun = test_line![()(Instruction::Call(test_index("fun")))];
         let response = executor.execute_line(call_fun).unwrap();
         assert_eq!(response.message(), "[20, 30]");
+    }
+
+    #[test]
+    fn execute_func_stack_overflow_error() {
+        let mut executor = Executor::new();
+        let func = test_func!(
+            "fun",
+            ()()(Instruction::Call(Index::Id(String::from("fun"))))
+        );
+        executor.execute_line(func).unwrap();
+
+        let call_fun = test_line![()(Instruction::Call(test_index("fun")))];
+        assert!(executor.execute_line(call_fun).is_err());
     }
 
     #[test]

@@ -24,7 +24,7 @@
 - [x] Mutli line inputs
 - [x] Readme
 - [x] Cleanup rustyline implementation
-- [ ] Stack overflow
+- [x] Stack overflow
 - [ ] Control statements
 - [ ] Setup coverage measurement
 - [ ] Github Actions / Pipelines
