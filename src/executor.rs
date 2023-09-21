@@ -17,6 +17,7 @@ const MAX_STACK_SIZE: i32 = 100;
 pub struct State {
     pub stack: Stack,
     pub locals: Locals,
+    instr_ptr: usize,
 }
 
 impl State {
@@ -24,6 +25,7 @@ impl State {
         State {
             stack: Stack::new(),
             locals: Locals::new(),
+            instr_ptr: 0,
         }
     }
 
@@ -72,20 +74,20 @@ impl Executor {
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
         let result = self.execute_line_expression(line);
-        let stack = self.call_stack.last_mut().unwrap();
+        let state = self.call_stack.last_mut().unwrap();
 
         match result {
             Ok(response) => {
                 if response.control == Control::Return {
-                    stack.rollback();
+                    state.rollback();
                     Err(anyhow!("return is allowed only in func"))
                 } else {
-                    stack.commit();
+                    state.commit();
                     Ok(response)
                 }
             }
             Err(err) => {
-                stack.rollback();
+                state.rollback();
                 Err(err)
             }
         }
@@ -153,57 +155,59 @@ impl Executor {
             }
         }
 
-        self.execute_block(&line_expr.expr.instrs, &mut 0)
+        self.call_stack.last_mut().unwrap().instr_ptr = 0;
+        self.execute_block(&line_expr.expr.instrs)
             .map(|resp| response.extend(resp))?;
 
         Ok(response)
     }
 
+    fn instr_ptr(&self) -> usize {
+        self.call_stack.last().unwrap().instr_ptr
+    }
+
     // TODO: This is un-necessarily tricky.
     // Maybe we can pre-process and execute to simplify this.
-    fn execute_block(
-        &mut self,
-        instrs: &Vec<Instruction>,
-        instr_ptr: &mut usize,
-    ) -> Result<Response> {
+    fn execute_block(&mut self, instrs: &Vec<Instruction>) -> Result<Response> {
         let mut response = Response::new();
-        while *instr_ptr < instrs.len() {
-            let resp = self.execute_instruction(&instrs[*instr_ptr])?;
+        while self.instr_ptr() < instrs.len() {
+            let resp = self.execute_instruction(&instrs[self.instr_ptr()])?;
             response.extend(resp);
 
+            let state = self.call_stack.last_mut().unwrap();
             // We will handle any control flow changes here.
             match &response.control {
-                Control::None => *instr_ptr = *instr_ptr + 1,
+                Control::None => state.instr_ptr += 1,
                 Control::If(b) => {
                     // Do we want if block or else block?
                     if *b {
-                        *instr_ptr = *instr_ptr + 1
+                        state.instr_ptr += 1;
                     } else {
                         // Skip if block
-                        *instr_ptr = skip_block(instrs, *instr_ptr);
+                        state.instr_ptr = skip_block(instrs, state.instr_ptr);
                     }
                     // Recursive call to execute block so that we can handle nested
                     // blocks
-                    response.extend(self.execute_block(instrs, instr_ptr)?);
+                    response.extend(self.execute_block(instrs)?);
                 }
                 Control::Else => {
                     // If we hit `else` block its possibly because we finished executing
                     // `if` block. Let us skip `else`
-                    *instr_ptr = skip_block(instrs, *instr_ptr);
+                    state.instr_ptr = skip_block(instrs, state.instr_ptr);
                     response.control = Control::None;
                     // break from recursive call
                     break;
                 }
                 Control::End => {
                     response.control = Control::None;
-                    *instr_ptr = *instr_ptr + 1;
+                    state.instr_ptr += 1;
                     // Let us break from recursive call
                     break;
                 }
                 Control::ExecFunc(index) => {
+                    state.instr_ptr += 1;
                     response.extend(self.execute_func(&index)?);
                     response.control = Control::None;
-                    *instr_ptr = *instr_ptr + 1;
                 }
                 // Return statement break all recursive blocks
                 // returning to calling function
