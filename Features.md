@@ -39,7 +39,7 @@ Supported features from [Wasm spec](https://webassembly.github.io/spec/core/synt
         - [ ] `unreachable`
         - [ ] `block` .. `end`
         - [ ] `loop` .. `end`
-        - [ ] `if` .. `else` .. `end`
+        - [x] `if` .. `else` .. `end`
         - [ ] `br`
         - [ ] `br_if`
         - [ ] `br_table`
