@@ -166,6 +166,16 @@ impl Executor {
         self.call_stack.last().unwrap().instr_ptr
     }
 
+    fn next_instr(&mut self) {
+        let state = self.call_stack.last_mut().unwrap();
+        state.instr_ptr += 1;
+    }
+
+    fn skip_block(&mut self, instrs: &Vec<Instruction>) {
+        let state = self.call_stack.last_mut().unwrap();
+        state.instr_ptr = skip_block(instrs, state.instr_ptr);
+    }
+
     // TODO: This is un-necessarily tricky.
     // Maybe we can pre-process and execute to simplify this.
     fn execute_block(&mut self, instrs: &Vec<Instruction>) -> Result<Response> {
@@ -174,17 +184,16 @@ impl Executor {
             let resp = self.execute_instruction(&instrs[self.instr_ptr()])?;
             response.extend(resp);
 
-            let state = self.call_stack.last_mut().unwrap();
             // We will handle any control flow changes here.
             match &response.control {
-                Control::None => state.instr_ptr += 1,
+                Control::None => self.next_instr(),
                 Control::If(b) => {
                     // Do we want if block or else block?
                     if *b {
-                        state.instr_ptr += 1;
+                        self.next_instr()
                     } else {
                         // Skip if block
-                        state.instr_ptr = skip_block(instrs, state.instr_ptr);
+                        self.skip_block(instrs);
                     }
                     // Recursive call to execute block so that we can handle nested
                     // blocks
@@ -193,20 +202,20 @@ impl Executor {
                 Control::Else => {
                     // If we hit `else` block its possibly because we finished executing
                     // `if` block. Let us skip `else`
-                    state.instr_ptr = skip_block(instrs, state.instr_ptr);
+                    self.skip_block(instrs);
                     response.control = Control::None;
                     // break from recursive call
                     break;
                 }
                 Control::End => {
+                    self.next_instr();
                     response.control = Control::None;
-                    state.instr_ptr += 1;
                     // Let us break from recursive call
                     break;
                 }
                 Control::ExecFunc(index) => {
-                    state.instr_ptr += 1;
                     response.extend(self.execute_func(&index)?);
+                    self.next_instr();
                     response.control = Control::None;
                 }
                 // Return statement break all recursive blocks
