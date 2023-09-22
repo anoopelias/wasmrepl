@@ -45,6 +45,12 @@ pub struct Executor {
     funcs: Elements<Func>,
 }
 
+#[derive(Debug, PartialEq)]
+enum BlockType {
+    None,
+    If,
+}
+
 impl Executor {
     pub fn new() -> Executor {
         Executor {
@@ -156,36 +162,21 @@ impl Executor {
         }
 
         self.call_stack.last_mut().unwrap().instr_ptr = 0;
-        self.execute_block(&line_expr.expr.instrs)
+        self.execute_block(&line_expr.expr.instrs, BlockType::None)
             .map(|resp| response.extend(resp))?;
 
         Ok(response)
     }
 
-    fn instr_ptr(&self) -> usize {
-        self.call_stack.last().unwrap().instr_ptr
-    }
-
-    fn next_instr(&mut self) {
-        let state = self.call_stack.last_mut().unwrap();
-        state.instr_ptr += 1;
-    }
-
-    fn skip_block(&mut self, instrs: &Vec<Instruction>) {
-        let state = self.call_stack.last_mut().unwrap();
-        state.instr_ptr = skip_block(instrs, state.instr_ptr);
-    }
-
     // TODO: This is un-necessarily tricky.
     // Maybe we can pre-process and execute to simplify this.
-    fn execute_block(&mut self, instrs: &Vec<Instruction>) -> Result<Response> {
+    fn execute_block(&mut self, instrs: &Vec<Instruction>, ty: BlockType) -> Result<Response> {
         let mut response = Response::new();
         while self.instr_ptr() < instrs.len() {
             let resp = self.execute_instruction(&instrs[self.instr_ptr()])?;
-            response.extend(resp);
 
             // We will handle any control flow changes here.
-            match &response.control {
+            match &resp.control {
                 Control::None => self.next_instr(),
                 Control::If(b) => {
                     // Do we want if block or else block?
@@ -197,30 +188,33 @@ impl Executor {
                     }
                     // Recursive call to execute block so that we can handle nested
                     // blocks
-                    response.extend(self.execute_block(instrs)?);
+                    self.execute_block(instrs, BlockType::If)?;
                 }
                 Control::Else => {
+                    if ty != BlockType::If {
+                        return Err(anyhow!("Unexpected else"));
+                    }
                     // If we hit `else` block its possibly because we finished executing
                     // `if` block. Let us skip `else`
                     self.skip_block(instrs);
-                    response.control = Control::None;
                     // break from recursive call
                     break;
                 }
                 Control::End => {
                     self.next_instr();
-                    response.control = Control::None;
                     // Let us break from recursive call
                     break;
                 }
                 Control::ExecFunc(index) => {
-                    response.extend(self.execute_func(&index)?);
+                    self.execute_func(&index)?;
                     self.next_instr();
-                    response.control = Control::None;
                 }
-                // Return statement break all recursive blocks
-                // returning to calling function
-                Control::Return => break,
+                Control::Return => {
+                    // Return statement break all recursive blocks
+                    // returning to calling function
+                    response.control = Control::Return;
+                    break;
+                }
             };
         }
         Ok(response)
@@ -238,6 +232,20 @@ impl Executor {
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<Response> {
         let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
         handler.handle(instr)
+    }
+
+    fn instr_ptr(&self) -> usize {
+        self.call_stack.last().unwrap().instr_ptr
+    }
+
+    fn next_instr(&mut self) {
+        let state = self.call_stack.last_mut().unwrap();
+        state.instr_ptr += 1;
+    }
+
+    fn skip_block(&mut self, instrs: &Vec<Instruction>) {
+        let state = self.call_stack.last_mut().unwrap();
+        state.instr_ptr = skip_block(instrs, state.instr_ptr);
     }
 }
 
@@ -873,5 +881,34 @@ mod tests {
             Instruction::Call(test_index("fn"))
         )];
         assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[4]");
+    }
+
+    #[test]
+    fn test_nested_no_else() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(1),
+            Instruction::If,
+            Instruction::I32Const(-1),
+            Instruction::If,
+            Instruction::I32Const(3),
+            Instruction::End,
+            Instruction::Else,
+            Instruction::I32Const(4),
+            Instruction::End
+        )];
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[]");
+    }
+
+    #[test]
+    fn test_else_only_error() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(1),
+            Instruction::Else,
+            Instruction::I32Const(4),
+            Instruction::End
+        )];
+        assert!(executor.execute_line(line).is_err());
     }
 }
