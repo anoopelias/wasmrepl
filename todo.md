@@ -25,6 +25,10 @@
 - [x] Readme
 - [x] Cleanup rustyline implementation
 - [x] Stack overflow
+- [ ] Function input validation not requred?
+- [ ] if-no-else block executes one block inside
+- [ ] if block with result
+- [ ] if block with param
 - [ ] Control statements
 - [ ] Setup coverage measurement
 - [ ] Github Actions / Pipelines
