@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Error, Result};
+use anyhow::{anyhow, Result};
 
 use crate::analyzer::skip_block;
 use crate::elements::Elements;
@@ -143,9 +143,6 @@ impl Executor {
             let val = self.call_stack.last_mut().unwrap().stack.pop()?;
             val.is_same_type(&param.val_type)?;
             func_state.locals.grow(param.id, val)?;
-        }
-        if !self.call_stack.last_mut().unwrap().stack.is_empty() {
-            return Err(Error::msg("Too many inputs to func"));
         }
         Ok((func_state, func))
     }
@@ -552,20 +549,6 @@ mod tests {
         executor.execute_line(func).unwrap();
 
         let call_fun = test_line![()(Instruction::Call(test_index("fun")))];
-        assert!(executor.execute_line(call_fun).is_err());
-    }
-
-    #[test]
-    fn execute_func_more_number_of_inputs() {
-        let mut executor = Executor::new();
-        let func = test_func!("fun", (test_local!(ValType::I32))()());
-        executor.execute_line(func).unwrap();
-
-        let call_fun = test_line![()(
-            Instruction::I32Const(5),
-            Instruction::I32Const(10),
-            Instruction::Call(test_index("fun"))
-        )];
         assert!(executor.execute_line(call_fun).is_err());
     }
 
