@@ -8,6 +8,7 @@ mod locals;
 mod model;
 mod ops;
 mod parser;
+mod preprocessor;
 mod response;
 mod stack;
 mod value;
