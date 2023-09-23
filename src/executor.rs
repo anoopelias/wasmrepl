@@ -1,10 +1,10 @@
 use anyhow::{anyhow, Result};
 
-use crate::analyzer::skip_block;
 use crate::elements::Elements;
 use crate::handler::Handler;
 use crate::locals::Locals;
 use crate::model::{Func, Index, Instruction, Local, ValType};
+use crate::preprocessor::{preprocess, Command, Group};
 use crate::response::{Control, Response};
 use crate::value::Value;
 use crate::{
@@ -17,7 +17,6 @@ const MAX_STACK_SIZE: i32 = 100;
 pub struct State {
     pub stack: Stack,
     pub locals: Locals,
-    instr_ptr: usize,
 }
 
 impl State {
@@ -25,7 +24,6 @@ impl State {
         State {
             stack: Stack::new(),
             locals: Locals::new(),
-            instr_ptr: 0,
         }
     }
 
@@ -43,12 +41,6 @@ impl State {
 pub struct Executor {
     call_stack: Vec<State>,
     funcs: Elements<Func>,
-}
-
-#[derive(Debug, PartialEq)]
-enum BlockType {
-    None,
-    If,
 }
 
 impl Executor {
@@ -158,62 +150,41 @@ impl Executor {
             }
         }
 
-        self.reset_instr_ptr();
-        self.execute_block(&line_expr.expr.instrs, BlockType::None)
-            .map(|resp| response.extend(resp))?;
+        response.extend(self.execute_group(preprocess(&line_expr.expr.instrs)?)?);
 
         Ok(response)
     }
 
-    // TODO: This is un-necessarily tricky.
-    // Maybe we can pre-process and execute to simplify this.
-    fn execute_block(&mut self, instrs: &Vec<Instruction>, ty: BlockType) -> Result<Response> {
+    fn execute_group(&mut self, group: Group) -> Result<Response> {
         let mut response = Response::new();
-        while self.instr_ptr() < instrs.len() {
-            let resp = self.execute_instruction(&instrs[self.instr_ptr()])?;
 
-            // We will handle any control flow changes here.
-            match &resp.control {
-                Control::None => self.next_instr(),
-                Control::If(b) => {
-                    // Do we want if block or else block?
-                    if *b {
-                        self.next_instr()
-                    } else {
-                        // Skip if block
-                        self.skip_block(instrs);
+        for command in group.commands {
+            match command {
+                Command::Instr(instr) => match self.execute_instruction(instr)?.control {
+                    Control::None => (),
+                    Control::ExecFunc(index) => {
+                        self.execute_func(&index)?;
                     }
-                    // Recursive call to execute block so that we can handle nested
-                    // blocks
-                    self.execute_block(instrs, BlockType::If)?;
-                }
-                Control::Else => {
-                    if ty != BlockType::If {
-                        return Err(anyhow!("Unexpected else"));
+                    Control::Return => {
+                        // Return statement break all recursive blocks
+                        // returning to calling function
+                        response.control = Control::Return;
+                        break;
                     }
-                    // If we hit `else` block its possibly because we finished executing
-                    // `if` block. Let us skip `else`
-                    self.skip_block(instrs);
-                    // break from recursive call
-                    break;
+                    _ => unreachable!(),
+                },
+                Command::If(ifinstr, ifgrp, elsegrp) => {
+                    if let Control::If(b) = self.execute_instruction(ifinstr)?.control {
+                        response.control =
+                            self.execute_group(if b { ifgrp } else { elsegrp })?.control;
+                        if response.control == Control::Return {
+                            break;
+                        }
+                    }
                 }
-                Control::End => {
-                    self.next_instr();
-                    // Let us break from recursive call
-                    break;
-                }
-                Control::ExecFunc(index) => {
-                    self.execute_func(&index)?;
-                    self.next_instr();
-                }
-                Control::Return => {
-                    // Return statement break all recursive blocks
-                    // returning to calling function
-                    response.control = Control::Return;
-                    break;
-                }
-            };
+            }
         }
+
         Ok(response)
     }
 
@@ -229,24 +200,6 @@ impl Executor {
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<Response> {
         let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
         handler.handle(instr)
-    }
-
-    fn reset_instr_ptr(&mut self) {
-        self.call_stack.last_mut().unwrap().instr_ptr = 0;
-    }
-
-    fn instr_ptr(&self) -> usize {
-        self.call_stack.last().unwrap().instr_ptr
-    }
-
-    fn next_instr(&mut self) {
-        let state = self.call_stack.last_mut().unwrap();
-        state.instr_ptr += 1;
-    }
-
-    fn skip_block(&mut self, instrs: &Vec<Instruction>) {
-        let state = self.call_stack.last_mut().unwrap();
-        state.instr_ptr = skip_block(instrs, state.instr_ptr);
     }
 }
 

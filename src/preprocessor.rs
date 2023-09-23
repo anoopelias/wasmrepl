@@ -3,62 +3,62 @@ use crate::model::Instruction;
 use anyhow::Result;
 
 #[derive(PartialEq, Debug)]
-pub struct Chunk<'a> {
-    commands: Vec<Command<'a>>,
+pub struct Group<'a> {
+    pub commands: Vec<Command<'a>>,
 }
 
 #[derive(PartialEq, Debug)]
-enum Command<'a> {
+pub enum Command<'a> {
     Instr(&'a Instruction),
-    If(Chunk<'a>, Chunk<'a>),
+    If(&'a Instruction, Group<'a>, Group<'a>),
 }
 
 #[derive(PartialEq, Debug)]
-enum ChunkEnd {
+enum GroupEnd {
     None,
     Else,
     End,
 }
 
-pub fn preprocess(instrs: &Vec<Instruction>) -> Result<Chunk> {
-    let (chunk, end) = chunk(instrs, &mut 0)?;
-    if end != ChunkEnd::None {
+pub fn preprocess(instrs: &Vec<Instruction>) -> Result<Group> {
+    let (group, end) = group(instrs, &mut 0)?;
+    if end != GroupEnd::None {
         return Err(anyhow::anyhow!("Unexpected end of block"));
     }
-    Ok(chunk)
+    Ok(group)
 }
 
-fn chunk<'a>(instrs: &'a Vec<Instruction>, i: &mut usize) -> Result<(Chunk<'a>, ChunkEnd)> {
+fn group<'a>(instrs: &'a Vec<Instruction>, i: &mut usize) -> Result<(Group<'a>, GroupEnd)> {
     let mut commands = Vec::new();
-    let mut end = ChunkEnd::None;
+    let mut end = GroupEnd::None;
     while *i < instrs.len() {
         let instr = &instrs[*i];
         match instr {
             Instruction::If => {
                 *i += 1;
-                let (if_chunk, if_end) = chunk(instrs, i)?;
+                let (if_group, if_end) = group(instrs, i)?;
                 commands.push(match if_end {
-                    ChunkEnd::Else => {
-                        let (else_chunk, end) = chunk(instrs, i)?;
-                        if end != ChunkEnd::End {
+                    GroupEnd::Else => {
+                        let (else_group, end) = group(instrs, i)?;
+                        if end != GroupEnd::End {
                             return Err(anyhow::anyhow!("Expected End"));
                         }
-                        Command::If(if_chunk, else_chunk)
+                        Command::If(instr, if_group, else_group)
                     }
                     _ => {
-                        let else_chunk = Chunk { commands: vec![] };
-                        Command::If(if_chunk, else_chunk)
+                        let else_group = Group { commands: vec![] };
+                        Command::If(instr, if_group, else_group)
                     }
                 });
             }
             Instruction::Else => {
                 *i += 1;
-                end = ChunkEnd::Else;
+                end = GroupEnd::Else;
                 break;
             }
             Instruction::End => {
                 *i += 1;
-                end = ChunkEnd::End;
+                end = GroupEnd::End;
                 break;
             }
             _ => {
@@ -67,7 +67,7 @@ fn chunk<'a>(instrs: &'a Vec<Instruction>, i: &mut usize) -> Result<(Chunk<'a>, 
             }
         }
     }
-    Ok((Chunk { commands }, end))
+    Ok((Group { commands }, end))
 }
 
 #[cfg(test)]
@@ -79,10 +79,10 @@ mod tests {
     fn test_simple() {
         let instrs = vec![Instruction::I32Const(1), Instruction::I32Const(5)];
 
-        let chunk = preprocess(&instrs).unwrap();
-        assert_eq!(chunk.commands.len(), 2);
-        assert_eq!(chunk.commands[0], Command::Instr(&Instruction::I32Const(1)));
-        assert_eq!(chunk.commands[1], Command::Instr(&Instruction::I32Const(5)));
+        let group = preprocess(&instrs).unwrap();
+        assert_eq!(group.commands.len(), 2);
+        assert_eq!(group.commands[0], Command::Instr(&Instruction::I32Const(1)));
+        assert_eq!(group.commands[1], Command::Instr(&Instruction::I32Const(5)));
     }
 
     #[test]
@@ -98,12 +98,12 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        let chunk = preprocess(&instrs).unwrap();
-        assert_eq!(chunk.commands.len(), 3);
-        assert_eq!(chunk.commands[0], Command::Instr(&Instruction::I32Const(1)));
+        let group = preprocess(&instrs).unwrap();
+        assert_eq!(group.commands.len(), 3);
+        assert_eq!(group.commands[0], Command::Instr(&Instruction::I32Const(1)));
 
-        let (ifch, elsech) = match &chunk.commands[1] {
-            Command::If(ifch, elsech) => (ifch, elsech),
+        let (ifch, elsech) = match &group.commands[1] {
+            Command::If(_, ifch, elsech) => (ifch, elsech),
             _ => panic!("Expected Command::If"),
         };
 
@@ -129,12 +129,12 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        let chunk = preprocess(&instrs).unwrap();
-        assert_eq!(chunk.commands.len(), 3);
-        assert_eq!(chunk.commands[0], Command::Instr(&Instruction::I32Const(1)));
+        let group = preprocess(&instrs).unwrap();
+        assert_eq!(group.commands.len(), 3);
+        assert_eq!(group.commands[0], Command::Instr(&Instruction::I32Const(1)));
 
-        let (ifch, elsech) = match &chunk.commands[1] {
-            Command::If(ifch, elsech) => (ifch, elsech),
+        let (ifch, elsech) = match &group.commands[1] {
+            Command::If(_, ifch, elsech) => (ifch, elsech),
             _ => panic!("Expected Command::If"),
         };
 

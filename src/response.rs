@@ -11,8 +11,6 @@ pub enum Control {
     Return,
     None,
     If(bool),
-    Else,
-    End,
 }
 
 impl Response {

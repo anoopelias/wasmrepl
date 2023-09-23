@@ -890,13 +890,13 @@ fn test_if_error() {
 }
 
 #[test]
+#[should_panic]
 fn test_else() {
-    let response = exec_instr_handler(&Instruction::Else, &mut State::new()).unwrap();
-    assert_eq!(response.control, Control::Else);
+    exec_instr_handler(&Instruction::Else, &mut State::new()).unwrap();
 }
 
 #[test]
+#[should_panic]
 fn test_end() {
-    let response = exec_instr_handler(&Instruction::End, &mut State::new()).unwrap();
-    assert_eq!(response.control, Control::End);
+    exec_instr_handler(&Instruction::End, &mut State::new()).unwrap();
 }
