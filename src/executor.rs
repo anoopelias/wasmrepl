@@ -158,7 +158,7 @@ impl Executor {
             }
         }
 
-        self.call_stack.last_mut().unwrap().instr_ptr = 0;
+        self.reset_instr_ptr();
         self.execute_block(&line_expr.expr.instrs, BlockType::None)
             .map(|resp| response.extend(resp))?;
 
@@ -229,6 +229,10 @@ impl Executor {
     fn execute_instruction(&mut self, instr: &Instruction) -> Result<Response> {
         let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
         handler.handle(instr)
+    }
+
+    fn reset_instr_ptr(&mut self) {
+        self.call_stack.last_mut().unwrap().instr_ptr = 0;
     }
 
     fn instr_ptr(&self) -> usize {
