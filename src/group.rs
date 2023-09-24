@@ -72,8 +72,8 @@ fn group<'a>(instrs: &'a Vec<Instruction>, i: &mut usize) -> Result<(Group<'a>, 
 
 #[cfg(test)]
 mod tests {
+    use crate::group::{preprocess, Command};
     use crate::model::Instruction;
-    use crate::preprocessor::{preprocess, Command};
 
     #[test]
     fn test_simple() {

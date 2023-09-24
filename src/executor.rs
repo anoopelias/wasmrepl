@@ -1,10 +1,10 @@
 use anyhow::{anyhow, Result};
 
 use crate::elements::Elements;
+use crate::group::{preprocess, Command, Group};
 use crate::handler::Handler;
 use crate::locals::Locals;
 use crate::model::{Func, Index, Instruction, Local, ValType};
-use crate::preprocessor::{preprocess, Command, Group};
 use crate::response::{Control, Response};
 use crate::value::Value;
 use crate::{
