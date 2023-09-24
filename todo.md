@@ -26,7 +26,8 @@
 - [x] Cleanup rustyline implementation
 - [x] Stack overflow
 - [x] Function input validation not requred?
-- [ ] if-no-else block executes one block inside
+- [x] if-no-else block executes one block inside
+- [ ] Early grouping for improving functions.
 - [ ] if block with result
 - [ ] if block with param
 - [ ] Control statements
