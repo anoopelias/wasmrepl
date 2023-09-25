@@ -21,8 +21,11 @@ pub fn test_index(id: &str) -> Index {
 }
 
 pub fn test_simple_if() -> Instruction {
-    Instruction::If(FuncType {
-        params: vec![],
-        results: vec![],
+    Instruction::If(crate::model::BlockType {
+        label: None,
+        ty: FuncType {
+            params: vec![],
+            results: vec![],
+        },
     })
 }

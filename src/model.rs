@@ -5,8 +5,9 @@
 //
 use wast::{
     core::{
-        Expression as WastExpression, Func as WastFunc, FuncKind, FunctionType,
-        Instruction as WastInstruction, Local as WastLocal, TypeUse, ValType as WastValType,
+        BlockType as WastBlockType, Expression as WastExpression, Func as WastFunc, FuncKind,
+        FunctionType, Instruction as WastInstruction, Local as WastLocal, TypeUse,
+        ValType as WastValType,
     },
     token::{Id, Index as WastIndex},
 };
@@ -179,6 +180,22 @@ impl TryFrom<&WastExpression<'_>> for Expression {
 }
 
 #[derive(PartialEq, Debug, Clone)]
+pub struct BlockType {
+    pub label: Option<String>,
+    pub ty: FuncType,
+}
+
+impl TryFrom<&Box<WastBlockType<'_>>> for BlockType {
+    type Error = Error;
+    fn try_from(block_type: &Box<WastBlockType<'_>>) -> Result<Self> {
+        let label = from_id(block_type.label);
+        let ty = FuncType::try_from(&block_type.ty)?;
+
+        Ok(BlockType { label, ty })
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
 pub enum Index {
     Id(String),
     Num(u32),
@@ -275,7 +292,7 @@ pub enum Instruction {
     Call(Index),
     Return,
     Nop,
-    If(FuncType),
+    If(BlockType),
     Else,
     End,
 }
@@ -359,7 +376,7 @@ impl TryFrom<&WastInstruction<'_>> for Instruction {
             WastInstruction::Call(index) => Ok(Instruction::Call(index.try_into()?)),
             WastInstruction::Return => Ok(Instruction::Return),
             WastInstruction::Nop => Ok(Instruction::Nop),
-            WastInstruction::If(ty) => Ok(Instruction::If((&ty.ty).try_into()?)),
+            WastInstruction::If(ty) => Ok(Instruction::If(ty.try_into()?)),
             WastInstruction::Else(_) => Ok(Instruction::Else),
             WastInstruction::End(_) => Ok(Instruction::End),
             _ => Err(Error::msg("Unsupported instruction")),
@@ -373,14 +390,16 @@ mod tests {
 
     use crate::{
         model::{
-            Expression, Func, FuncType, Index, Instruction, Line, LineExpression, Local, ValType,
+            BlockType, Expression, Func, FuncType, Index, Instruction, Line, LineExpression, Local,
+            ValType,
         },
         parser::{Line as WastLine, LineExpression as WastLineExpression},
     };
     use wast::{
         core::{
-            Expression as WastExpression, Func as WastFunc, FunctionType, InlineExport,
-            Instruction as WastInstruction, Local as WastLocal, TypeUse, ValType as WastValType,
+            BlockType as WastBlockType, Expression as WastExpression, Func as WastFunc,
+            FunctionType, InlineExport, Instruction as WastInstruction, Local as WastLocal,
+            TypeUse, ValType as WastValType,
         },
         parser::{self, ParseBuffer},
         token::{Float32, Float64, Id, Index as WastIndex, Span},
@@ -622,5 +641,54 @@ mod tests {
         } else {
             panic!("Expected Line::Func");
         }
+    }
+
+    #[test]
+    fn test_wast_block_type() {
+        test_id!(block_id, "$block1");
+        test_id!(param_id, "$param1");
+        let ty = BlockType::try_from(&Box::new(WastBlockType {
+            label: Some(block_id),
+            label_name: None,
+            ty: TypeUse {
+                // TODO: What is this index? Is this in use?
+                index: None,
+                inline: Some(FunctionType {
+                    params: Box::new([(Some(param_id), None, WastValType::I32)]),
+                    results: Box::new([WastValType::I32]),
+                }),
+            },
+        }))
+        .unwrap();
+
+        assert_eq!(ty.label, Some(String::from("block1")));
+        assert_eq!(ty.ty.params.len(), 1);
+        assert_eq!(ty.ty.results.len(), 1);
+    }
+
+    #[test]
+    fn test_from_wast_if_instruction() {
+        let instr = Instruction::try_from(&WastInstruction::If(Box::new(WastBlockType {
+            label: None,
+            label_name: None,
+            ty: TypeUse {
+                index: None,
+                inline: Some(FunctionType {
+                    params: Box::new([]),
+                    results: Box::new([WastValType::I32]),
+                }),
+            },
+        })))
+        .unwrap();
+        assert_eq!(
+            instr,
+            Instruction::If(BlockType {
+                label: None,
+                ty: FuncType {
+                    params: vec![],
+                    results: vec![ValType::I32],
+                }
+            })
+        );
     }
 }
