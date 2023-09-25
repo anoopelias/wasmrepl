@@ -13,7 +13,10 @@ use wast::{
 
 use anyhow::{Error, Result};
 
-use crate::parser::{Line as WastLine, LineExpression as WastLineExpression};
+use crate::{
+    group,
+    parser::{Line as WastLine, LineExpression as WastLineExpression},
+};
 
 pub enum Line {
     Expression(LineExpression),
@@ -148,7 +151,7 @@ impl TryFrom<&WastValType<'_>> for ValType {
 
 #[derive(Clone)]
 pub struct Expression {
-    pub instrs: Vec<Instruction>,
+    pub group: group::Group,
 }
 
 impl TryFrom<&WastExpression<'_>> for Expression {
@@ -159,7 +162,8 @@ impl TryFrom<&WastExpression<'_>> for Expression {
         for instr in expr.instrs.iter() {
             instrs.push(instr.try_into()?);
         }
-        Ok(Expression { instrs })
+        let group = group::preprocess(instrs)?;
+        Ok(Expression { group })
     }
 }
 
@@ -357,6 +361,7 @@ mod tests {
     use std::vec;
 
     use crate::{
+        group::Command,
         model::{Expression, Func, Index, Instruction, Line, LineExpression, Local, ValType},
         parser::{Line as WastLine, LineExpression as WastLineExpression},
     };
@@ -402,6 +407,14 @@ mod tests {
             id: None,
             name: None,
             ty: WastValType::I32,
+        }
+    }
+
+    fn assert_instr(command: Command, test_instr: Instruction) {
+        if let Command::Instruction(instr) = &command {
+            assert_eq!(*instr, test_instr);
+        } else {
+            panic!("Expected Command::Instruction");
         }
     }
 
@@ -454,8 +467,8 @@ mod tests {
         })
         .unwrap();
 
-        assert_eq!(expr.instrs.len(), 1);
-        assert_eq!(expr.instrs[0], Instruction::I32Const(2));
+        assert_eq!(expr.group.commands.len(), 1);
+        assert_instr(expr.group.commands[0].clone(), Instruction::I32Const(2));
     }
 
     #[test]
@@ -521,10 +534,10 @@ mod tests {
         assert_eq!(func.results[0], ValType::I32);
         assert_eq!(func.line_expression.locals.len(), 1);
         assert_eq!(func.line_expression.locals[0].val_type, ValType::I32);
-        assert_eq!(func.line_expression.expr.instrs.len(), 1);
-        assert_eq!(
-            func.line_expression.expr.instrs[0],
-            Instruction::I32Const(2)
+        assert_eq!(func.line_expression.expr.group.commands.len(), 1);
+        assert_instr(
+            func.line_expression.expr.group.commands[0].clone(),
+            Instruction::I32Const(2),
         );
     }
 
@@ -540,8 +553,11 @@ mod tests {
 
         assert_eq!(line_expr.locals.len(), 1);
         assert_eq!(line_expr.locals[0].val_type, ValType::I32);
-        assert_eq!(line_expr.expr.instrs.len(), 1);
-        assert_eq!(line_expr.expr.instrs[0], Instruction::I32Const(2));
+        assert_eq!(line_expr.expr.group.commands.len(), 1);
+        assert_instr(
+            line_expr.expr.group.commands[0].clone(),
+            Instruction::I32Const(2),
+        );
     }
 
     #[test]
@@ -557,8 +573,11 @@ mod tests {
         if let Line::Expression(line_expr) = line_expression {
             assert_eq!(line_expr.locals.len(), 1);
             assert_eq!(line_expr.locals[0].val_type, ValType::I32);
-            assert_eq!(line_expr.expr.instrs.len(), 1);
-            assert_eq!(line_expr.expr.instrs[0], Instruction::I32Const(2));
+            assert_eq!(line_expr.expr.group.commands.len(), 1);
+            assert_instr(
+                line_expr.expr.group.commands[0].clone(),
+                Instruction::I32Const(2),
+            );
         } else {
             panic!("Expected Line::Expression");
         }

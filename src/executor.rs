@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 
 use crate::elements::Elements;
-use crate::group::{preprocess, Command, Group};
+use crate::group::{Command, Group};
 use crate::handler::Handler;
 use crate::locals::Locals;
 use crate::model::{Func, Index, Instruction, Local, ValType};
@@ -150,17 +150,17 @@ impl Executor {
             }
         }
 
-        response.extend(self.execute_group(preprocess(&line_expr.expr.instrs)?)?);
+        response.extend(self.execute_group(&line_expr.expr.group)?);
 
         Ok(response)
     }
 
-    fn execute_group(&mut self, group: Group) -> Result<Response> {
+    fn execute_group(&mut self, group: &Group) -> Result<Response> {
         let mut response = Response::new();
 
-        for command in group.commands {
+        for command in &group.commands {
             match command {
-                Command::Instr(instr) => match self.execute_instruction(instr)?.control {
+                Command::Instruction(instr) => match self.execute_instruction(&instr)?.control {
                     Control::None => (),
                     Control::ExecFunc(index) => {
                         self.execute_func(&index)?;
@@ -174,9 +174,10 @@ impl Executor {
                     _ => unreachable!(),
                 },
                 Command::If(ifinstr, ifgrp, elsegrp) => {
-                    if let Control::If(b) = self.execute_instruction(ifinstr)?.control {
-                        response.control =
-                            self.execute_group(if b { ifgrp } else { elsegrp })?.control;
+                    if let Control::If(b) = self.execute_instruction(&ifinstr)?.control {
+                        response.control = self
+                            .execute_group(if b { &ifgrp } else { &elsegrp })?
+                            .control;
                         if response.control == Control::Return {
                             break;
                         }
@@ -217,6 +218,7 @@ mod tests {
     use crate::model::{Expression, Func, Index, Instruction, Local, ValType};
 
     use crate::executor::Executor;
+    use crate::group::preprocess;
     use crate::model::{Line, LineExpression};
     use crate::test_utils::test_index;
 
@@ -225,9 +227,9 @@ mod tests {
             Line::Expression(LineExpression {
                 locals:  vec![$( $y ),*],
                 expr: Expression{
-                    instrs: vec!(
+                    group: preprocess(vec!(
                         $( $x ),*
-                    )
+                    )).unwrap()
                 }
             })
         };
@@ -244,9 +246,9 @@ mod tests {
                 line_expression: LineExpression {
                     locals: vec![],
                     expr: Expression {
-                        instrs: vec![
+                        group: preprocess(vec![
                             $( $instr ),*
-                        ],
+                        ]).unwrap(),
                     },
                 },
             })
@@ -601,7 +603,7 @@ mod tests {
             line_expression: LineExpression {
                 locals: vec![],
                 expr: Expression {
-                    instrs: vec![Instruction::LocalGet(Index::Num(0))],
+                    group: preprocess(vec![Instruction::LocalGet(Index::Num(0))]).unwrap(),
                 },
             },
         });

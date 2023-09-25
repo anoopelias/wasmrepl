@@ -2,15 +2,15 @@
 use crate::model::Instruction;
 use anyhow::Result;
 
-#[derive(PartialEq, Debug)]
-pub struct Group<'a> {
-    pub commands: Vec<Command<'a>>,
+#[derive(PartialEq, Debug, Clone)]
+pub struct Group {
+    pub commands: Vec<Command>,
 }
 
-#[derive(PartialEq, Debug)]
-pub enum Command<'a> {
-    Instr(&'a Instruction),
-    If(&'a Instruction, Group<'a>, Group<'a>),
+#[derive(PartialEq, Debug, Clone)]
+pub enum Command {
+    Instruction(Instruction),
+    If(Instruction, Group, Group),
 }
 
 #[derive(PartialEq, Debug)]
@@ -20,7 +20,7 @@ enum GroupEnd {
     End,
 }
 
-pub fn preprocess(instrs: &Vec<Instruction>) -> Result<Group> {
+pub fn preprocess(instrs: Vec<Instruction>) -> Result<Group> {
     let (group, end) = group(instrs, &mut 0)?;
     if end != GroupEnd::None {
         return Err(anyhow::anyhow!("Unexpected end of block"));
@@ -28,18 +28,18 @@ pub fn preprocess(instrs: &Vec<Instruction>) -> Result<Group> {
     Ok(group)
 }
 
-fn group<'a>(instrs: &'a Vec<Instruction>, i: &mut usize) -> Result<(Group<'a>, GroupEnd)> {
+fn group(mut instrs: Vec<Instruction>, i: &mut usize) -> Result<(Group, GroupEnd)> {
     let mut commands = Vec::new();
     let mut end = GroupEnd::None;
-    while *i < instrs.len() {
-        let instr = &instrs[*i];
+    instrs.drain(0..(*i));
+    for instr in instrs.clone().into_iter() {
         match instr {
             Instruction::If => {
                 *i += 1;
-                let (if_group, if_end) = group(instrs, i)?;
+                let (if_group, if_end) = group(instrs.clone(), i)?;
                 commands.push(match if_end {
                     GroupEnd::Else => {
-                        let (else_group, end) = group(instrs, i)?;
+                        let (else_group, end) = group(instrs.clone(), i)?;
                         if end != GroupEnd::End {
                             return Err(anyhow::anyhow!("Expected End"));
                         }
@@ -63,7 +63,7 @@ fn group<'a>(instrs: &'a Vec<Instruction>, i: &mut usize) -> Result<(Group<'a>, 
             }
             _ => {
                 *i += 1;
-                commands.push(Command::Instr(instr));
+                commands.push(Command::Instruction(instr));
             }
         }
     }
@@ -79,10 +79,16 @@ mod tests {
     fn test_simple() {
         let instrs = vec![Instruction::I32Const(1), Instruction::I32Const(5)];
 
-        let group = preprocess(&instrs).unwrap();
+        let group = preprocess(instrs).unwrap();
         assert_eq!(group.commands.len(), 2);
-        assert_eq!(group.commands[0], Command::Instr(&Instruction::I32Const(1)));
-        assert_eq!(group.commands[1], Command::Instr(&Instruction::I32Const(5)));
+        assert_eq!(
+            group.commands[0],
+            Command::Instruction(Instruction::I32Const(1))
+        );
+        assert_eq!(
+            group.commands[1],
+            Command::Instruction(Instruction::I32Const(5))
+        );
     }
 
     #[test]
@@ -98,9 +104,12 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        let group = preprocess(&instrs).unwrap();
+        let group = preprocess(instrs).unwrap();
         assert_eq!(group.commands.len(), 3);
-        assert_eq!(group.commands[0], Command::Instr(&Instruction::I32Const(1)));
+        assert_eq!(
+            group.commands[0],
+            Command::Instruction(Instruction::I32Const(1))
+        );
 
         let (ifch, elsech) = match &group.commands[1] {
             Command::If(_, ifch, elsech) => (ifch, elsech),
@@ -108,13 +117,19 @@ mod tests {
         };
 
         assert!(ifch.commands.len() == 2);
-        assert_eq!(ifch.commands[0], Command::Instr(&Instruction::I32Const(2)));
-        assert_eq!(ifch.commands[1], Command::Instr(&Instruction::I32Const(3)));
+        assert_eq!(
+            ifch.commands[0],
+            Command::Instruction(Instruction::I32Const(2))
+        );
+        assert_eq!(
+            ifch.commands[1],
+            Command::Instruction(Instruction::I32Const(3))
+        );
 
         assert!(elsech.commands.len() == 1);
         assert_eq!(
             elsech.commands[0],
-            Command::Instr(&Instruction::I32Const(4))
+            Command::Instruction(Instruction::I32Const(4))
         );
     }
 
@@ -129,9 +144,12 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        let group = preprocess(&instrs).unwrap();
+        let group = preprocess(instrs).unwrap();
         assert_eq!(group.commands.len(), 3);
-        assert_eq!(group.commands[0], Command::Instr(&Instruction::I32Const(1)));
+        assert_eq!(
+            group.commands[0],
+            Command::Instruction(Instruction::I32Const(1))
+        );
 
         let (ifch, elsech) = match &group.commands[1] {
             Command::If(_, ifch, elsech) => (ifch, elsech),
@@ -139,8 +157,14 @@ mod tests {
         };
 
         assert!(ifch.commands.len() == 2);
-        assert_eq!(ifch.commands[0], Command::Instr(&Instruction::I32Const(2)));
-        assert_eq!(ifch.commands[1], Command::Instr(&Instruction::I32Const(3)));
+        assert_eq!(
+            ifch.commands[0],
+            Command::Instruction(Instruction::I32Const(2))
+        );
+        assert_eq!(
+            ifch.commands[1],
+            Command::Instruction(Instruction::I32Const(3))
+        );
 
         assert!(elsech.commands.len() == 0);
     }
@@ -153,7 +177,7 @@ mod tests {
             Instruction::End,
         ];
 
-        assert!(preprocess(&instrs).is_err());
+        assert!(preprocess(instrs).is_err());
     }
 
     #[test]
@@ -164,7 +188,7 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        assert!(preprocess(&instrs).is_err());
+        assert!(preprocess(instrs).is_err());
     }
 
     #[test]
@@ -181,7 +205,7 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        assert!(preprocess(&instrs).is_err());
+        assert!(preprocess(instrs).is_err());
     }
 
     #[test]
@@ -196,6 +220,6 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        assert!(preprocess(&instrs).is_err());
+        assert!(preprocess(instrs).is_err());
     }
 }
