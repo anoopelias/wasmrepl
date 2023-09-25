@@ -1,7 +1,4 @@
-use crate::{
-    model::{FuncType, Index, Instruction},
-    value::Value,
-};
+use crate::{model::Index, value::Value};
 
 macro_rules! test_val {
     ($fname:ident, $type:ty) => {
@@ -20,12 +17,19 @@ pub fn test_index(id: &str) -> Index {
     Index::Id(String::from(id))
 }
 
-pub fn test_simple_if() -> Instruction {
-    Instruction::If(crate::model::BlockType {
-        label: None,
-        ty: FuncType {
-            params: vec![],
-            results: vec![],
-        },
-    })
+macro_rules! test_if {
+    (($( $param:expr ),*)($( $res:expr ),*)) => {
+        Instruction::If(crate::model::BlockType {
+            label: None,
+            ty: crate::model::FuncType {
+                params: vec![
+                    $( $param ),*
+                ],
+                results: vec![$( $res ),*]
+
+            }
+        })
+    };
 }
+
+pub(crate) use test_if;

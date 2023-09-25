@@ -73,8 +73,8 @@ fn group<'a>(instrs: &'a Vec<Instruction>, i: &mut usize) -> Result<(Group<'a>, 
 #[cfg(test)]
 mod tests {
     use crate::group::{preprocess, Command};
-    use crate::model::Instruction;
-    use crate::test_utils::test_simple_if;
+    use crate::model::{Instruction, ValType};
+    use crate::test_utils::test_if;
 
     #[test]
     fn test_simple() {
@@ -90,7 +90,7 @@ mod tests {
     fn test_if_else() {
         let instrs = vec![
             Instruction::I32Const(1),
-            test_simple_if(),
+            test_if!(()(ValType::I32)),
             Instruction::I32Const(2),
             Instruction::I32Const(3),
             Instruction::Else,
@@ -123,7 +123,7 @@ mod tests {
     fn test_only_if() {
         let instrs = vec![
             Instruction::I32Const(1),
-            test_simple_if(),
+            test_if!(()(ValType::I32, ValType::I32)),
             Instruction::I32Const(2),
             Instruction::I32Const(3),
             Instruction::End,
@@ -172,7 +172,7 @@ mod tests {
     fn test_nested_end_error() {
         let instrs = vec![
             Instruction::I32Const(1),
-            test_simple_if(),
+            test_if!(()(ValType::I32)),
             Instruction::I32Const(2),
             Instruction::End,
             Instruction::I32Const(3),
@@ -189,7 +189,7 @@ mod tests {
     fn test_if_no_end_error() {
         let instrs = vec![
             Instruction::I32Const(1),
-            test_simple_if(),
+            test_if!(()(ValType::I32)),
             Instruction::I32Const(2),
             Instruction::I32Const(3),
             Instruction::Else,

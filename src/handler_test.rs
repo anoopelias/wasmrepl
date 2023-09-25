@@ -3,7 +3,7 @@ use crate::{executor::State, value::Value};
 use anyhow::Result;
 
 use crate::model::{Index, Instruction};
-use crate::test_utils::{test_index, test_simple_if};
+use crate::test_utils::{test_if, test_index};
 
 use super::Handler;
 
@@ -872,7 +872,7 @@ fn test_call_func() {
 fn test_if_instr() {
     let mut state = State::new();
     state.stack.push(1.into());
-    let response = exec_instr_handler(&test_simple_if(), &mut state).unwrap();
+    let response = exec_instr_handler(&test_if!(()()), &mut state).unwrap();
     assert_eq!(response.control, Control::If(true));
 }
 
@@ -880,13 +880,13 @@ fn test_if_instr() {
 fn test_if_else() {
     let mut state = State::new();
     state.stack.push(0.into());
-    let response = exec_instr_handler(&test_simple_if(), &mut state).unwrap();
+    let response = exec_instr_handler(&test_if!(()()), &mut state).unwrap();
     assert_eq!(response.control, Control::If(false));
 }
 
 #[test]
 fn test_if_error() {
-    assert!(exec_instr_handler(&test_simple_if(), &mut State::new()).is_err());
+    assert!(exec_instr_handler(&test_if!(()()), &mut State::new()).is_err());
 }
 
 #[test]

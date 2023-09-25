@@ -71,7 +71,7 @@ impl Executor {
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
-        let result = self.execute_line_expression(&line);
+        let result = self.execute_group(&preprocess(&line.expr.instrs)?, Some(&line.locals), None);
         let state = self.call_stack.last_mut().unwrap();
 
         match result {
@@ -100,63 +100,49 @@ impl Executor {
             return Err(anyhow!("Stack overflow"));
         }
 
-        let mut func = self.funcs.get(index)?.clone();
-        let func_state = self.prepare_state(&func.ty)?;
-        self.call_stack.push(func_state);
+        let func = self.funcs.get(index)?.clone();
+        self.execute_group(
+            &preprocess(&func.line_expression.expr.instrs)?,
+            Some(&func.line_expression.locals),
+            Some(&func.ty),
+        )?;
 
-        let response = self.execute_line_expression(&func.line_expression)?;
-
-        let mut func_state = self.call_stack.pop().unwrap();
-        let mut values = vec![];
-        while func.ty.results.len() > 0 {
-            let value = func_state.stack.pop()?;
-            let result = func.ty.results.pop().unwrap();
-            value.is_same_type(&result)?;
-            values.push(value);
-        }
-
-        let prev_stack = &mut self.call_stack.last_mut().unwrap().stack;
-        while values.len() > 0 {
-            prev_stack.push(values.pop().unwrap());
-        }
-
-        if response.control != Control::Return && !func_state.stack.is_empty() {
-            return Err(anyhow!("Too many returns"));
-        }
-
-        // Ignoring the response messages from function execution
-        // to reduce noise in REPL
         Ok(Response::new())
     }
 
-    fn prepare_state(&mut self, ty: &FuncType) -> Result<State> {
+    fn insert_new_state(&mut self, ty: &FuncType) -> Result<()> {
         let mut func_state = State::new();
         for param in ty.params.iter().rev() {
             let val = self.call_stack.last_mut().unwrap().stack.pop()?;
             val.is_same_type(&param.val_type)?;
             func_state.locals.grow(param.id.clone(), val)?;
         }
-        Ok(func_state)
+        self.call_stack.push(func_state);
+        Ok(())
     }
 
-    fn execute_line_expression(&mut self, line_expr: &LineExpression) -> Result<Response> {
+    fn execute_group(
+        &mut self,
+        group: &Group,
+        locals: Option<&Vec<Local>>,
+        ty: Option<&FuncType>,
+    ) -> Result<Response> {
         let mut response = Response::new();
-        for lc in line_expr.locals.iter() {
-            match self.execute_local(&lc).map(|resp| response.extend(resp)) {
-                Ok(response) => response,
-                Err(err) => {
-                    return Err(err);
+
+        if let Some(ty) = ty {
+            self.insert_new_state(ty)?;
+        }
+
+        if let Some(lcs) = locals {
+            for lc in lcs.iter() {
+                match self.execute_local(&lc) {
+                    Ok(resp) => response.extend(resp),
+                    Err(err) => {
+                        return Err(err);
+                    }
                 }
             }
         }
-
-        response.extend(self.execute_group(&preprocess(&line_expr.expr.instrs)?)?);
-
-        Ok(response)
-    }
-
-    fn execute_group(&mut self, group: &Group) -> Result<Response> {
-        let mut response = Response::new();
 
         for command in &group.commands {
             match command {
@@ -175,14 +161,39 @@ impl Executor {
                 },
                 Command::If(ifinstr, ifgrp, elsegrp) => {
                     if let Control::If(b) = self.execute_instruction(ifinstr)?.control {
-                        response.control = self
-                            .execute_group(if b { &ifgrp } else { &elsegrp })?
-                            .control;
-                        if response.control == Control::Return {
-                            break;
+                        if let Instruction::If(block_type) = ifinstr {
+                            response.control = self
+                                .execute_group(
+                                    if b { &ifgrp } else { &elsegrp },
+                                    None,
+                                    Some(&block_type.ty),
+                                )?
+                                .control;
+                            if response.control == Control::Return {
+                                break;
+                            }
                         }
                     }
                 }
+            }
+        }
+
+        if let Some(ty) = ty {
+            let mut func_state = self.call_stack.pop().unwrap();
+            let mut values = vec![];
+            for result in ty.results.iter().rev() {
+                let value = func_state.stack.pop()?;
+                value.is_same_type(&result)?;
+                values.push(value);
+            }
+
+            let prev_stack = &mut self.call_stack.last_mut().unwrap().stack;
+            while values.len() > 0 {
+                prev_stack.push(values.pop().unwrap());
+            }
+
+            if response.control != Control::Return && !func_state.stack.is_empty() {
+                return Err(anyhow!("Too many returns"));
             }
         }
 
@@ -220,7 +231,7 @@ mod tests {
     };
 
     use crate::executor::Executor;
-    use crate::test_utils::{test_index, test_simple_if};
+    use crate::test_utils::{test_if, test_index};
 
     macro_rules! test_line {
         (($( $y:expr ),*)($( $x:expr ),*)) => {
@@ -689,7 +700,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
-            test_simple_if(),
+            test_if!(()(ValType::I32)),
             Instruction::I32Const(2),
             Instruction::Else,
             Instruction::I32Const(3),
@@ -704,7 +715,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
-            test_simple_if(),
+            test_if!(()(ValType::I32)),
             Instruction::I32Add,
             Instruction::Else,
             Instruction::I32Const(3),
@@ -719,7 +730,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(0),
-            test_simple_if(),
+            test_if!(()(ValType::I32)),
             Instruction::I32Const(2),
             Instruction::Else,
             Instruction::I32Const(3),
@@ -734,9 +745,9 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
-            test_simple_if(),
+            test_if!(()(ValType::I32)),
             Instruction::I32Const(2),
-            test_simple_if(),
+            test_if!(()(ValType::I32)),
             Instruction::I32Const(3),
             Instruction::Else,
             Instruction::I32Const(4),
@@ -754,9 +765,9 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(-1),
-            test_simple_if(),
+            test_if!(()(ValType::I32)),
             Instruction::I32Const(2),
-            test_simple_if(),
+            test_if!(()(ValType::I32)),
             Instruction::I32Const(3),
             Instruction::Else,
             Instruction::I32Const(4),
@@ -774,7 +785,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(3),
-            test_simple_if(),
+            test_if!(()()),
             Instruction::Else,
             Instruction::I32Const(1),
             Instruction::End,
@@ -788,7 +799,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(-2),
-            test_simple_if(),
+            test_if!(()()),
             Instruction::I32Const(1),
             Instruction::End,
             Instruction::I32Const(2)
@@ -803,7 +814,7 @@ mod tests {
             "fn",
             (test_local!(ValType::I32))(ValType::I32)(
                 Instruction::LocalGet(Index::Num(0)),
-                test_simple_if(),
+                test_if!(()(ValType::I32)),
                 Instruction::I32Const(1),
                 Instruction::Return,
                 Instruction::I32Const(2),
@@ -835,9 +846,9 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
-            test_simple_if(),
+            test_if!(()()),
             Instruction::I32Const(-1),
-            test_simple_if(),
+            test_if!(()()),
             Instruction::I32Const(3),
             Instruction::End,
             Instruction::Else,
