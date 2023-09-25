@@ -4,7 +4,7 @@ use crate::elements::Elements;
 use crate::group::{preprocess, Command, Group};
 use crate::handler::Handler;
 use crate::locals::Locals;
-use crate::model::{Func, Index, Instruction, Local, ValType};
+use crate::model::{Func, FuncType, Index, Instruction, Local, ValType};
 use crate::response::{Control, Response};
 use crate::value::Value;
 use crate::{
@@ -100,7 +100,8 @@ impl Executor {
             return Err(anyhow!("Stack overflow"));
         }
 
-        let (func_state, mut func) = self.prepare_func_call(index)?;
+        let mut func = self.funcs.get(index)?.clone();
+        let func_state = self.prepare_state(&func.ty)?;
         self.call_stack.push(func_state);
 
         let response = self.execute_line_expression(func.line_expression)?;
@@ -128,15 +129,14 @@ impl Executor {
         Ok(Response::new())
     }
 
-    fn prepare_func_call(&mut self, index: &Index) -> Result<(State, Func)> {
+    fn prepare_state(&mut self, ty: &FuncType) -> Result<State> {
         let mut func_state = State::new();
-        let mut func = self.funcs.get(index)?.clone();
-        while let Some(param) = func.ty.params.pop() {
+        for param in ty.params.iter().rev() {
             let val = self.call_stack.last_mut().unwrap().stack.pop()?;
             val.is_same_type(&param.val_type)?;
-            func_state.locals.grow(param.id, val)?;
+            func_state.locals.grow(param.id.clone(), val)?;
         }
-        Ok((func_state, func))
+        Ok(func_state)
     }
 
     fn execute_line_expression(&mut self, line_expr: LineExpression) -> Result<Response> {
@@ -150,15 +150,15 @@ impl Executor {
             }
         }
 
-        response.extend(self.execute_group(preprocess(&line_expr.expr.instrs)?)?);
+        response.extend(self.execute_group(&preprocess(&line_expr.expr.instrs)?)?);
 
         Ok(response)
     }
 
-    fn execute_group(&mut self, group: Group) -> Result<Response> {
+    fn execute_group(&mut self, group: &Group) -> Result<Response> {
         let mut response = Response::new();
 
-        for command in group.commands {
+        for command in &group.commands {
             match command {
                 Command::Instr(instr) => match self.execute_instruction(instr)?.control {
                     Control::None => (),
@@ -175,8 +175,9 @@ impl Executor {
                 },
                 Command::If(ifinstr, ifgrp, elsegrp) => {
                     if let Control::If(b) = self.execute_instruction(ifinstr)?.control {
-                        response.control =
-                            self.execute_group(if b { ifgrp } else { elsegrp })?.control;
+                        response.control = self
+                            .execute_group(if b { &ifgrp } else { &elsegrp })?
+                            .control;
                         if response.control == Control::Return {
                             break;
                         }
