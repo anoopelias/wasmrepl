@@ -71,7 +71,7 @@ impl Executor {
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
-        let result = self.execute_line_expression(line);
+        let result = self.execute_line_expression(&line);
         let state = self.call_stack.last_mut().unwrap();
 
         match result {
@@ -104,7 +104,7 @@ impl Executor {
         let func_state = self.prepare_state(&func.ty)?;
         self.call_stack.push(func_state);
 
-        let response = self.execute_line_expression(func.line_expression)?;
+        let response = self.execute_line_expression(&func.line_expression)?;
 
         let mut func_state = self.call_stack.pop().unwrap();
         let mut values = vec![];
@@ -139,10 +139,10 @@ impl Executor {
         Ok(func_state)
     }
 
-    fn execute_line_expression(&mut self, line_expr: LineExpression) -> Result<Response> {
+    fn execute_line_expression(&mut self, line_expr: &LineExpression) -> Result<Response> {
         let mut response = Response::new();
-        for lc in line_expr.locals.into_iter() {
-            match self.execute_local(lc).map(|resp| response.extend(resp)) {
+        for lc in line_expr.locals.iter() {
+            match self.execute_local(&lc).map(|resp| response.extend(resp)) {
                 Ok(response) => response,
                 Err(err) => {
                     return Err(err);
@@ -189,7 +189,7 @@ impl Executor {
         Ok(response)
     }
 
-    fn execute_local(&mut self, lc: Local) -> Result<Response> {
+    fn execute_local(&mut self, lc: &Local) -> Result<Response> {
         let id = lc.id.clone();
         let state = self.call_stack.last_mut().unwrap();
         state
@@ -204,7 +204,7 @@ impl Executor {
     }
 }
 
-fn default_value(local: Local) -> Result<Value> {
+fn default_value(local: &Local) -> Result<Value> {
     match local.val_type {
         ValType::I32 => Ok(Value::default_i32()),
         ValType::I64 => Ok(Value::default_i64()),
