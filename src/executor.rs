@@ -107,9 +107,9 @@ impl Executor {
 
         let mut func_state = self.call_stack.pop().unwrap();
         let mut values = vec![];
-        while func.results.len() > 0 {
+        while func.ty.results.len() > 0 {
             let value = func_state.stack.pop()?;
-            let result = func.results.pop().unwrap();
+            let result = func.ty.results.pop().unwrap();
             value.is_same_type(&result)?;
             values.push(value);
         }
@@ -131,7 +131,7 @@ impl Executor {
     fn prepare_func_call(&mut self, index: &Index) -> Result<(State, Func)> {
         let mut func_state = State::new();
         let mut func = self.funcs.get(index)?.clone();
-        while let Some(param) = func.params.pop() {
+        while let Some(param) = func.ty.params.pop() {
             let val = self.call_stack.last_mut().unwrap().stack.pop()?;
             val.is_same_type(&param.val_type)?;
             func_state.locals.grow(param.id, val)?;
@@ -214,10 +214,11 @@ fn default_value(local: Local) -> Result<Value> {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{Expression, Func, Index, Instruction, Local, ValType};
+    use crate::model::{
+        Expression, Func, FuncType, Index, Instruction, Line, LineExpression, Local, ValType,
+    };
 
     use crate::executor::Executor;
-    use crate::model::{Line, LineExpression};
     use crate::test_utils::test_index;
 
     macro_rules! test_line {
@@ -237,10 +238,13 @@ mod tests {
         ($fname:expr, ($( $param:expr ),*)($( $res:expr ),*)($( $instr:expr ),*)) => {
             Line::Func(Func {
                 id: Some(String::from($fname)),
-                params: vec![
-                    $( $param ),*
-                ],
-                results: vec![$( $res ),*],
+                ty: FuncType {
+                    params: vec![
+                        $( $param ),*
+                    ],
+                    results: vec![$( $res ),*]
+
+                },
                 line_expression: LineExpression {
                     locals: vec![],
                     expr: Expression {
@@ -596,8 +600,10 @@ mod tests {
         let mut executor = Executor::new();
         let func = Line::Func(Func {
             id: None,
-            params: vec![test_local!(ValType::I32)],
-            results: vec![ValType::I32],
+            ty: FuncType {
+                params: vec![test_local!(ValType::I32)],
+                results: vec![ValType::I32],
+            },
             line_expression: LineExpression {
                 locals: vec![],
                 expr: Expression {

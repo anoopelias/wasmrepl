@@ -5,8 +5,8 @@
 //
 use wast::{
     core::{
-        Expression as WastExpression, Func as WastFunc, FuncKind, Instruction as WastInstruction,
-        Local as WastLocal, ValType as WastValType,
+        Expression as WastExpression, Func as WastFunc, FuncKind, FunctionType,
+        Instruction as WastInstruction, Local as WastLocal, ValType as WastValType,
     },
     token::{Id, Index as WastIndex},
 };
@@ -33,8 +33,7 @@ impl TryFrom<&WastLine<'_>> for Line {
 #[derive(Clone)]
 pub struct Func {
     pub id: Option<String>,
-    pub params: Vec<Local>,
-    pub results: Vec<ValType>,
+    pub ty: FuncType,
     pub line_expression: LineExpression,
 }
 
@@ -43,24 +42,12 @@ impl TryFrom<&WastFunc<'_>> for Func {
     fn try_from(func: &WastFunc) -> Result<Self> {
         let id = from_id(func.id);
 
-        let (params, results) = match &func.ty.inline {
-            Some(func_type) => {
-                let mut params = Vec::new();
-                let mut results = Vec::new();
-
-                for param in func_type.params.iter() {
-                    params.push(Local {
-                        id: from_id(param.0),
-                        val_type: (&param.2).try_into()?,
-                    });
-                }
-
-                for result in func_type.results.iter() {
-                    results.push(result.try_into()?);
-                }
-                (params, results)
-            }
-            None => (vec![], vec![]),
+        let ty = match &func.ty.inline {
+            Some(func_type) => FuncType::try_from(func_type)?,
+            None => FuncType {
+                params: vec![],
+                results: vec![],
+            },
         };
 
         let line_expression = match &func.kind {
@@ -84,10 +71,35 @@ impl TryFrom<&WastFunc<'_>> for Func {
         // TODO: Return error for unsupported function types.
         Ok(Func {
             id,
-            params,
-            results,
+            ty,
             line_expression,
         })
+    }
+}
+
+#[derive(Clone)]
+pub struct FuncType {
+    pub params: Vec<Local>,
+    pub results: Vec<ValType>,
+}
+
+impl TryFrom<&FunctionType<'_>> for FuncType {
+    type Error = Error;
+    fn try_from(func_type: &FunctionType) -> Result<Self> {
+        let mut params = Vec::new();
+        let mut results = Vec::new();
+
+        for param in func_type.params.iter() {
+            params.push(Local {
+                id: from_id(param.0),
+                val_type: (&param.2).try_into()?,
+            });
+        }
+
+        for result in func_type.results.iter() {
+            results.push(result.try_into()?);
+        }
+        Ok(FuncType { params, results })
     }
 }
 
@@ -357,7 +369,9 @@ mod tests {
     use std::vec;
 
     use crate::{
-        model::{Expression, Func, Index, Instruction, Line, LineExpression, Local, ValType},
+        model::{
+            Expression, Func, FuncType, Index, Instruction, Line, LineExpression, Local, ValType,
+        },
         parser::{Line as WastLine, LineExpression as WastLineExpression},
     };
     use wast::{
@@ -514,11 +528,8 @@ mod tests {
         .unwrap();
 
         assert_eq!(func.id, Some(String::from("fun1")));
-        assert_eq!(func.params.len(), 1);
-        assert_eq!(func.params[0].val_type, ValType::I32);
-        assert_eq!(func.params[0].id, Some(String::from("param1")));
-        assert_eq!(func.results.len(), 1);
-        assert_eq!(func.results[0], ValType::I32);
+        assert_eq!(func.ty.params.len(), 1);
+        assert_eq!(func.ty.params[0].val_type, ValType::I32);
         assert_eq!(func.line_expression.locals.len(), 1);
         assert_eq!(func.line_expression.locals[0].val_type, ValType::I32);
         assert_eq!(func.line_expression.expr.instrs.len(), 1);
@@ -526,6 +537,21 @@ mod tests {
             func.line_expression.expr.instrs[0],
             Instruction::I32Const(2)
         );
+    }
+
+    #[test]
+    fn test_wast_func_type() {
+        test_id!(param_id, "$param1");
+        let ty = FuncType::try_from(&FunctionType {
+            params: Box::new([(Some(param_id), None, WastValType::I32)]),
+            results: Box::new([WastValType::I32]),
+        })
+        .unwrap();
+        assert_eq!(ty.params.len(), 1);
+        assert_eq!(ty.params[0].val_type, ValType::I32);
+        assert_eq!(ty.params[0].id, Some(String::from("param1")));
+        assert_eq!(ty.results.len(), 1);
+        assert_eq!(ty.results[0], ValType::I32);
     }
 
     #[test]
