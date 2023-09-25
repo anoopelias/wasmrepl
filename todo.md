@@ -27,6 +27,7 @@
 - [x] Stack overflow
 - [x] Function input validation not requred?
 - [x] if-no-else block executes one block inside
+- [ ] Not supported fields in func and block
 - [ ] Early grouping for improving functions.
 - [ ] if block with result
 - [ ] if block with param
