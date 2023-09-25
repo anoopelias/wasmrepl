@@ -219,7 +219,7 @@ mod tests {
     };
 
     use crate::executor::Executor;
-    use crate::test_utils::test_index;
+    use crate::test_utils::{test_index, test_simple_if};
 
     macro_rules! test_line {
         (($( $y:expr ),*)($( $x:expr ),*)) => {
@@ -688,7 +688,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(2),
             Instruction::Else,
             Instruction::I32Const(3),
@@ -703,7 +703,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Add,
             Instruction::Else,
             Instruction::I32Const(3),
@@ -718,7 +718,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(0),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(2),
             Instruction::Else,
             Instruction::I32Const(3),
@@ -733,9 +733,9 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(2),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(3),
             Instruction::Else,
             Instruction::I32Const(4),
@@ -753,9 +753,9 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(-1),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(2),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(3),
             Instruction::Else,
             Instruction::I32Const(4),
@@ -773,7 +773,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(3),
-            Instruction::If,
+            test_simple_if(),
             Instruction::Else,
             Instruction::I32Const(1),
             Instruction::End,
@@ -787,7 +787,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(-2),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(1),
             Instruction::End,
             Instruction::I32Const(2)
@@ -802,7 +802,7 @@ mod tests {
             "fn",
             (test_local!(ValType::I32))(ValType::I32)(
                 Instruction::LocalGet(Index::Num(0)),
-                Instruction::If,
+                test_simple_if(),
                 Instruction::I32Const(1),
                 Instruction::Return,
                 Instruction::I32Const(2),
@@ -834,9 +834,9 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(-1),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(3),
             Instruction::End,
             Instruction::Else,

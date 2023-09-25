@@ -6,7 +6,7 @@
 use wast::{
     core::{
         Expression as WastExpression, Func as WastFunc, FuncKind, FunctionType,
-        Instruction as WastInstruction, Local as WastLocal, ValType as WastValType,
+        Instruction as WastInstruction, Local as WastLocal, TypeUse, ValType as WastValType,
     },
     token::{Id, Index as WastIndex},
 };
@@ -41,14 +41,7 @@ impl TryFrom<&WastFunc<'_>> for Func {
     type Error = Error;
     fn try_from(func: &WastFunc) -> Result<Self> {
         let id = from_id(func.id);
-
-        let ty = match &func.ty.inline {
-            Some(func_type) => FuncType::try_from(func_type)?,
-            None => FuncType {
-                params: vec![],
-                results: vec![],
-            },
-        };
+        let ty = FuncType::try_from(&func.ty)?;
 
         let line_expression = match &func.kind {
             FuncKind::Inline { locals, expression } => {
@@ -77,29 +70,39 @@ impl TryFrom<&WastFunc<'_>> for Func {
     }
 }
 
-#[derive(Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct FuncType {
     pub params: Vec<Local>,
     pub results: Vec<ValType>,
 }
 
-impl TryFrom<&FunctionType<'_>> for FuncType {
+impl TryFrom<&TypeUse<'_, FunctionType<'_>>> for FuncType {
     type Error = Error;
-    fn try_from(func_type: &FunctionType) -> Result<Self> {
+    fn try_from(type_use: &TypeUse<'_, FunctionType<'_>>) -> Result<Self> {
         let mut params = Vec::new();
         let mut results = Vec::new();
 
-        for param in func_type.params.iter() {
-            params.push(Local {
-                id: from_id(param.0),
-                val_type: (&param.2).try_into()?,
-            });
-        }
+        // TODO: Handle case where `typeuse.import` is `Some`
 
-        for result in func_type.results.iter() {
-            results.push(result.try_into()?);
+        match &type_use.inline {
+            Some(func_type) => {
+                for param in func_type.params.iter() {
+                    params.push(Local {
+                        id: from_id(param.0),
+                        val_type: (&param.2).try_into()?,
+                    });
+                }
+
+                for result in func_type.results.iter() {
+                    results.push(result.try_into()?);
+                }
+                Ok(FuncType { params, results })
+            }
+            None => Ok(FuncType {
+                params: vec![],
+                results: vec![],
+            }),
         }
-        Ok(FuncType { params, results })
     }
 }
 
@@ -122,7 +125,7 @@ impl TryFrom<&WastLineExpression<'_>> for LineExpression {
     }
 }
 
-#[derive(Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Local {
     pub id: Option<String>,
     pub val_type: ValType,
@@ -272,7 +275,7 @@ pub enum Instruction {
     Call(Index),
     Return,
     Nop,
-    If,
+    If(FuncType),
     Else,
     End,
 }
@@ -356,7 +359,7 @@ impl TryFrom<&WastInstruction<'_>> for Instruction {
             WastInstruction::Call(index) => Ok(Instruction::Call(index.try_into()?)),
             WastInstruction::Return => Ok(Instruction::Return),
             WastInstruction::Nop => Ok(Instruction::Nop),
-            WastInstruction::If(_) => Ok(Instruction::If),
+            WastInstruction::If(ty) => Ok(Instruction::If((&ty.ty).try_into()?)),
             WastInstruction::Else(_) => Ok(Instruction::Else),
             WastInstruction::End(_) => Ok(Instruction::End),
             _ => Err(Error::msg("Unsupported instruction")),
@@ -542,9 +545,12 @@ mod tests {
     #[test]
     fn test_wast_func_type() {
         test_id!(param_id, "$param1");
-        let ty = FuncType::try_from(&FunctionType {
-            params: Box::new([(Some(param_id), None, WastValType::I32)]),
-            results: Box::new([WastValType::I32]),
+        let ty = FuncType::try_from(&TypeUse {
+            index: None,
+            inline: Some(FunctionType {
+                params: Box::new([(Some(param_id), None, WastValType::I32)]),
+                results: Box::new([WastValType::I32]),
+            }),
         })
         .unwrap();
         assert_eq!(ty.params.len(), 1);

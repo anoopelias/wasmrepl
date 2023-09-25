@@ -34,7 +34,7 @@ fn group<'a>(instrs: &'a Vec<Instruction>, i: &mut usize) -> Result<(Group<'a>, 
     while *i < instrs.len() {
         let instr = &instrs[*i];
         match instr {
-            Instruction::If => {
+            Instruction::If(_) => {
                 *i += 1;
                 let (if_group, if_end) = group(instrs, i)?;
                 commands.push(match if_end {
@@ -74,6 +74,7 @@ fn group<'a>(instrs: &'a Vec<Instruction>, i: &mut usize) -> Result<(Group<'a>, 
 mod tests {
     use crate::group::{preprocess, Command};
     use crate::model::Instruction;
+    use crate::test_utils::test_simple_if;
 
     #[test]
     fn test_simple() {
@@ -89,7 +90,7 @@ mod tests {
     fn test_if_else() {
         let instrs = vec![
             Instruction::I32Const(1),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(2),
             Instruction::I32Const(3),
             Instruction::Else,
@@ -122,7 +123,7 @@ mod tests {
     fn test_only_if() {
         let instrs = vec![
             Instruction::I32Const(1),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(2),
             Instruction::I32Const(3),
             Instruction::End,
@@ -171,7 +172,7 @@ mod tests {
     fn test_nested_end_error() {
         let instrs = vec![
             Instruction::I32Const(1),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(2),
             Instruction::End,
             Instruction::I32Const(3),
@@ -188,7 +189,7 @@ mod tests {
     fn test_if_no_end_error() {
         let instrs = vec![
             Instruction::I32Const(1),
-            Instruction::If,
+            test_simple_if(),
             Instruction::I32Const(2),
             Instruction::I32Const(3),
             Instruction::Else,
