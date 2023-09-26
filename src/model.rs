@@ -398,8 +398,8 @@ mod tests {
     use wast::{
         core::{
             BlockType as WastBlockType, Expression as WastExpression, Func as WastFunc,
-            FunctionType, InlineExport, Instruction as WastInstruction, Local as WastLocal,
-            TypeUse, ValType as WastValType,
+            FunctionType, InlineExport, InlineImport, Instruction as WastInstruction,
+            Local as WastLocal, TypeUse, ValType as WastValType,
         },
         parser::{self, ParseBuffer},
         token::{Float32, Float64, Id, Index as WastIndex, Span},
@@ -559,6 +559,28 @@ mod tests {
             func.line_expression.expr.instrs[0],
             Instruction::I32Const(2)
         );
+    }
+
+    #[test]
+    fn test_from_wast_import_error() {
+        assert!(Func::try_from(&WastFunc {
+            id: None,
+            name: None,
+            exports: InlineExport { names: vec![] },
+            ty: TypeUse {
+                index: None,
+                inline: Some(FunctionType {
+                    params: Box::new([]),
+                    results: Box::new([]),
+                }),
+            },
+            span: Span::from_offset(0),
+            kind: wast::core::FuncKind::Import(InlineImport {
+                module: "mod1",
+                field: "fun1",
+            }),
+        })
+        .is_err());
     }
 
     #[test]
