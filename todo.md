@@ -28,12 +28,12 @@
 - [x] Function input validation not requred?
 - [x] if-no-else block executes one block inside
 - [x] Not supported fields in func and block
-- [ ] Typecheck
-- [ ] Early grouping for improving functions.
-- [ ] if block with result
-- [ ] if block with param
+- [x] Early grouping for improving functions.
+- [x] if block with result
+- [x] if block with param
 - [ ] Control statements
 - [ ] Setup coverage measurement
+- [ ] Typecheck
 - [ ] Github Actions / Pipelines
 - [ ] Improve speed of asciinema demo
 - [ ] Pop should return option instead of result

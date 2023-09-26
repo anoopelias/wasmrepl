@@ -172,7 +172,6 @@ impl TryFrom<&WastValType<'_>> for ValType {
 
 #[derive(Clone)]
 pub struct Expression {
-    pub instrs: Vec<Instruction>,
     pub group: Group,
 }
 
@@ -185,7 +184,6 @@ impl TryFrom<&WastExpression<'_>> for Expression {
             instrs.push(instr.try_into()?);
         }
         Ok(Expression {
-            instrs: instrs.clone(),
             group: preprocess(instrs)?,
         })
     }
@@ -401,6 +399,7 @@ mod tests {
     use std::vec;
 
     use crate::{
+        group::Command,
         model::{
             BlockType, Expression, Func, FuncType, Index, Instruction, Line, LineExpression, Local,
             ValType,
@@ -502,8 +501,11 @@ mod tests {
         })
         .unwrap();
 
-        assert_eq!(expr.instrs.len(), 1);
-        assert_eq!(expr.instrs[0], Instruction::I32Const(2));
+        assert_eq!(expr.group.commands.len(), 1);
+        assert_eq!(
+            expr.group.commands[0],
+            Command::Instr(Instruction::I32Const(2))
+        );
     }
 
     #[test]
@@ -566,10 +568,10 @@ mod tests {
         assert_eq!(func.ty.params[0].val_type, ValType::I32);
         assert_eq!(func.line_expression.locals.len(), 1);
         assert_eq!(func.line_expression.locals[0].val_type, ValType::I32);
-        assert_eq!(func.line_expression.expr.instrs.len(), 1);
+        assert_eq!(func.line_expression.expr.group.commands.len(), 1);
         assert_eq!(
-            func.line_expression.expr.instrs[0],
-            Instruction::I32Const(2)
+            func.line_expression.expr.group.commands[0],
+            Command::Instr(Instruction::I32Const(2))
         );
     }
 
@@ -663,8 +665,11 @@ mod tests {
 
         assert_eq!(line_expr.locals.len(), 1);
         assert_eq!(line_expr.locals[0].val_type, ValType::I32);
-        assert_eq!(line_expr.expr.instrs.len(), 1);
-        assert_eq!(line_expr.expr.instrs[0], Instruction::I32Const(2));
+        assert_eq!(line_expr.expr.group.commands.len(), 1);
+        assert_eq!(
+            line_expr.expr.group.commands[0],
+            Command::Instr(Instruction::I32Const(2))
+        );
     }
 
     #[test]
@@ -680,8 +685,11 @@ mod tests {
         if let Line::Expression(line_expr) = line_expression {
             assert_eq!(line_expr.locals.len(), 1);
             assert_eq!(line_expr.locals[0].val_type, ValType::I32);
-            assert_eq!(line_expr.expr.instrs.len(), 1);
-            assert_eq!(line_expr.expr.instrs[0], Instruction::I32Const(2));
+            assert_eq!(line_expr.expr.group.commands.len(), 1);
+            assert_eq!(
+                line_expr.expr.group.commands[0],
+                Command::Instr(Instruction::I32Const(2))
+            );
         } else {
             panic!("Expected Line::Expression");
         }

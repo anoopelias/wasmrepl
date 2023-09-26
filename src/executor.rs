@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 
 use crate::elements::Elements;
-use crate::group::{preprocess, Command, Group};
+use crate::group::{Command, Group};
 use crate::handler::Handler;
 use crate::locals::Locals;
 use crate::model::{Func, FuncType, Index, Instruction, Local, ValType};
@@ -166,8 +166,7 @@ impl Executor {
             }
         }
 
-        let group = preprocess(line.expr.instrs.clone())?;
-        response.extend(self.execute_group(&group)?);
+        response.extend(self.execute_group(&line.expr.group)?);
         Ok(response)
     }
 
@@ -243,7 +242,7 @@ mod tests {
     };
 
     use crate::executor::Executor;
-    use crate::group::Group;
+    use crate::group::{preprocess, Command, Group};
     use crate::test_utils::{test_if, test_index};
 
     macro_rules! test_line {
@@ -251,12 +250,9 @@ mod tests {
             Line::Expression(LineExpression {
                 locals:  vec![$( $y ),*],
                 expr: Expression{
-                    instrs: vec!(
-                        $( $x ),*
-                    ),
-                    group: Group {
-                        commands: vec![]
-                    }
+                    group: preprocess((
+                        vec![$( $x ),*]
+                    )).unwrap()
                 }
             })
         };
@@ -276,12 +272,9 @@ mod tests {
                 line_expression: LineExpression {
                     locals: vec![],
                     expr: Expression {
-                        instrs: vec![
-                            $( $instr ),*
-                        ],
-                        group: Group {
-                            commands: vec![]
-                        }
+                        group: preprocess((
+                            vec![$( $instr ),*]
+                        )).unwrap()
                     },
                 },
             })
@@ -638,8 +631,9 @@ mod tests {
             line_expression: LineExpression {
                 locals: vec![],
                 expr: Expression {
-                    instrs: vec![Instruction::LocalGet(Index::Num(0))],
-                    group: Group { commands: vec![] },
+                    group: Group {
+                        commands: vec![Command::Instr(Instruction::LocalGet(Index::Num(0)))],
+                    },
                 },
             },
         });
@@ -958,17 +952,5 @@ mod tests {
             Instruction::End
         )];
         assert_eq!(executor.execute_line(line).unwrap().message(), "[]");
-    }
-
-    #[test]
-    fn test_else_only_error() {
-        let mut executor = Executor::new();
-        let line = test_line![()(
-            Instruction::I32Const(1),
-            Instruction::Else,
-            Instruction::I32Const(4),
-            Instruction::End
-        )];
-        assert!(executor.execute_line(line).is_err());
     }
 }
