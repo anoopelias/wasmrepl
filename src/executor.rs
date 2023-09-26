@@ -166,8 +166,8 @@ impl Executor {
             }
         }
 
-        let group = &preprocess(&line.expr.instrs)?;
-        response.extend(self.execute_group(group)?);
+        let group = preprocess(line.expr.instrs.clone())?;
+        response.extend(self.execute_group(&group)?);
         Ok(response)
     }
 
