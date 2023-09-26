@@ -160,6 +160,8 @@ impl Executor {
         for command in &group.commands {
             let response = self.execute_command(command)?;
             if response.control == Control::Return {
+                // Return statement break all recursive blocks
+                // returning to calling function
                 return Ok(response);
             }
         }
@@ -177,21 +179,21 @@ impl Executor {
             Control::None => Ok(Response::new()),
             Control::ExecFunc(index) => self.execute_func(&index),
             Control::If(b) => {
-                if let Instruction::If(block_type) = instr {
-                    self.push_state(&block_type.ty)?;
-                    let group = if b { if_group } else { else_group };
-                    let response = self.execute_group(&group.unwrap())?;
-                    self.pop_state(&block_type.ty, response.control != Control::Return)?;
-                    Ok(response)
-                } else {
-                    unreachable!()
-                }
+                let group = (if b { if_group } else { else_group }).unwrap();
+                self.execute_if(instr, group)
             }
-            Control::Return => {
-                // Return statement break all recursive blocks
-                // returning to calling function
-                Ok(response)
-            }
+            Control::Return => Ok(response),
+        }
+    }
+
+    fn execute_if(&mut self, instr: &Instruction, group: &Group) -> Result<Response> {
+        if let Instruction::If(block_type) = instr {
+            self.push_state(&block_type.ty)?;
+            let response = self.execute_group(group)?;
+            self.pop_state(&block_type.ty, response.control != Control::Return)?;
+            Ok(response)
+        } else {
+            unreachable!()
         }
     }
 
