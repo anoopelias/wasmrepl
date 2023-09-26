@@ -101,14 +101,14 @@ impl Executor {
         }
 
         let func = self.funcs.get(index)?.clone();
-        self.push_state(&func.ty)?;
+        self.push_func_state(&func.ty)?;
         let response = self.execute_line_expression(&func.line_expression)?;
 
         self.pop_state(&func.ty, response.control != Control::Return)?;
         Ok(Response::new())
     }
 
-    fn push_state(&mut self, ty: &FuncType) -> Result<()> {
+    fn push_func_state(&mut self, ty: &FuncType) -> Result<()> {
         let mut func_state = State::new();
         for param in ty.params.iter().rev() {
             let val = self.call_stack.last_mut().unwrap().stack.pop()?;
@@ -119,11 +119,26 @@ impl Executor {
         Ok(())
     }
 
+    fn push_group_state(&mut self, ty: &FuncType) -> Result<()> {
+        let mut group_state = State::new();
+        let mut values = vec![];
+        for param in ty.params.iter().rev() {
+            let val = self.call_stack.last_mut().unwrap().stack.pop()?;
+            val.is_same_type(&param.val_type)?;
+            values.push(val);
+        }
+        while values.len() > 0 {
+            group_state.stack.push(values.pop().unwrap());
+        }
+        self.call_stack.push(group_state);
+        Ok(())
+    }
+
     fn pop_state(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
-        let mut func_state = self.call_stack.pop().unwrap();
+        let mut state = self.call_stack.pop().unwrap();
         let mut values = vec![];
         for result in ty.results.iter().rev() {
-            let value = func_state.stack.pop()?;
+            let value = state.stack.pop()?;
             value.is_same_type(&result)?;
             values.push(value);
         }
@@ -133,7 +148,7 @@ impl Executor {
             prev_stack.push(values.pop().unwrap());
         }
 
-        if requires_empty && !func_state.stack.is_empty() {
+        if requires_empty && !state.stack.is_empty() {
             return Err(anyhow!("Too many returns"));
         }
 
@@ -188,7 +203,7 @@ impl Executor {
 
     fn execute_if(&mut self, instr: &Instruction, group: &Group) -> Result<Response> {
         if let Instruction::If(block_type) = instr {
-            self.push_state(&block_type.ty)?;
+            self.push_group_state(&block_type.ty)?;
             let response = self.execute_group(group)?;
             self.pop_state(&block_type.ty, response.control != Control::Return)?;
             Ok(response)
@@ -696,15 +711,19 @@ mod tests {
     fn test_if() {
         let mut executor = Executor::new();
         let line = test_line![()(
-            Instruction::I32Const(1),
-            test_if!(()(ValType::I32)),
-            Instruction::I32Const(2),
-            Instruction::Else,
+            Instruction::I32Const(12),
             Instruction::I32Const(3),
+            Instruction::I32Const(1),
+            test_if!((test_local!(ValType::I32), test_local!(ValType::I32))(
+                ValType::I32
+            )),
+            Instruction::I32Add,
+            Instruction::Else,
+            Instruction::I32Sub,
             Instruction::End,
             Instruction::I32Const(4)
         )];
-        assert_eq!(executor.execute_line(line).unwrap().message(), "[2, 4]");
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[15, 4]");
     }
 
     #[test]
@@ -740,15 +759,19 @@ mod tests {
     fn test_else() {
         let mut executor = Executor::new();
         let line = test_line![()(
-            Instruction::I32Const(0),
-            test_if!(()(ValType::I32)),
-            Instruction::I32Const(2),
-            Instruction::Else,
+            Instruction::I32Const(12),
             Instruction::I32Const(3),
+            Instruction::I32Const(0),
+            test_if!((test_local!(ValType::I32), test_local!(ValType::I32))(
+                ValType::I32
+            )),
+            Instruction::I32Add,
+            Instruction::Else,
+            Instruction::I32Sub,
             Instruction::End,
             Instruction::I32Const(4)
         )];
-        assert_eq!(executor.execute_line(line).unwrap().message(), "[3, 4]");
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[9, 4]");
     }
 
     #[test]
