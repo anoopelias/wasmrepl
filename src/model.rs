@@ -14,7 +14,10 @@ use wast::{
 
 use anyhow::{Error, Result};
 
-use crate::parser::{Line as WastLine, LineExpression as WastLineExpression};
+use crate::{
+    group::{preprocess, Group},
+    parser::{Line as WastLine, LineExpression as WastLineExpression},
+};
 
 pub enum Line {
     Expression(LineExpression),
@@ -170,6 +173,7 @@ impl TryFrom<&WastValType<'_>> for ValType {
 #[derive(Clone)]
 pub struct Expression {
     pub instrs: Vec<Instruction>,
+    pub group: Group,
 }
 
 impl TryFrom<&WastExpression<'_>> for Expression {
@@ -180,7 +184,10 @@ impl TryFrom<&WastExpression<'_>> for Expression {
         for instr in expr.instrs.iter() {
             instrs.push(instr.try_into()?);
         }
-        Ok(Expression { instrs })
+        Ok(Expression {
+            instrs: instrs.clone(),
+            group: preprocess(instrs)?,
+        })
     }
 }
 

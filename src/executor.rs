@@ -243,6 +243,7 @@ mod tests {
     };
 
     use crate::executor::Executor;
+    use crate::group::Group;
     use crate::test_utils::{test_if, test_index};
 
     macro_rules! test_line {
@@ -252,7 +253,10 @@ mod tests {
                 expr: Expression{
                     instrs: vec!(
                         $( $x ),*
-                    )
+                    ),
+                    group: Group {
+                        commands: vec![]
+                    }
                 }
             })
         };
@@ -275,6 +279,9 @@ mod tests {
                         instrs: vec![
                             $( $instr ),*
                         ],
+                        group: Group {
+                            commands: vec![]
+                        }
                     },
                 },
             })
@@ -632,6 +639,7 @@ mod tests {
                 locals: vec![],
                 expr: Expression {
                     instrs: vec![Instruction::LocalGet(Index::Num(0))],
+                    group: Group { commands: vec![] },
                 },
             },
         });

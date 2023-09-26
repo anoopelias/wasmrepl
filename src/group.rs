@@ -2,12 +2,12 @@
 use crate::model::Instruction;
 use anyhow::Result;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Group {
     pub commands: Vec<Command>,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Command {
     Instr(Instruction),
     If(Instruction, Group, Group),
