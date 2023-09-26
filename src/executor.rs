@@ -727,7 +727,7 @@ mod tests {
     }
 
     #[test]
-    fn test_if_error() {
+    fn test_if_execution_error() {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
@@ -742,11 +742,71 @@ mod tests {
     }
 
     #[test]
-    fn test_if_response_error() {
+    fn test_if_param_error() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(1),
+            test_if!((test_local!(ValType::I32))(ValType::I32)),
+            Instruction::Else,
+            Instruction::End,
+            Instruction::I32Const(4)
+        )];
+        assert!(executor.execute_line(line).is_err());
+        assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    }
+
+    #[test]
+    fn test_if_param_type_error() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::F32Const(1.0),
+            Instruction::I32Const(1),
+            test_if!((test_local!(ValType::I32))(ValType::I32)),
+            Instruction::Else,
+            Instruction::End,
+            Instruction::I32Const(4)
+        )];
+        assert!(executor.execute_line(line).is_err());
+        assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    }
+
+    #[test]
+    fn test_if_result_error() {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
             test_if!(()(ValType::I32)),
+            Instruction::Else,
+            Instruction::End,
+            Instruction::I32Const(4)
+        )];
+        assert!(executor.execute_line(line).is_err());
+        assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    }
+
+    #[test]
+    fn test_if_result_type_error() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(1),
+            test_if!(()(ValType::I32)),
+            Instruction::F64Const(1.0),
+            Instruction::Else,
+            Instruction::End,
+            Instruction::I32Const(4)
+        )];
+        assert!(executor.execute_line(line).is_err());
+        assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    }
+
+    #[test]
+    fn test_if_result_too_many() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(1),
+            test_if!(()(ValType::I32)),
+            Instruction::I32Const(1),
+            Instruction::I32Const(3),
             Instruction::Else,
             Instruction::End,
             Instruction::I32Const(4)
