@@ -119,63 +119,6 @@ impl Executor {
         Ok(())
     }
 
-    fn execute_line_expression(&mut self, line: &LineExpression) -> Result<Response> {
-        let mut response = Response::new();
-        for lc in line.locals.iter() {
-            match self.execute_local(&lc) {
-                Ok(resp) => response.extend(resp),
-                Err(err) => {
-                    return Err(err);
-                }
-            }
-        }
-
-        let group = &preprocess(&line.expr.instrs)?;
-        response.extend(self.execute_group(group)?);
-        Ok(response)
-    }
-
-    fn execute_group(&mut self, group: &Group) -> Result<Response> {
-        let mut response = Response::new();
-
-        for command in &group.commands {
-            match command {
-                Command::Instr(instr) => match self.execute_instruction(instr)?.control {
-                    Control::None => (),
-                    Control::ExecFunc(index) => {
-                        self.execute_func(&index)?;
-                    }
-                    Control::Return => {
-                        // Return statement break all recursive blocks
-                        // returning to calling function
-                        response.control = Control::Return;
-                        break;
-                    }
-                    _ => unreachable!(),
-                },
-                Command::If(ifinstr, ifgrp, elsegrp) => {
-                    if let Control::If(b) = self.execute_instruction(ifinstr)?.control {
-                        if let Instruction::If(block_type) = ifinstr {
-                            self.insert_new_state(&block_type.ty)?;
-                            response.control = self
-                                .execute_group(if b { &ifgrp } else { &elsegrp })?
-                                .control;
-                            self.process_group_state(
-                                &block_type.ty,
-                                response.control != Control::Return,
-                            )?;
-                            if response.control == Control::Return {
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(response)
-    }
-
     fn process_group_state(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
         let mut func_state = self.call_stack.pop().unwrap();
         let mut values = vec![];
@@ -195,6 +138,61 @@ impl Executor {
         }
 
         Ok(())
+    }
+
+    fn execute_line_expression(&mut self, line: &LineExpression) -> Result<Response> {
+        let mut response = Response::new();
+        for lc in line.locals.iter() {
+            match self.execute_local(&lc) {
+                Ok(resp) => response.extend(resp),
+                Err(err) => {
+                    return Err(err);
+                }
+            }
+        }
+
+        let group = &preprocess(&line.expr.instrs)?;
+        response.extend(self.execute_group(group)?);
+        Ok(response)
+    }
+
+    fn execute_group(&mut self, group: &Group) -> Result<Response> {
+        for command in &group.commands {
+            let response = self.execute_command(command)?;
+            if response.control == Control::Return {
+                return Ok(response);
+            }
+        }
+        Ok(Response::new())
+    }
+
+    fn execute_command(&mut self, command: &Command) -> Result<Response> {
+        let (instr, if_group, else_group) = match command {
+            Command::Instr(instr) => (instr, None, None),
+            Command::If(instr, if_group, else_group) => (instr, Some(if_group), Some(else_group)),
+        };
+        let response = self.execute_instruction(instr)?;
+
+        match response.control {
+            Control::None => Ok(Response::new()),
+            Control::ExecFunc(index) => self.execute_func(&index),
+            Control::If(b) => {
+                if let Instruction::If(block_type) = instr {
+                    self.insert_new_state(&block_type.ty)?;
+                    let group = if b { if_group } else { else_group };
+                    let response = self.execute_group(&group.unwrap())?;
+                    self.process_group_state(&block_type.ty, response.control != Control::Return)?;
+                    Ok(response)
+                } else {
+                    unreachable!()
+                }
+            }
+            Control::Return => {
+                // Return statement break all recursive blocks
+                // returning to calling function
+                Ok(response)
+            }
+        }
     }
 
     fn execute_local(&mut self, lc: &Local) -> Result<Response> {
