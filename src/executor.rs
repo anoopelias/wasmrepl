@@ -101,14 +101,14 @@ impl Executor {
         }
 
         let func = self.funcs.get(index)?.clone();
-        self.insert_new_state(&func.ty)?;
+        self.push_state(&func.ty)?;
         let response = self.execute_line_expression(&func.line_expression)?;
 
-        self.process_group_state(&func.ty, response.control != Control::Return)?;
+        self.pop_state(&func.ty, response.control != Control::Return)?;
         Ok(Response::new())
     }
 
-    fn insert_new_state(&mut self, ty: &FuncType) -> Result<()> {
+    fn push_state(&mut self, ty: &FuncType) -> Result<()> {
         let mut func_state = State::new();
         for param in ty.params.iter().rev() {
             let val = self.call_stack.last_mut().unwrap().stack.pop()?;
@@ -119,7 +119,7 @@ impl Executor {
         Ok(())
     }
 
-    fn process_group_state(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
+    fn pop_state(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
         let mut func_state = self.call_stack.pop().unwrap();
         let mut values = vec![];
         for result in ty.results.iter().rev() {
@@ -178,10 +178,10 @@ impl Executor {
             Control::ExecFunc(index) => self.execute_func(&index),
             Control::If(b) => {
                 if let Instruction::If(block_type) = instr {
-                    self.insert_new_state(&block_type.ty)?;
+                    self.push_state(&block_type.ty)?;
                     let group = if b { if_group } else { else_group };
                     let response = self.execute_group(&group.unwrap())?;
-                    self.process_group_state(&block_type.ty, response.control != Control::Return)?;
+                    self.pop_state(&block_type.ty, response.control != Control::Return)?;
                     Ok(response)
                 } else {
                     unreachable!()
