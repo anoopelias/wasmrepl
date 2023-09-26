@@ -44,6 +44,10 @@ impl TryFrom<&WastFunc<'_>> for Func {
         let id = from_id(func.id);
         let ty = FuncType::try_from(&func.ty)?;
 
+        if func.exports.names.len() > 0 {
+            return Err(Error::msg("Unsupported export"));
+        }
+
         let line_expression = match &func.kind {
             FuncKind::Inline { locals, expression } => {
                 let mut lcls = Vec::new();
@@ -579,6 +583,30 @@ mod tests {
                 module: "mod1",
                 field: "fun1",
             }),
+        })
+        .is_err());
+    }
+
+    #[test]
+    fn test_from_wast_export_error() {
+        assert!(Func::try_from(&WastFunc {
+            id: None,
+            name: None,
+            exports: InlineExport { names: vec!["fn"] },
+            ty: TypeUse {
+                index: None,
+                inline: Some(FunctionType {
+                    params: Box::new([]),
+                    results: Box::new([]),
+                }),
+            },
+            span: Span::from_offset(0),
+            kind: wast::core::FuncKind::Inline {
+                locals: Box::new([]),
+                expression: WastExpression {
+                    instrs: Box::new([]),
+                },
+            },
         })
         .is_err());
     }
