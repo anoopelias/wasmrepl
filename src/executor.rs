@@ -129,7 +129,9 @@ impl Executor {
                 }
             }
         }
-        response.extend(self.execute_group(&preprocess(&line.expr.instrs)?)?);
+
+        let group = &preprocess(&line.expr.instrs)?;
+        response.extend(self.execute_group(group)?);
         Ok(response)
     }
 
