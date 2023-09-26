@@ -726,6 +726,20 @@ mod tests {
     }
 
     #[test]
+    fn test_if_response_error() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(1),
+            test_if!(()(ValType::I32)),
+            Instruction::Else,
+            Instruction::End,
+            Instruction::I32Const(4)
+        )];
+        assert!(executor.execute_line(line).is_err());
+        assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    }
+
+    #[test]
     fn test_else() {
         let mut executor = Executor::new();
         let line = test_line![()(
