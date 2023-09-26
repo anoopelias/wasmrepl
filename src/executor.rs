@@ -71,7 +71,7 @@ impl Executor {
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
-        let result = self.execute_group(&preprocess(&line.expr.instrs)?, Some(&line.locals), None);
+        let result = self.execute_line_expression(&line);
         let state = self.call_stack.last_mut().unwrap();
 
         match result {
@@ -101,12 +101,10 @@ impl Executor {
         }
 
         let func = self.funcs.get(index)?.clone();
-        self.execute_group(
-            &preprocess(&func.line_expression.expr.instrs)?,
-            Some(&func.line_expression.locals),
-            Some(&func.ty),
-        )?;
+        self.insert_new_state(&func.ty)?;
+        let response = self.execute_line_expression(&func.line_expression)?;
 
+        self.process_group_state(&func.ty, response.control != Control::Return)?;
         Ok(Response::new())
     }
 
@@ -121,28 +119,22 @@ impl Executor {
         Ok(())
     }
 
-    fn execute_group(
-        &mut self,
-        group: &Group,
-        locals: Option<&Vec<Local>>,
-        ty: Option<&FuncType>,
-    ) -> Result<Response> {
+    fn execute_line_expression(&mut self, line: &LineExpression) -> Result<Response> {
         let mut response = Response::new();
-
-        if let Some(ty) = ty {
-            self.insert_new_state(ty)?;
-        }
-
-        if let Some(lcs) = locals {
-            for lc in lcs.iter() {
-                match self.execute_local(&lc) {
-                    Ok(resp) => response.extend(resp),
-                    Err(err) => {
-                        return Err(err);
-                    }
+        for lc in line.locals.iter() {
+            match self.execute_local(&lc) {
+                Ok(resp) => response.extend(resp),
+                Err(err) => {
+                    return Err(err);
                 }
             }
         }
+        response.extend(self.execute_group(&preprocess(&line.expr.instrs)?)?);
+        Ok(response)
+    }
+
+    fn execute_group(&mut self, group: &Group) -> Result<Response> {
+        let mut response = Response::new();
 
         for command in &group.commands {
             match command {
@@ -162,13 +154,14 @@ impl Executor {
                 Command::If(ifinstr, ifgrp, elsegrp) => {
                     if let Control::If(b) = self.execute_instruction(ifinstr)?.control {
                         if let Instruction::If(block_type) = ifinstr {
+                            self.insert_new_state(&block_type.ty)?;
                             response.control = self
-                                .execute_group(
-                                    if b { &ifgrp } else { &elsegrp },
-                                    None,
-                                    Some(&block_type.ty),
-                                )?
+                                .execute_group(if b { &ifgrp } else { &elsegrp })?
                                 .control;
+                            self.process_group_state(
+                                &block_type.ty,
+                                response.control != Control::Return,
+                            )?;
                             if response.control == Control::Return {
                                 break;
                             }
@@ -178,26 +171,28 @@ impl Executor {
             }
         }
 
-        if let Some(ty) = ty {
-            let mut func_state = self.call_stack.pop().unwrap();
-            let mut values = vec![];
-            for result in ty.results.iter().rev() {
-                let value = func_state.stack.pop()?;
-                value.is_same_type(&result)?;
-                values.push(value);
-            }
+        Ok(response)
+    }
 
-            let prev_stack = &mut self.call_stack.last_mut().unwrap().stack;
-            while values.len() > 0 {
-                prev_stack.push(values.pop().unwrap());
-            }
-
-            if response.control != Control::Return && !func_state.stack.is_empty() {
-                return Err(anyhow!("Too many returns"));
-            }
+    fn process_group_state(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
+        let mut func_state = self.call_stack.pop().unwrap();
+        let mut values = vec![];
+        for result in ty.results.iter().rev() {
+            let value = func_state.stack.pop()?;
+            value.is_same_type(&result)?;
+            values.push(value);
         }
 
-        Ok(response)
+        let prev_stack = &mut self.call_stack.last_mut().unwrap().stack;
+        while values.len() > 0 {
+            prev_stack.push(values.pop().unwrap());
+        }
+
+        if requires_empty && !func_state.stack.is_empty() {
+            return Err(anyhow!("Too many returns"));
+        }
+
+        Ok(())
     }
 
     fn execute_local(&mut self, lc: &Local) -> Result<Response> {
