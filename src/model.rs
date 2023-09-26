@@ -66,7 +66,6 @@ impl TryFrom<&WastFunc<'_>> for Func {
             }
         };
 
-        // TODO: Return error for unsupported function types.
         Ok(Func {
             id,
             ty,
@@ -87,7 +86,9 @@ impl TryFrom<&TypeUse<'_, FunctionType<'_>>> for FuncType {
         let mut params = Vec::new();
         let mut results = Vec::new();
 
-        // TODO: Handle case where `typeuse.import` is `Some`
+        if let Some(_) = type_use.index {
+            return Err(Error::msg("Unsupported type index"));
+        }
 
         match &type_use.inline {
             Some(func_type) => {
@@ -627,6 +628,20 @@ mod tests {
         assert_eq!(ty.params[0].id, Some(String::from("param1")));
         assert_eq!(ty.results.len(), 1);
         assert_eq!(ty.results[0], ValType::I32);
+    }
+
+    #[test]
+    fn test_wast_func_type_type_error() {
+        test_id!(param_id, "$param1");
+        test_id!(ty_index, "$ty1");
+        assert!(FuncType::try_from(&TypeUse {
+            index: Some(WastIndex::Id(ty_index)),
+            inline: Some(FunctionType {
+                params: Box::new([(Some(param_id), None, WastValType::I32)]),
+                results: Box::new([WastValType::I32]),
+            }),
+        })
+        .is_err());
     }
 
     #[test]
