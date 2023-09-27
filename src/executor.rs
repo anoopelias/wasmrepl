@@ -242,7 +242,7 @@ mod tests {
     };
 
     use crate::executor::Executor;
-    use crate::group::{preprocess, Command, Group};
+    use crate::group::{group, Command, Group};
     use crate::test_utils::{test_if, test_index};
 
     macro_rules! test_line {
@@ -250,7 +250,7 @@ mod tests {
             Line::Expression(LineExpression {
                 locals:  vec![$( $y ),*],
                 expr: Expression{
-                    group: preprocess((
+                    group: group((
                         vec![$( $x ),*]
                     )).unwrap()
                 }
@@ -272,7 +272,7 @@ mod tests {
                 line_expression: LineExpression {
                     locals: vec![],
                     expr: Expression {
-                        group: preprocess((
+                        group: group((
                             vec![$( $instr ),*]
                         )).unwrap()
                     },

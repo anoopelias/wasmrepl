@@ -20,16 +20,16 @@ enum GroupEnd {
     End,
 }
 
-pub fn preprocess(mut instrs: Vec<Instruction>) -> Result<Group> {
+pub fn group(mut instrs: Vec<Instruction>) -> Result<Group> {
     instrs.reverse();
-    let (group, end) = group(&mut instrs)?;
+    let (group, end) = group_rec(&mut instrs)?;
     if end != GroupEnd::None {
         return Err(anyhow::anyhow!("Unexpected end of block"));
     }
     Ok(group)
 }
 
-fn group(instrs: &mut Vec<Instruction>) -> Result<(Group, GroupEnd)> {
+fn group_rec(instrs: &mut Vec<Instruction>) -> Result<(Group, GroupEnd)> {
     let mut commands = Vec::new();
     while instrs.len() > 0 {
         let instr = instrs.pop().unwrap();
@@ -49,10 +49,10 @@ fn group(instrs: &mut Vec<Instruction>) -> Result<(Group, GroupEnd)> {
 }
 
 fn group_if(instrs: &mut Vec<Instruction>, if_instr: Instruction) -> Result<Command> {
-    let (if_group, if_end) = group(instrs)?;
+    let (if_group, if_end) = group_rec(instrs)?;
     match if_end {
         GroupEnd::Else => {
-            let (else_group, end) = group(instrs)?;
+            let (else_group, end) = group_rec(instrs)?;
             if end != GroupEnd::End {
                 return Err(anyhow::anyhow!("Expected End"));
             }
@@ -67,7 +67,7 @@ fn group_if(instrs: &mut Vec<Instruction>, if_instr: Instruction) -> Result<Comm
 
 #[cfg(test)]
 mod tests {
-    use crate::group::{preprocess, Command};
+    use crate::group::{group, Command};
     use crate::model::{Instruction, ValType};
     use crate::test_utils::test_if;
 
@@ -75,7 +75,7 @@ mod tests {
     fn test_simple() {
         let instrs = vec![Instruction::I32Const(1), Instruction::I32Const(5)];
 
-        let group = preprocess(instrs).unwrap();
+        let group = group(instrs).unwrap();
         assert_eq!(group.commands.len(), 2);
         assert_eq!(group.commands[0], Command::Instr(Instruction::I32Const(1)));
         assert_eq!(group.commands[1], Command::Instr(Instruction::I32Const(5)));
@@ -94,7 +94,7 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        let group = preprocess(instrs).unwrap();
+        let group = group(instrs).unwrap();
         assert_eq!(group.commands.len(), 3);
         assert_eq!(group.commands[0], Command::Instr(Instruction::I32Const(1)));
 
@@ -122,7 +122,7 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        let group = preprocess(instrs).unwrap();
+        let group = group(instrs).unwrap();
         assert_eq!(group.commands.len(), 3);
         assert_eq!(group.commands[0], Command::Instr(Instruction::I32Const(1)));
 
@@ -146,7 +146,7 @@ mod tests {
             Instruction::End,
         ];
 
-        assert!(preprocess(instrs).is_err());
+        assert!(group(instrs).is_err());
     }
 
     #[test]
@@ -157,7 +157,7 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        assert!(preprocess(instrs).is_err());
+        assert!(group(instrs).is_err());
     }
 
     #[test]
@@ -174,7 +174,7 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        assert!(preprocess(instrs).is_err());
+        assert!(group(instrs).is_err());
     }
 
     #[test]
@@ -189,6 +189,6 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        assert!(preprocess(instrs).is_err());
+        assert!(group(instrs).is_err());
     }
 }

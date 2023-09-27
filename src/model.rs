@@ -15,7 +15,7 @@ use wast::{
 use anyhow::{Error, Result};
 
 use crate::{
-    group::{preprocess, Group},
+    group::{group, Group},
     parser::{Line as WastLine, LineExpression as WastLineExpression},
 };
 
@@ -184,7 +184,7 @@ impl TryFrom<&WastExpression<'_>> for Expression {
             instrs.push(instr.try_into()?);
         }
         Ok(Expression {
-            group: preprocess(instrs)?,
+            group: group(instrs)?,
         })
     }
 }
