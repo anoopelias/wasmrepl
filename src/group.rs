@@ -39,17 +39,21 @@ fn group_rec(instrs: &mut Vec<Instruction>) -> Result<(Group, GroupEnd)> {
         commands.push(match instr {
             Instruction::If(_) => group_if(instrs, instr)?,
             Instruction::Block(_) => group_block(instrs, instr)?,
-            Instruction::Else => {
-                return Ok((Group { commands }, GroupEnd::Else));
-            }
-            Instruction::End => {
-                return Ok((Group { commands }, GroupEnd::End));
-            }
+            Instruction::Else => return group_else(commands),
+            Instruction::End => return group_end(commands),
             _ => Command::Instr(instr),
         });
     }
 
     Ok((Group { commands }, GroupEnd::None))
+}
+
+fn group_else(commands: Vec<Command>) -> Result<(Group, GroupEnd)> {
+    Ok((Group { commands }, GroupEnd::Else))
+}
+
+fn group_end(commands: Vec<Command>) -> Result<(Group, GroupEnd)> {
+    Ok((Group { commands }, GroupEnd::End))
 }
 
 fn group_if(instrs: &mut Vec<Instruction>, if_instr: Instruction) -> Result<Command> {
