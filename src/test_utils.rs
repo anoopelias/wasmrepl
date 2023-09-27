@@ -32,4 +32,21 @@ macro_rules! test_if {
     };
 }
 
+macro_rules! test_block {
+    (($( $param:expr ),*)($( $res:expr ),*)) => {
+        Instruction::Block(crate::model::BlockType {
+            label: None,
+            ty: crate::model::FuncType {
+                params: vec![
+                    $( $param ),*
+                ],
+                results: vec![$( $res ),*]
+
+            }
+        })
+    };
+}
+
+// TODO: Can we combine both of these?
 pub(crate) use test_if;
+pub(crate) use test_block;

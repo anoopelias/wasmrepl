@@ -140,6 +140,7 @@ impl<'a> Handler<'a> {
             Instruction::If(_) => self.if_instr(),
             Instruction::Else => unreachable!(),
             Instruction::End => unreachable!(),
+            Instruction::Block(_) => unreachable!(),
         }
     }
 }

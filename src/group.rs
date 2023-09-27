@@ -11,6 +11,7 @@ pub struct Group {
 pub enum Command {
     Instr(Instruction),
     If(Instruction, Group, Group),
+    Block(Instruction, Group),
 }
 
 #[derive(PartialEq, Debug)]
@@ -21,7 +22,9 @@ enum GroupEnd {
 }
 
 pub fn group(mut instrs: Vec<Instruction>) -> Result<Group> {
+    // We are revering the vector first and then popping from the end
     instrs.reverse();
+
     let (group, end) = group_rec(&mut instrs)?;
     if end != GroupEnd::None {
         return Err(anyhow::anyhow!("Unexpected end of block"));
@@ -35,6 +38,7 @@ fn group_rec(instrs: &mut Vec<Instruction>) -> Result<(Group, GroupEnd)> {
         let instr = instrs.pop().unwrap();
         commands.push(match instr {
             Instruction::If(_) => group_if(instrs, instr)?,
+            Instruction::Block(_) => group_block(instrs, instr)?,
             Instruction::Else => {
                 return Ok((Group { commands }, GroupEnd::Else));
             }
@@ -65,11 +69,19 @@ fn group_if(instrs: &mut Vec<Instruction>, if_instr: Instruction) -> Result<Comm
     }
 }
 
+fn group_block(instrs: &mut Vec<Instruction>, block_instr: Instruction) -> Result<Command> {
+    let (block_group, end) = group_rec(instrs)?;
+    if end != GroupEnd::End {
+        return Err(anyhow::anyhow!("Expected End"));
+    }
+    Ok(Command::Block(block_instr, block_group))
+}
+
 #[cfg(test)]
 mod tests {
     use crate::group::{group, Command};
     use crate::model::{Instruction, ValType};
-    use crate::test_utils::test_if;
+    use crate::test_utils::{test_block, test_if};
 
     #[test]
     fn test_simple() {
@@ -187,6 +199,45 @@ mod tests {
             Instruction::Else,
             Instruction::I32Const(4),
             Instruction::I32Const(5),
+        ];
+
+        assert!(group(instrs).is_err());
+    }
+
+    #[test]
+    fn test_block() {
+        let instrs = vec![
+            Instruction::I32Const(1),
+            test_block!(()(ValType::I32)),
+            Instruction::I32Const(2),
+            Instruction::End,
+            Instruction::I32Const(3),
+        ];
+
+        let group = group(instrs).unwrap();
+        assert_eq!(group.commands.len(), 3);
+        assert_eq!(group.commands[0], Command::Instr(Instruction::I32Const(1)));
+
+        let (block_instr, block_group) = match &group.commands[1] {
+            Command::Block(block_instr, block_group) => (block_instr, block_group),
+            _ => panic!("Expected Command::Block"),
+        };
+
+        assert_eq!(block_group.commands.len(), 1);
+        assert_eq!(
+            block_group.commands[0],
+            Command::Instr(Instruction::I32Const(2))
+        );
+    }
+
+    #[test]
+    fn test_block_else_error() {
+        let instrs = vec![
+            Instruction::I32Const(1),
+            test_block!(()(ValType::I32)),
+            Instruction::I32Const(2),
+            Instruction::Else,
+            Instruction::I32Const(3),
         ];
 
         assert!(group(instrs).is_err());

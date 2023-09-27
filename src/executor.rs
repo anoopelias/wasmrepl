@@ -186,6 +186,7 @@ impl Executor {
         let (instr, if_group, else_group) = match command {
             Command::Instr(instr) => (instr, None, None),
             Command::If(instr, if_group, else_group) => (instr, Some(if_group), Some(else_group)),
+            Command::Block(_, _) => todo!(),
         };
         let response = self.execute_instruction(instr)?;
 

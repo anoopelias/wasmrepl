@@ -305,6 +305,7 @@ pub enum Instruction {
     If(BlockType),
     Else,
     End,
+    Block(BlockType),
 }
 
 impl TryFrom<&WastInstruction<'_>> for Instruction {
@@ -389,6 +390,7 @@ impl TryFrom<&WastInstruction<'_>> for Instruction {
             WastInstruction::If(ty) => Ok(Instruction::If(ty.try_into()?)),
             WastInstruction::Else(_) => Ok(Instruction::Else),
             WastInstruction::End(_) => Ok(Instruction::End),
+            WastInstruction::Block(ty) => Ok(Instruction::Block(ty.try_into()?)),
             _ => Err(Error::msg("Unsupported instruction")),
         }
     }
@@ -763,6 +765,32 @@ mod tests {
         assert_eq!(
             instr,
             Instruction::If(BlockType {
+                label: None,
+                ty: FuncType {
+                    params: vec![],
+                    results: vec![ValType::I32],
+                }
+            })
+        );
+    }
+
+    #[test]
+    fn test_from_wast_block_instruction() {
+        let instr = Instruction::try_from(&WastInstruction::Block(Box::new(WastBlockType {
+            label: None,
+            label_name: None,
+            ty: TypeUse {
+                index: None,
+                inline: Some(FunctionType {
+                    params: Box::new([]),
+                    results: Box::new([WastValType::I32]),
+                }),
+            },
+        })))
+        .unwrap();
+        assert_eq!(
+            instr,
+            Instruction::Block(BlockType {
                 label: None,
                 ty: FuncType {
                     params: vec![],
