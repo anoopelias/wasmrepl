@@ -33,36 +33,36 @@ fn group(instrs: &mut Vec<Instruction>) -> Result<(Group, GroupEnd)> {
     let mut commands = Vec::new();
     while instrs.len() > 0 {
         let instr = instrs.pop().unwrap();
-        match instr {
-            Instruction::If(_) => {
-                let (if_group, if_end) = group(instrs)?;
-                commands.push(match if_end {
-                    GroupEnd::Else => {
-                        let (else_group, end) = group(instrs)?;
-                        if end != GroupEnd::End {
-                            return Err(anyhow::anyhow!("Expected End"));
-                        }
-                        Command::If(instr, if_group, else_group)
-                    }
-                    _ => {
-                        let else_group = Group { commands: vec![] };
-                        Command::If(instr, if_group, else_group)
-                    }
-                })
-            }
+        commands.push(match instr {
+            Instruction::If(_) => group_if(instrs, instr)?,
             Instruction::Else => {
                 return Ok((Group { commands }, GroupEnd::Else));
             }
             Instruction::End => {
                 return Ok((Group { commands }, GroupEnd::End));
             }
-            _ => {
-                commands.push(Command::Instr(instr));
-            }
-        }
+            _ => Command::Instr(instr),
+        });
     }
 
     Ok((Group { commands }, GroupEnd::None))
+}
+
+fn group_if(instrs: &mut Vec<Instruction>, if_instr: Instruction) -> Result<Command> {
+    let (if_group, if_end) = group(instrs)?;
+    match if_end {
+        GroupEnd::Else => {
+            let (else_group, end) = group(instrs)?;
+            if end != GroupEnd::End {
+                return Err(anyhow::anyhow!("Expected End"));
+            }
+            Ok(Command::If(if_instr, if_group, else_group))
+        }
+        _ => {
+            let else_group = Group { commands: vec![] };
+            Ok(Command::If(if_instr, if_group, else_group))
+        }
+    }
 }
 
 #[cfg(test)]
