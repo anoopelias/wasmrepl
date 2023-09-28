@@ -22,7 +22,8 @@ enum GroupEnd {
 }
 
 pub fn group(mut instrs: Vec<Instruction>) -> Result<Group> {
-    // We are revering the vector first and then popping from the end
+    // We are reversing the vector first and then popping from the end
+    // This is beacuse it is easier to pop from the end than the start
     instrs.reverse();
 
     let (group, end) = group_rec(&mut instrs)?;
