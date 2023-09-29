@@ -1,10 +1,9 @@
 use anyhow::{anyhow, Result};
 
 use crate::elements::Elements;
-use crate::group::{Command, Group};
 use crate::handler::Handler;
 use crate::locals::Locals;
-use crate::model::{Func, FuncType, Index, Instruction, Local, ValType};
+use crate::model::{Expression, Func, FuncType, Index, Instruction, Local, ValType};
 use crate::response::{Control, Response};
 use crate::value::Value;
 use crate::{
@@ -166,13 +165,13 @@ impl Executor {
             }
         }
 
-        response.extend(self.execute_group(&line.expr.group)?);
+        response.extend(self.execute_expr(&line.expr)?);
         Ok(response)
     }
 
-    fn execute_group(&mut self, group: &Group) -> Result<Response> {
-        for command in &group.commands {
-            let response = self.execute_command(command)?;
+    fn execute_expr(&mut self, expr: &Expression) -> Result<Response> {
+        for instr in &expr.instrs {
+            let response = self.execute_instr(instr)?;
             if response.control == Control::Return {
                 // Return statement break all recursive blocks
                 // returning to calling function
@@ -182,29 +181,29 @@ impl Executor {
         Ok(Response::new())
     }
 
-    fn execute_command(&mut self, command: &Command) -> Result<Response> {
-        let (instr, if_group, else_group) = match command {
-            Command::Instr(instr) => (instr, None, None),
-            Command::If(instr, if_group, else_group) => (instr, Some(if_group), Some(else_group)),
-            Command::Block(_, _) => todo!(),
+    fn execute_instr(&mut self, instr: &Instruction) -> Result<Response> {
+        let (if_block, else_block) = match instr {
+            Instruction::If(_, if_block, else_block) => (if_block, else_block),
+            _ => (&None, &None),
         };
-        let response = self.execute_instruction(instr)?;
+        let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
+        let response = handler.handle(instr)?;
 
         match response.control {
             Control::None => Ok(Response::new()),
             Control::ExecFunc(index) => self.execute_func(&index),
             Control::If(b) => {
-                let group = (if b { if_group } else { else_group }).unwrap();
-                self.execute_if(instr, group)
+                let block = (if b { if_block } else { else_block }).as_ref().unwrap();
+                self.execute_if(instr, block)
             }
             Control::Return => Ok(response),
         }
     }
 
-    fn execute_if(&mut self, instr: &Instruction, group: &Group) -> Result<Response> {
-        if let Instruction::If(block_type) = instr {
+    fn execute_if(&mut self, instr: &Instruction, expr: &Expression) -> Result<Response> {
+        if let Instruction::If(block_type, _, _) = instr {
             self.push_group_state(&block_type.ty)?;
-            let response = self.execute_group(group)?;
+            let response = self.execute_expr(expr)?;
             self.pop_state(&block_type.ty, response.control != Control::Return)?;
             Ok(response)
         } else {
@@ -219,11 +218,6 @@ impl Executor {
             .locals
             .grow(lc.id.clone(), default_value(lc)?)
             .map(|i| Response::new_index("local", i, id))
-    }
-
-    fn execute_instruction(&mut self, instr: &Instruction) -> Result<Response> {
-        let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
-        handler.handle(instr)
     }
 }
 
@@ -243,18 +237,14 @@ mod tests {
     };
 
     use crate::executor::Executor;
-    use crate::group::{group, Command, Group};
+    use crate::group::group_expr;
     use crate::test_utils::{test_if, test_index};
 
     macro_rules! test_line {
         (($( $y:expr ),*)($( $x:expr ),*)) => {
             Line::Expression(LineExpression {
                 locals:  vec![$( $y ),*],
-                expr: Expression{
-                    group: group((
-                        vec![$( $x ),*]
-                    )).unwrap()
-                }
+                expr:  group_expr((vec![$( $x ),*])).unwrap()
             })
         };
     }
@@ -272,11 +262,7 @@ mod tests {
                 },
                 line_expression: LineExpression {
                     locals: vec![],
-                    expr: Expression {
-                        group: group((
-                            vec![$( $instr ),*]
-                        )).unwrap()
-                    },
+                    expr:  group_expr((vec![$( $instr ),*])).unwrap()
                 },
             })
         };
@@ -632,9 +618,7 @@ mod tests {
             line_expression: LineExpression {
                 locals: vec![],
                 expr: Expression {
-                    group: Group {
-                        commands: vec![Command::Instr(Instruction::LocalGet(Index::Num(0)))],
-                    },
+                    instrs: vec![Instruction::LocalGet(Index::Num(0))],
                 },
             },
         });

@@ -28,7 +28,7 @@ macro_rules! test_if {
                 results: vec![$( $res ),*]
 
             }
-        })
+        }, None, None)
     };
 }
 
@@ -43,10 +43,10 @@ macro_rules! test_block {
                 results: vec![$( $res ),*]
 
             }
-        })
+        }, None)
     };
 }
 
 // TODO: Can we combine both of these?
-pub(crate) use test_if;
 pub(crate) use test_block;
+pub(crate) use test_if;

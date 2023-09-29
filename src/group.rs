@@ -1,90 +1,85 @@
 #![allow(unused)]
-use crate::model::Instruction;
+use crate::model::{Expression, Instruction};
 use anyhow::Result;
 
-#[derive(PartialEq, Debug, Clone)]
-pub struct Group {
-    pub commands: Vec<Command>,
-}
-
-#[derive(PartialEq, Debug, Clone)]
-pub enum Command {
-    Instr(Instruction),
-    If(Instruction, Group, Group),
-    Block(Instruction, Group),
-}
-
 #[derive(PartialEq, Debug)]
-enum GroupClose {
+enum ExprEnd {
     None,
     Else,
     End,
 }
 
-pub fn group(mut instrs: Vec<Instruction>) -> Result<Group> {
+pub fn group_expr(mut instrs: Vec<Instruction>) -> Result<Expression> {
     // We are reversing the vector first and then popping from the end
     // This is beacuse it is easier to pop from the end than the start
     instrs.reverse();
 
-    let (group, end) = group_rec(&mut instrs)?;
-    if end != GroupClose::None {
+    let (expr, end) = expr(&mut instrs)?;
+    if end != ExprEnd::None {
         return Err(anyhow::anyhow!("Unexpected end of block"));
     }
-    Ok(group)
+    Ok(expr)
 }
 
-fn group_rec(instrs: &mut Vec<Instruction>) -> Result<(Group, GroupClose)> {
-    let mut commands = Vec::new();
+fn expr(instrs: &mut Vec<Instruction>) -> Result<(Expression, ExprEnd)> {
+    let mut new_instrs = Vec::new();
     while instrs.len() > 0 {
         let instr = instrs.pop().unwrap();
-        commands.push(match instr {
-            Instruction::If(_) => group_if(instrs, instr)?,
-            Instruction::Block(_) => group_block(instrs, instr)?,
-            Instruction::Else => return close_else(commands),
-            Instruction::End => return close_end(commands),
-            _ => Command::Instr(instr),
+        new_instrs.push(match instr {
+            Instruction::If(block_type, if_expr, else_expr) => {
+                let (if_ex, else_ex) = expr_if(instrs)?;
+                // TODO: Can we mutate the existing object instead?
+                Instruction::If(block_type, Some(if_ex), Some(else_ex))
+            }
+            Instruction::Block(block_type, mut expr) => {
+                Instruction::Block(block_type, Some(expr_block(instrs)?))
+            }
+            Instruction::Else => return close_else(new_instrs),
+            Instruction::End => return close_end(new_instrs),
+            _ => instr,
         });
     }
 
-    Ok((Group { commands }, GroupClose::None))
+    Ok((Expression { instrs: new_instrs }, ExprEnd::None))
 }
 
-fn close_else(commands: Vec<Command>) -> Result<(Group, GroupClose)> {
-    Ok((Group { commands }, GroupClose::Else))
-}
-
-fn close_end(commands: Vec<Command>) -> Result<(Group, GroupClose)> {
-    Ok((Group { commands }, GroupClose::End))
-}
-
-fn group_if(instrs: &mut Vec<Instruction>, if_instr: Instruction) -> Result<Command> {
-    let (if_group, if_end) = group_rec(instrs)?;
+fn expr_if(instrs: &mut Vec<Instruction>) -> Result<(Expression, Expression)> {
+    let (if_group, if_end) = expr(instrs)?;
     match if_end {
-        GroupClose::Else => {
-            let (else_group, end) = group_rec(instrs)?;
-            if end != GroupClose::End {
+        ExprEnd::Else => {
+            let (else_group, end) = expr(instrs)?;
+            if end != ExprEnd::End {
                 return Err(anyhow::anyhow!("Expected End"));
             }
-            Ok(Command::If(if_instr, if_group, else_group))
+            Ok((if_group, else_group))
         }
         _ => {
-            let else_group = Group { commands: vec![] };
-            Ok(Command::If(if_instr, if_group, else_group))
+            // TODO: Can we use None instead?
+            let else_group = Expression { instrs: vec![] };
+            Ok((if_group, else_group))
         }
     }
 }
 
-fn group_block(instrs: &mut Vec<Instruction>, block_instr: Instruction) -> Result<Command> {
-    let (block_group, end) = group_rec(instrs)?;
-    if end != GroupClose::End {
+fn expr_block(instrs: &mut Vec<Instruction>) -> Result<Expression> {
+    let (block_group, end) = expr(instrs)?;
+    if end != ExprEnd::End {
         return Err(anyhow::anyhow!("Expected End"));
     }
-    Ok(Command::Block(block_instr, block_group))
+    Ok(block_group)
+}
+
+fn close_else(instrs: Vec<Instruction>) -> Result<(Expression, ExprEnd)> {
+    Ok((Expression { instrs }, ExprEnd::Else))
+}
+
+fn close_end(instrs: Vec<Instruction>) -> Result<(Expression, ExprEnd)> {
+    Ok((Expression { instrs }, ExprEnd::End))
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::group::{group, Command};
+    use crate::group::group_expr;
     use crate::model::{Instruction, ValType};
     use crate::test_utils::{test_block, test_if};
 
@@ -92,10 +87,10 @@ mod tests {
     fn test_simple() {
         let instrs = vec![Instruction::I32Const(1), Instruction::I32Const(5)];
 
-        let group = group(instrs).unwrap();
-        assert_eq!(group.commands.len(), 2);
-        assert_eq!(group.commands[0], Command::Instr(Instruction::I32Const(1)));
-        assert_eq!(group.commands[1], Command::Instr(Instruction::I32Const(5)));
+        let expr = group_expr(instrs).unwrap();
+        assert_eq!(expr.instrs.len(), 2);
+        assert_eq!(expr.instrs[0], Instruction::I32Const(1));
+        assert_eq!(expr.instrs[1], Instruction::I32Const(5));
     }
 
     #[test]
@@ -111,21 +106,21 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        let group = group(instrs).unwrap();
-        assert_eq!(group.commands.len(), 3);
-        assert_eq!(group.commands[0], Command::Instr(Instruction::I32Const(1)));
+        let expr = group_expr(instrs).unwrap();
+        assert_eq!(expr.instrs.len(), 3);
+        assert_eq!(expr.instrs[0], Instruction::I32Const(1));
 
-        let (ifch, elsech) = match &group.commands[1] {
-            Command::If(_, ifch, elsech) => (ifch, elsech),
-            _ => panic!("Expected Command::If"),
+        let (if_expr, else_expr) = match &expr.instrs[1] {
+            Instruction::If(_, Some(if_expr), Some(else_expr)) => (if_expr, else_expr),
+            _ => panic!("Expected Instruction::If"),
         };
 
-        assert!(ifch.commands.len() == 2);
-        assert_eq!(ifch.commands[0], Command::Instr(Instruction::I32Const(2)));
-        assert_eq!(ifch.commands[1], Command::Instr(Instruction::I32Const(3)));
+        assert!(if_expr.instrs.len() == 2);
+        assert_eq!(if_expr.instrs[0], Instruction::I32Const(2));
+        assert_eq!(if_expr.instrs[1], Instruction::I32Const(3));
 
-        assert!(elsech.commands.len() == 1);
-        assert_eq!(elsech.commands[0], Command::Instr(Instruction::I32Const(4)));
+        assert!(else_expr.instrs.len() == 1);
+        assert_eq!(else_expr.instrs[0], Instruction::I32Const(4));
     }
 
     #[test]
@@ -139,20 +134,20 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        let group = group(instrs).unwrap();
-        assert_eq!(group.commands.len(), 3);
-        assert_eq!(group.commands[0], Command::Instr(Instruction::I32Const(1)));
+        let expr = group_expr(instrs).unwrap();
+        assert_eq!(expr.instrs.len(), 3);
+        assert_eq!(expr.instrs[0], Instruction::I32Const(1));
 
-        let (ifch, elsech) = match &group.commands[1] {
-            Command::If(_, ifch, elsech) => (ifch, elsech),
-            _ => panic!("Expected Command::If"),
+        let (if_expr, else_expr) = match &expr.instrs[1] {
+            Instruction::If(_, Some(if_expr), Some(else_expr)) => (if_expr, else_expr),
+            _ => panic!("Expected Instruction::If"),
         };
 
-        assert!(ifch.commands.len() == 2);
-        assert_eq!(ifch.commands[0], Command::Instr(Instruction::I32Const(2)));
-        assert_eq!(ifch.commands[1], Command::Instr(Instruction::I32Const(3)));
+        assert!(if_expr.instrs.len() == 2);
+        assert_eq!(if_expr.instrs[0], Instruction::I32Const(2));
+        assert_eq!(if_expr.instrs[1], Instruction::I32Const(3));
 
-        assert!(elsech.commands.len() == 0);
+        assert!(else_expr.instrs.len() == 0);
     }
 
     #[test]
@@ -163,7 +158,7 @@ mod tests {
             Instruction::End,
         ];
 
-        assert!(group(instrs).is_err());
+        assert!(group_expr(instrs).is_err());
     }
 
     #[test]
@@ -174,7 +169,7 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        assert!(group(instrs).is_err());
+        assert!(group_expr(instrs).is_err());
     }
 
     #[test]
@@ -191,7 +186,7 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        assert!(group(instrs).is_err());
+        assert!(group_expr(instrs).is_err());
     }
 
     #[test]
@@ -206,7 +201,7 @@ mod tests {
             Instruction::I32Const(5),
         ];
 
-        assert!(group(instrs).is_err());
+        assert!(group_expr(instrs).is_err());
     }
 
     #[test]
@@ -219,20 +214,17 @@ mod tests {
             Instruction::I32Const(3),
         ];
 
-        let group = group(instrs).unwrap();
-        assert_eq!(group.commands.len(), 3);
-        assert_eq!(group.commands[0], Command::Instr(Instruction::I32Const(1)));
+        let expr = group_expr(instrs).unwrap();
+        assert_eq!(expr.instrs.len(), 3);
+        assert_eq!(expr.instrs[0], Instruction::I32Const(1));
 
-        let (block_instr, block_group) = match &group.commands[1] {
-            Command::Block(block_instr, block_group) => (block_instr, block_group),
-            _ => panic!("Expected Command::Block"),
+        let block = match &expr.instrs[1] {
+            Instruction::Block(_, Some(block)) => block,
+            _ => panic!("Expected Instruction::Block"),
         };
 
-        assert_eq!(block_group.commands.len(), 1);
-        assert_eq!(
-            block_group.commands[0],
-            Command::Instr(Instruction::I32Const(2))
-        );
+        assert_eq!(block.instrs.len(), 1);
+        assert_eq!(block.instrs[0], Instruction::I32Const(2));
     }
 
     #[test]
@@ -245,6 +237,6 @@ mod tests {
             Instruction::I32Const(3),
         ];
 
-        assert!(group(instrs).is_err());
+        assert!(group_expr(instrs).is_err());
     }
 }

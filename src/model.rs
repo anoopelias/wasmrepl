@@ -15,7 +15,7 @@ use wast::{
 use anyhow::{Error, Result};
 
 use crate::{
-    group::{group, Group},
+    group::group_expr,
     parser::{Line as WastLine, LineExpression as WastLineExpression},
 };
 
@@ -170,9 +170,9 @@ impl TryFrom<&WastValType<'_>> for ValType {
     }
 }
 
-#[derive(Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Expression {
-    pub group: Group,
+    pub instrs: Vec<Instruction>,
 }
 
 impl TryFrom<&WastExpression<'_>> for Expression {
@@ -183,9 +183,7 @@ impl TryFrom<&WastExpression<'_>> for Expression {
         for instr in expr.instrs.iter() {
             instrs.push(instr.try_into()?);
         }
-        Ok(Expression {
-            group: group(instrs)?,
-        })
+        Ok(group_expr(instrs)?)
     }
 }
 
@@ -302,10 +300,10 @@ pub enum Instruction {
     Call(Index),
     Return,
     Nop,
-    If(BlockType),
+    If(BlockType, Option<Expression>, Option<Expression>),
     Else,
     End,
-    Block(BlockType),
+    Block(BlockType, Option<Expression>),
     Br(Index),
 }
 
@@ -388,10 +386,10 @@ impl TryFrom<&WastInstruction<'_>> for Instruction {
             WastInstruction::Call(index) => Ok(Instruction::Call(index.try_into()?)),
             WastInstruction::Return => Ok(Instruction::Return),
             WastInstruction::Nop => Ok(Instruction::Nop),
-            WastInstruction::If(ty) => Ok(Instruction::If(ty.try_into()?)),
+            WastInstruction::If(ty) => Ok(Instruction::If(ty.try_into()?, None, None)),
             WastInstruction::Else(_) => Ok(Instruction::Else),
             WastInstruction::End(_) => Ok(Instruction::End),
-            WastInstruction::Block(ty) => Ok(Instruction::Block(ty.try_into()?)),
+            WastInstruction::Block(ty) => Ok(Instruction::Block(ty.try_into()?, None)),
             WastInstruction::Br(index) => Ok(Instruction::Br(index.try_into()?)),
             _ => Err(Error::msg("Unsupported instruction")),
         }
@@ -403,7 +401,6 @@ mod tests {
     use std::vec;
 
     use crate::{
-        group::Command,
         model::{
             BlockType, Expression, Func, FuncType, Index, Instruction, Line, LineExpression, Local,
             ValType,
@@ -506,11 +503,8 @@ mod tests {
         })
         .unwrap();
 
-        assert_eq!(expr.group.commands.len(), 1);
-        assert_eq!(
-            expr.group.commands[0],
-            Command::Instr(Instruction::I32Const(2))
-        );
+        assert_eq!(expr.instrs.len(), 1);
+        assert_eq!(expr.instrs[0], Instruction::I32Const(2));
     }
 
     #[test]
@@ -574,10 +568,10 @@ mod tests {
         assert_eq!(func.ty.params[0].val_type, ValType::I32);
         assert_eq!(func.line_expression.locals.len(), 1);
         assert_eq!(func.line_expression.locals[0].val_type, ValType::I32);
-        assert_eq!(func.line_expression.expr.group.commands.len(), 1);
+        assert_eq!(func.line_expression.expr.instrs.len(), 1);
         assert_eq!(
-            func.line_expression.expr.group.commands[0],
-            Command::Instr(Instruction::I32Const(2))
+            func.line_expression.expr.instrs[0],
+            Instruction::I32Const(2)
         );
     }
 
@@ -671,11 +665,8 @@ mod tests {
 
         assert_eq!(line_expr.locals.len(), 1);
         assert_eq!(line_expr.locals[0].val_type, ValType::I32);
-        assert_eq!(line_expr.expr.group.commands.len(), 1);
-        assert_eq!(
-            line_expr.expr.group.commands[0],
-            Command::Instr(Instruction::I32Const(2))
-        );
+        assert_eq!(line_expr.expr.instrs.len(), 1);
+        assert_eq!(line_expr.expr.instrs[0], Instruction::I32Const(2));
     }
 
     #[test]
@@ -691,11 +682,8 @@ mod tests {
         if let Line::Expression(line_expr) = line_expression {
             assert_eq!(line_expr.locals.len(), 1);
             assert_eq!(line_expr.locals[0].val_type, ValType::I32);
-            assert_eq!(line_expr.expr.group.commands.len(), 1);
-            assert_eq!(
-                line_expr.expr.group.commands[0],
-                Command::Instr(Instruction::I32Const(2))
-            );
+            assert_eq!(line_expr.expr.instrs.len(), 1);
+            assert_eq!(line_expr.expr.instrs[0], Instruction::I32Const(2));
         } else {
             panic!("Expected Line::Expression");
         }
@@ -768,13 +756,17 @@ mod tests {
         .unwrap();
         assert_eq!(
             instr,
-            Instruction::If(BlockType {
-                label: None,
-                ty: FuncType {
-                    params: vec![],
-                    results: vec![ValType::I32],
-                }
-            })
+            Instruction::If(
+                BlockType {
+                    label: None,
+                    ty: FuncType {
+                        params: vec![],
+                        results: vec![ValType::I32],
+                    }
+                },
+                None,
+                None
+            )
         );
     }
 
@@ -794,13 +786,16 @@ mod tests {
         .unwrap();
         assert_eq!(
             instr,
-            Instruction::Block(BlockType {
-                label: None,
-                ty: FuncType {
-                    params: vec![],
-                    results: vec![ValType::I32],
-                }
-            })
+            Instruction::Block(
+                BlockType {
+                    label: None,
+                    ty: FuncType {
+                        params: vec![],
+                        results: vec![ValType::I32],
+                    }
+                },
+                None
+            )
         );
     }
 

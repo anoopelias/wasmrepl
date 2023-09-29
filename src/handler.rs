@@ -137,10 +137,10 @@ impl<'a> Handler<'a> {
             Instruction::Return => self.return_instr(),
             Instruction::Nop => self.nop(),
             Instruction::Call(index) => self.call_func(index.clone()),
-            Instruction::If(_) => self.if_instr(),
+            Instruction::If(_, _, _) => self.if_instr(),
             Instruction::Else => unreachable!(),
             Instruction::End => unreachable!(),
-            Instruction::Block(_) => unreachable!(),
+            Instruction::Block(_, _) => unreachable!(),
             Instruction::Br(_) => todo!(),
         }
     }
