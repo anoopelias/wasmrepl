@@ -306,6 +306,7 @@ pub enum Instruction {
     Else,
     End,
     Block(BlockType),
+    Br(Index),
 }
 
 impl TryFrom<&WastInstruction<'_>> for Instruction {
@@ -391,6 +392,7 @@ impl TryFrom<&WastInstruction<'_>> for Instruction {
             WastInstruction::Else(_) => Ok(Instruction::Else),
             WastInstruction::End(_) => Ok(Instruction::End),
             WastInstruction::Block(ty) => Ok(Instruction::Block(ty.try_into()?)),
+            WastInstruction::Br(index) => Ok(Instruction::Br(index.try_into()?)),
             _ => Err(Error::msg("Unsupported instruction")),
         }
     }
@@ -407,6 +409,7 @@ mod tests {
             ValType,
         },
         parser::{Line as WastLine, LineExpression as WastLineExpression},
+        test_utils::test_index,
     };
     use wast::{
         core::{
@@ -431,7 +434,7 @@ mod tests {
             let str_id = String::from($id);
             let buf_id = ParseBuffer::new(&str_id).unwrap();
             let id = parser::parse::<Id>(&buf_id).unwrap();
-            let $var = Index::try_from(&WastIndex::Id(id)).unwrap();
+            let $var = WastIndex::Id(id);
         };
     }
 
@@ -537,6 +540,7 @@ mod tests {
     #[test]
     fn test_from_wast_index_id() {
         test_index!(index, "$id1");
+        let index = Index::try_from(&index).unwrap();
         assert_eq!(index, Index::Id(String::from("id1")));
     }
 
@@ -798,5 +802,12 @@ mod tests {
                 }
             })
         );
+    }
+
+    #[test]
+    fn test_from_wast_branch_instruction() {
+        test_index!(index, "$id1");
+        let instr = Instruction::try_from(&WastInstruction::Br(index)).unwrap();
+        assert_eq!(instr, Instruction::Br(test_index("id1")));
     }
 }

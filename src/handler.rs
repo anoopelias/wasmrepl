@@ -141,6 +141,7 @@ impl<'a> Handler<'a> {
             Instruction::Else => unreachable!(),
             Instruction::End => unreachable!(),
             Instruction::Block(_) => unreachable!(),
+            Instruction::Br(_) => todo!(),
         }
     }
 }
