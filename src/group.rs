@@ -54,7 +54,6 @@ fn expr_if(instrs: &mut Vec<Instruction>) -> Result<(Expression, Expression)> {
             Ok((if_group, else_group))
         }
         _ => {
-            // TODO: Can we use None instead?
             let else_group = Expression { instrs: vec![] };
             Ok((if_group, else_group))
         }
