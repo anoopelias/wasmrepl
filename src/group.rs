@@ -15,7 +15,7 @@ pub enum Command {
 }
 
 #[derive(PartialEq, Debug)]
-enum GroupEnd {
+enum GroupClose {
     None,
     Else,
     End,
@@ -27,42 +27,42 @@ pub fn group(mut instrs: Vec<Instruction>) -> Result<Group> {
     instrs.reverse();
 
     let (group, end) = group_rec(&mut instrs)?;
-    if end != GroupEnd::None {
+    if end != GroupClose::None {
         return Err(anyhow::anyhow!("Unexpected end of block"));
     }
     Ok(group)
 }
 
-fn group_rec(instrs: &mut Vec<Instruction>) -> Result<(Group, GroupEnd)> {
+fn group_rec(instrs: &mut Vec<Instruction>) -> Result<(Group, GroupClose)> {
     let mut commands = Vec::new();
     while instrs.len() > 0 {
         let instr = instrs.pop().unwrap();
         commands.push(match instr {
             Instruction::If(_) => group_if(instrs, instr)?,
             Instruction::Block(_) => group_block(instrs, instr)?,
-            Instruction::Else => return group_else(commands),
-            Instruction::End => return group_end(commands),
+            Instruction::Else => return close_else(commands),
+            Instruction::End => return close_end(commands),
             _ => Command::Instr(instr),
         });
     }
 
-    Ok((Group { commands }, GroupEnd::None))
+    Ok((Group { commands }, GroupClose::None))
 }
 
-fn group_else(commands: Vec<Command>) -> Result<(Group, GroupEnd)> {
-    Ok((Group { commands }, GroupEnd::Else))
+fn close_else(commands: Vec<Command>) -> Result<(Group, GroupClose)> {
+    Ok((Group { commands }, GroupClose::Else))
 }
 
-fn group_end(commands: Vec<Command>) -> Result<(Group, GroupEnd)> {
-    Ok((Group { commands }, GroupEnd::End))
+fn close_end(commands: Vec<Command>) -> Result<(Group, GroupClose)> {
+    Ok((Group { commands }, GroupClose::End))
 }
 
 fn group_if(instrs: &mut Vec<Instruction>, if_instr: Instruction) -> Result<Command> {
     let (if_group, if_end) = group_rec(instrs)?;
     match if_end {
-        GroupEnd::Else => {
+        GroupClose::Else => {
             let (else_group, end) = group_rec(instrs)?;
-            if end != GroupEnd::End {
+            if end != GroupClose::End {
                 return Err(anyhow::anyhow!("Expected End"));
             }
             Ok(Command::If(if_instr, if_group, else_group))
@@ -76,7 +76,7 @@ fn group_if(instrs: &mut Vec<Instruction>, if_instr: Instruction) -> Result<Comm
 
 fn group_block(instrs: &mut Vec<Instruction>, block_instr: Instruction) -> Result<Command> {
     let (block_group, end) = group_rec(instrs)?;
-    if end != GroupEnd::End {
+    if end != GroupClose::End {
         return Err(anyhow::anyhow!("Expected End"));
     }
     Ok(Command::Block(block_instr, block_group))
