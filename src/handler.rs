@@ -59,26 +59,25 @@ impl<'a> Handler<'a> {
 
     fn if_instr(
         &mut self,
-        block_type: &BlockType,
-        if_block: &Option<Expression>,
-        else_block: &Option<Expression>,
+        block_type: BlockType,
+        if_block: Option<Expression>,
+        else_block: Option<Expression>,
     ) -> Result<Response> {
         let value = self.state.stack.pop()?;
-        // TODO: Get rid of `clone`s all over
         if value.is_true() {
             Ok(Response::new_ctrl(Control::ExecBlock(
-                block_type.clone(),
-                if_block.clone().unwrap(),
+                block_type,
+                if_block.unwrap(),
             )))
         } else {
             Ok(Response::new_ctrl(Control::ExecBlock(
-                block_type.clone(),
-                else_block.clone().unwrap(),
+                block_type,
+                else_block.unwrap(),
             )))
         }
     }
 
-    pub fn handle(&mut self, instr: &Instruction) -> Result<Response> {
+    pub fn handle(&mut self, instr: Instruction) -> Result<Response> {
         match instr {
             Instruction::I32Const(value) => self.i32_const(value),
             Instruction::Drop => self.drop(),
@@ -183,8 +182,8 @@ pop!(f64_pop, f64);
 macro_rules! constant {
     ($fname:ident, $ty:ty) => {
         impl<'a> Handler<'a> {
-            fn $fname(&mut self, value: &$ty) -> Result<Response> {
-                self.state.stack.push(value.clone().into());
+            fn $fname(&mut self, value: $ty) -> Result<Response> {
+                self.state.stack.push(value.into());
                 Ok(Response::new())
             }
         }

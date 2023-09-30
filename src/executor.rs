@@ -3,7 +3,7 @@ use anyhow::{anyhow, Result};
 use crate::elements::Elements;
 use crate::handler::Handler;
 use crate::locals::Locals;
-use crate::model::{Expression, Func, FuncType, Index, Instruction, Local, ValType};
+use crate::model::{BlockType, Expression, Func, FuncType, Index, Instruction, Local, ValType};
 use crate::response::{Control, Response};
 use crate::value::Value;
 use crate::{
@@ -70,7 +70,7 @@ impl Executor {
     }
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
-        let result = self.execute_line_expression(&line);
+        let result = self.execute_line_expression(line);
         let state = self.call_stack.last_mut().unwrap();
 
         match result {
@@ -101,7 +101,7 @@ impl Executor {
 
         let func = self.funcs.get(index)?.clone();
         self.push_func_state(&func.ty)?;
-        let response = self.execute_line_expression(&func.line_expression)?;
+        let response = self.execute_line_expression(func.line_expression)?;
 
         self.pop_state(&func.ty, response.control != Control::Return)?;
         Ok(Response::new())
@@ -154,7 +154,7 @@ impl Executor {
         Ok(())
     }
 
-    fn execute_line_expression(&mut self, line: &LineExpression) -> Result<Response> {
+    fn execute_line_expression(&mut self, line: LineExpression) -> Result<Response> {
         let mut response = Response::new();
         for lc in line.locals.iter() {
             match self.execute_local(&lc) {
@@ -165,12 +165,12 @@ impl Executor {
             }
         }
 
-        response.extend(self.execute_expr(&line.expr)?);
+        response.extend(self.execute_expr(line.expr)?);
         Ok(response)
     }
 
-    fn execute_expr(&mut self, expr: &Expression) -> Result<Response> {
-        for instr in &expr.instrs {
+    fn execute_expr(&mut self, expr: Expression) -> Result<Response> {
+        for instr in expr.instrs {
             let response = self.execute_instr(instr)?;
             if response.control == Control::Return {
                 // Return statement break all recursive blocks
@@ -181,27 +181,23 @@ impl Executor {
         Ok(Response::new())
     }
 
-    fn execute_instr(&mut self, instr: &Instruction) -> Result<Response> {
+    fn execute_instr(&mut self, instr: Instruction) -> Result<Response> {
         let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
         let response = handler.handle(instr)?;
 
         match response.control {
             Control::None => Ok(response),
             Control::ExecFunc(index) => self.execute_func(&index),
-            Control::ExecBlock(_, block) => self.execute_block(instr, &block),
+            Control::ExecBlock(block_type, block) => self.execute_block(block_type, block),
             Control::Return => Ok(response),
         }
     }
 
-    fn execute_block(&mut self, instr: &Instruction, expr: &Expression) -> Result<Response> {
-        if let Instruction::If(block_type, _, _) = instr {
-            self.push_group_state(&block_type.ty)?;
-            let response = self.execute_expr(expr)?;
-            self.pop_state(&block_type.ty, response.control != Control::Return)?;
-            Ok(response)
-        } else {
-            unreachable!()
-        }
+    fn execute_block(&mut self, block_type: BlockType, expr: Expression) -> Result<Response> {
+        self.push_group_state(&block_type.ty)?;
+        let response = self.execute_expr(expr)?;
+        self.pop_state(&block_type.ty, response.control != Control::Return)?;
+        Ok(response)
     }
 
     fn execute_local(&mut self, lc: &Local) -> Result<Response> {
