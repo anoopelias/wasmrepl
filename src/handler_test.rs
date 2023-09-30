@@ -2,8 +2,8 @@ use crate::response::{Control, Response};
 use crate::{executor::State, value::Value};
 use anyhow::Result;
 
-use crate::model::{Expression, Index, Instruction};
-use crate::test_utils::{test_if, test_index};
+use crate::model::{Expression, Index, Instruction, Local, ValType};
+use crate::test_utils::{test_if, test_index, test_local};
 
 use super::Handler;
 
@@ -872,21 +872,49 @@ fn test_call_func() {
 fn test_if_instr() {
     let mut state = State::new();
     state.stack.push(1.into());
-    let response = exec_instr_handler(&test_if!(()()), &mut state).unwrap();
-    assert_eq!(response.control, Control::If(true));
+    let response = exec_instr_handler(
+        &test_if!((test_local!(ValType::I64))(ValType::I32)(
+            Instruction::I32Const(2)
+        )(Instruction::I32Const(3))),
+        &mut state,
+    )
+    .unwrap();
+
+    if let Control::ExecBlock(block_type, block) = response.control {
+        assert_eq!(block_type.ty.params.len(), 1);
+        assert_eq!(block_type.ty.params[0].val_type, ValType::I64);
+        assert_eq!(block_type.ty.results.len(), 1);
+        assert_eq!(block_type.ty.results[0], ValType::I32);
+
+        assert_eq!(block.instrs.len(), 1);
+        assert_eq!(block.instrs[0], Instruction::I32Const(2));
+    } else {
+        panic!("Expected Exec::Block");
+    }
 }
 
 #[test]
 fn test_if_else() {
     let mut state = State::new();
     state.stack.push(0.into());
-    let response = exec_instr_handler(&test_if!(()()), &mut state).unwrap();
-    assert_eq!(response.control, Control::If(false));
+    let response = exec_instr_handler(
+        &test_if!((test_local!(ValType::I64))(ValType::I32)(
+            Instruction::I32Const(2)
+        )(Instruction::I32Const(3))),
+        &mut state,
+    )
+    .unwrap();
+
+    if let Control::ExecBlock(_, block) = response.control {
+        assert_eq!(block.instrs[0], Instruction::I32Const(3));
+    } else {
+        panic!("Expected Exec::Block");
+    }
 }
 
 #[test]
 fn test_if_error() {
-    assert!(exec_instr_handler(&test_if!(()()), &mut State::new()).is_err());
+    assert!(exec_instr_handler(&test_if!(), &mut State::new()).is_err());
 }
 
 #[test]

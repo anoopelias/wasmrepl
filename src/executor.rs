@@ -182,25 +182,18 @@ impl Executor {
     }
 
     fn execute_instr(&mut self, instr: &Instruction) -> Result<Response> {
-        let (if_block, else_block) = match instr {
-            Instruction::If(_, if_block, else_block) => (if_block, else_block),
-            _ => (&None, &None),
-        };
         let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
         let response = handler.handle(instr)?;
 
         match response.control {
-            Control::None => Ok(Response::new()),
+            Control::None => Ok(response),
             Control::ExecFunc(index) => self.execute_func(&index),
-            Control::If(b) => {
-                let block = (if b { if_block } else { else_block }).as_ref().unwrap();
-                self.execute_if(instr, block)
-            }
+            Control::ExecBlock(_, block) => self.execute_block(instr, &block),
             Control::Return => Ok(response),
         }
     }
 
-    fn execute_if(&mut self, instr: &Instruction, expr: &Expression) -> Result<Response> {
+    fn execute_block(&mut self, instr: &Instruction, expr: &Expression) -> Result<Response> {
         if let Instruction::If(block_type, _, _) = instr {
             self.push_group_state(&block_type.ty)?;
             let response = self.execute_expr(expr)?;
@@ -238,7 +231,7 @@ mod tests {
 
     use crate::executor::Executor;
     use crate::group::group_expr;
-    use crate::test_utils::{test_if, test_index};
+    use crate::test_utils::{test_if, test_index, test_local, test_local_id};
 
     macro_rules! test_line {
         (($( $y:expr ),*)($( $x:expr ),*)) => {
@@ -265,24 +258,6 @@ mod tests {
                     expr:  group_expr((vec![$( $instr ),*])).unwrap()
                 },
             })
-        };
-    }
-
-    macro_rules! test_local_id {
-        ($id:expr, $type:expr) => {
-            Local {
-                id: Some(String::from($id)),
-                val_type: $type,
-            }
-        };
-    }
-
-    macro_rules! test_local {
-        ($type:expr) => {
-            Local {
-                id: None,
-                val_type: $type,
-            }
         };
     }
 
@@ -866,7 +841,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(3),
-            test_if!(()()),
+            test_if!(),
             Instruction::Else,
             Instruction::I32Const(1),
             Instruction::End,
@@ -880,7 +855,7 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(-2),
-            test_if!(()()),
+            test_if!(),
             Instruction::I32Const(1),
             Instruction::End,
             Instruction::I32Const(2)
@@ -927,9 +902,9 @@ mod tests {
         let mut executor = Executor::new();
         let line = test_line![()(
             Instruction::I32Const(1),
-            test_if!(()()),
+            test_if!(),
             Instruction::I32Const(-1),
-            test_if!(()()),
+            test_if!(),
             Instruction::I32Const(3),
             Instruction::End,
             Instruction::Else,

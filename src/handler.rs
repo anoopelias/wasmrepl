@@ -4,6 +4,8 @@ use std::ops::BitOr;
 use std::ops::{BitXor, Shl};
 
 use crate::executor::State;
+use crate::model::BlockType;
+use crate::model::Expression;
 use crate::model::{Index, Instruction};
 use crate::ops::FloatOps;
 use crate::ops::IntOps;
@@ -55,9 +57,25 @@ impl<'a> Handler<'a> {
         Ok(Response::new_ctrl(Control::ExecFunc(index)))
     }
 
-    fn if_instr(&mut self) -> Result<Response> {
+    fn if_instr(
+        &mut self,
+        block_type: &BlockType,
+        if_block: &Option<Expression>,
+        else_block: &Option<Expression>,
+    ) -> Result<Response> {
         let value = self.state.stack.pop()?;
-        Ok(Response::new_ctrl(Control::If(value.is_true())))
+        // TODO: Get rid of `clone`s all over
+        if value.is_true() {
+            Ok(Response::new_ctrl(Control::ExecBlock(
+                block_type.clone(),
+                if_block.clone().unwrap(),
+            )))
+        } else {
+            Ok(Response::new_ctrl(Control::ExecBlock(
+                block_type.clone(),
+                else_block.clone().unwrap(),
+            )))
+        }
     }
 
     pub fn handle(&mut self, instr: &Instruction) -> Result<Response> {
@@ -137,7 +155,7 @@ impl<'a> Handler<'a> {
             Instruction::Return => self.return_instr(),
             Instruction::Nop => self.nop(),
             Instruction::Call(index) => self.call_func(index.clone()),
-            Instruction::If(_, _, _) => self.if_instr(),
+            Instruction::If(bt, ib, eb) => self.if_instr(bt, ib, eb),
             Instruction::Else => unreachable!(),
             Instruction::End => unreachable!(),
             Instruction::Block(_, _) => unreachable!(),

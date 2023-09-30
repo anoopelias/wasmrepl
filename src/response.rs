@@ -1,4 +1,4 @@
-use crate::model::Index;
+use crate::model::{BlockType, Expression, Index};
 
 pub struct Response {
     pub control: Control,
@@ -8,9 +8,9 @@ pub struct Response {
 #[derive(Debug, PartialEq)]
 pub enum Control {
     ExecFunc(Index),
+    ExecBlock(BlockType, Expression),
     Return,
     None,
-    If(bool),
 }
 
 impl Response {
