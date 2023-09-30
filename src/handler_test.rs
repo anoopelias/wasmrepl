@@ -2,7 +2,7 @@ use crate::response::{Control, Response};
 use crate::{executor::State, value::Value};
 use anyhow::Result;
 
-use crate::model::{Index, Instruction};
+use crate::model::{Expression, Index, Instruction};
 use crate::test_utils::{test_if, test_index};
 
 use super::Handler;

@@ -28,7 +28,7 @@ macro_rules! test_if {
                 results: vec![$( $res ),*]
 
             }
-        }, None, None)
+        }, Some(Expression {instrs: vec![]}), Some(Expression {instrs: vec![]}))
     };
 }
 
@@ -43,7 +43,7 @@ macro_rules! test_block {
                 results: vec![$( $res ),*]
 
             }
-        }, None)
+        }, Some(Expression {instrs: vec![]}))
     };
 }
 
