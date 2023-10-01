@@ -3,7 +3,9 @@ use crate::model::{
 };
 
 use crate::executor::Executor;
-use crate::test_utils::{test_block_type, test_if, test_index, test_local, test_local_id};
+use crate::test_utils::{
+    test_block, test_block_type, test_if, test_index, test_local, test_local_id,
+};
 
 macro_rules! test_line {
     (($( $y:expr ),*)($( $x:expr ),*)) => {
@@ -634,4 +636,15 @@ fn execute_nested_return() {
         Instruction::Call(test_index("fn"))
     )];
     assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[5]");
+}
+
+#[test]
+fn test_execute_block() {
+    let mut executor = Executor::new();
+    let line = test_line![()(
+        Instruction::I32Const(1),
+        test_block!(()(ValType::I32)(Instruction::I32Const(2))),
+        Instruction::I32Const(3)
+    )];
+    assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 2, 3]");
 }
