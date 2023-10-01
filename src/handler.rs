@@ -77,6 +77,13 @@ impl<'a> Handler<'a> {
         }
     }
 
+    fn block(&mut self, block_type: BlockType, block: Option<Expression>) -> Result<Response> {
+        Ok(Response::new_ctrl(Control::ExecBlock(
+            block_type,
+            block.unwrap(),
+        )))
+    }
+
     pub fn handle(&mut self, instr: Instruction) -> Result<Response> {
         match instr {
             Instruction::I32Const(value) => self.i32_const(value),
@@ -157,7 +164,7 @@ impl<'a> Handler<'a> {
             Instruction::If(bt, ib, eb) => self.if_instr(bt, ib, eb),
             Instruction::Else => unreachable!(),
             Instruction::End => unreachable!(),
-            Instruction::Block(_, _) => unreachable!(),
+            Instruction::Block(bt, b) => self.block(bt, b),
             Instruction::Br(_) => todo!(),
         }
     }

@@ -68,6 +68,12 @@ macro_rules! test_block {
         Instruction::Block(test_block_type!(($( $param ),*) ($( $res ),*)),
             Some(Expression {instrs: vec![]}))
     };
+    (($( $param:expr ),*)($( $res:expr ),*)($( $block_instr:expr ),*)) => {
+        Instruction::Block(test_block_type!(($( $param ),*) ($( $res ),*)),
+            Some(Expression {instrs: vec![
+                $( $block_instr ),*
+            ]}))
+    };
 }
 
 macro_rules! test_local_id {

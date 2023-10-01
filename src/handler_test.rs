@@ -3,7 +3,7 @@ use crate::{executor::State, value::Value};
 use anyhow::Result;
 
 use crate::model::{Expression, Index, Instruction, Local, ValType};
-use crate::test_utils::{test_block_type, test_if, test_index, test_local};
+use crate::test_utils::{test_block, test_block_type, test_if, test_index, test_local};
 
 use super::Handler;
 
@@ -927,4 +927,27 @@ fn test_else() {
 #[should_panic]
 fn test_end() {
     exec_instr_handler(Instruction::End, &mut State::new()).unwrap();
+}
+
+#[test]
+fn test_block() {
+    let response = exec_instr_handler(
+        test_block!((test_local!(ValType::I64))(ValType::I32)(
+            Instruction::I32Const(2)
+        )),
+        &mut State::new(),
+    )
+    .unwrap();
+
+    if let Control::ExecBlock(block_type, block) = response.control {
+        assert_eq!(block_type.ty.params.len(), 1);
+        assert_eq!(block_type.ty.params[0].val_type, ValType::I64);
+        assert_eq!(block_type.ty.results.len(), 1);
+        assert_eq!(block_type.ty.results[0], ValType::I32);
+
+        assert_eq!(block.instrs.len(), 1);
+        assert_eq!(block.instrs[0], Instruction::I32Const(2));
+    } else {
+        panic!("Expected Exec::Block");
+    }
 }

@@ -227,7 +227,9 @@ mod tests {
 
     use crate::executor::Executor;
     use crate::group::group_expr;
-    use crate::test_utils::{test_block_type, test_if, test_index, test_local, test_local_id};
+    use crate::test_utils::{
+        test_block, test_block_type, test_if, test_index, test_local, test_local_id,
+    };
 
     macro_rules! test_line {
         (($( $y:expr ),*)($( $x:expr ),*)) => {
@@ -908,5 +910,19 @@ mod tests {
             Instruction::End
         )];
         assert_eq!(executor.execute_line(line).unwrap().message(), "[]");
+    }
+
+    #[test]
+    fn test_block() {
+        let mut executor = Executor::new();
+        let line = test_line![()(
+            Instruction::I32Const(1),
+            test_block!((test_local!(ValType::I32))(ValType::I32)),
+            Instruction::I32Const(3),
+            Instruction::I32Add,
+            Instruction::End,
+            Instruction::I32Const(5)
+        )];
+        assert_eq!(executor.execute_line(line).unwrap().message(), "[4, 5]");
     }
 }
