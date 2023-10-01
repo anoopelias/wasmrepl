@@ -3,7 +3,6 @@ use crate::model::{
 };
 
 use crate::executor::Executor;
-use crate::group::group_expr;
 use crate::test_utils::{test_block_type, test_if, test_index, test_local, test_local_id};
 
 macro_rules! test_line {
@@ -28,7 +27,7 @@ macro_rules! test_func {
             },
             line_expression: LineExpression {
                 locals: vec![],
-                expr:  group_expr((vec![$( $instr ),*])).unwrap()
+                expr:  Expression { instrs: vec![$( $instr ),*] }
             },
         })
     };
@@ -612,14 +611,12 @@ fn execute_nested_return() {
         "fn",
         (test_local!(ValType::I32))(ValType::I32)(
             Instruction::LocalGet(Index::Num(0)),
-            test_if!(()(ValType::I32)),
-            Instruction::I32Const(1),
-            Instruction::Return,
-            Instruction::I32Const(2),
-            Instruction::Else,
-            Instruction::I32Const(3),
-            Instruction::End,
-            Instruction::I32Const(4),
+            test_if!(()(ValType::I32)(
+                Instruction::I32Const(2),
+                Instruction::Return,
+                Instruction::I32Const(3)
+            )(Instruction::I32Const(4))),
+            Instruction::I32Const(5),
             Instruction::Return
         )
     );
@@ -629,12 +626,12 @@ fn execute_nested_return() {
         Instruction::I32Const(1),
         Instruction::Call(test_index("fn"))
     )];
-    assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[1]");
+    assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[2]");
 
     let call_sub = test_line![()(
         Instruction::Drop,
         Instruction::I32Const(-1),
         Instruction::Call(test_index("fn"))
     )];
-    assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[4]");
+    assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[5]");
 }
