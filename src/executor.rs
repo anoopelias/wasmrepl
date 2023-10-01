@@ -227,7 +227,7 @@ mod tests {
 
     use crate::executor::Executor;
     use crate::group::group_expr;
-    use crate::test_utils::{test_if, test_index, test_local, test_local_id};
+    use crate::test_utils::{test_block_type, test_if, test_index, test_local, test_local_id};
 
     macro_rules! test_line {
         (($( $y:expr ),*)($( $x:expr ),*)) => {

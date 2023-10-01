@@ -17,19 +17,19 @@ pub fn test_index(id: &str) -> Index {
     Index::Id(String::from(id))
 }
 
-macro_rules! test_if {
+macro_rules! test_block_type {
     () => {
-        Instruction::If(crate::model::BlockType {
+        crate::model::BlockType {
             label: None,
             ty: crate::model::FuncType {
                 params: vec![],
                 results: vec![]
 
             }
-        }, Some(Expression {instrs: vec![]}), Some(Expression {instrs: vec![]}))
+        }
     };
     (($( $param:expr ),*)($( $res:expr ),*)) => {
-        Instruction::If(crate::model::BlockType {
+        crate::model::BlockType {
             label: None,
             ty: crate::model::FuncType {
                 params: vec![
@@ -38,38 +38,35 @@ macro_rules! test_if {
                 results: vec![$( $res ),*]
 
             }
-        }, Some(Expression {instrs: vec![]}), Some(Expression {instrs: vec![]}))
+        }
     };
-    (($( $param:expr ),*)($( $res:expr ),*)($( $if_instr:expr ),*)($( $else_instr:expr ),*)) => {
-        Instruction::If(crate::model::BlockType {
-            label: None,
-            ty: crate::model::FuncType {
-                params: vec![
-                    $( $param ),*
-                ],
-                results: vec![$( $res ),*]
+}
 
-            }
-        }, Some(Expression {instrs: vec![
-            $( $if_instr ),*
-        ]}), Some(Expression {instrs: vec![
-            $( $else_instr ),*
-        ]}))
+macro_rules! test_if {
+    () => {
+        Instruction::If(test_block_type!(),
+            Some(Expression {instrs: vec![]}), Some(Expression {instrs: vec![]}))
+    };
+    (($( $param:expr ),*)($( $res:expr ),*)) => {
+        Instruction::If(test_block_type!(($( $param ),*)( $( $res ),*)),
+            Some(Expression {instrs: vec![]}), Some(Expression {instrs: vec![]}))
+    };
+    (($( $param:expr ),*)($( $res:expr ),*)($( $if_instr:expr ),*)
+        ($( $else_instr:expr ),*)) => {
+
+        Instruction::If(test_block_type!(($( $param ),*) ($( $res ),*)),
+            Some(Expression {instrs: vec![
+                $( $if_instr ),*
+            ]}), Some(Expression {instrs: vec![
+                $( $else_instr ),*
+            ]}))
     };
 }
 
 macro_rules! test_block {
     (($( $param:expr ),*)($( $res:expr ),*)) => {
-        Instruction::Block(crate::model::BlockType {
-            label: None,
-            ty: crate::model::FuncType {
-                params: vec![
-                    $( $param ),*
-                ],
-                results: vec![$( $res ),*]
-
-            }
-        }, Some(Expression {instrs: vec![]}))
+        Instruction::Block(test_block_type!(($( $param ),*) ($( $res ),*)),
+            Some(Expression {instrs: vec![]}))
     };
 }
 
@@ -92,6 +89,7 @@ macro_rules! test_local {
 }
 
 pub(crate) use test_block;
+pub(crate) use test_block_type;
 pub(crate) use test_if;
 pub(crate) use test_local;
 pub(crate) use test_local_id;

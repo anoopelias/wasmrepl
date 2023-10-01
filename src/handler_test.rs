@@ -3,7 +3,7 @@ use crate::{executor::State, value::Value};
 use anyhow::Result;
 
 use crate::model::{Expression, Index, Instruction, Local, ValType};
-use crate::test_utils::{test_if, test_index, test_local};
+use crate::test_utils::{test_block_type, test_if, test_index, test_local};
 
 use super::Handler;
 

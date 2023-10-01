@@ -80,7 +80,7 @@ fn close_end(instrs: Vec<Instruction>) -> Result<(Expression, ExprEnd)> {
 mod tests {
     use crate::group::group_expr;
     use crate::model::{Expression, Instruction, ValType};
-    use crate::test_utils::{test_block, test_if};
+    use crate::test_utils::{test_block, test_block_type, test_if};
 
     #[test]
     fn test_simple() {
