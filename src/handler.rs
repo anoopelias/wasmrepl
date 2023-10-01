@@ -84,6 +84,10 @@ impl<'a> Handler<'a> {
         )))
     }
 
+    fn branch(&mut self, index: Index) -> Result<Response> {
+        Ok(Response::new_ctrl(Control::Branch(index)))
+    }
+
     pub fn handle(&mut self, instr: Instruction) -> Result<Response> {
         match instr {
             Instruction::I32Const(value) => self.i32_const(value),
@@ -165,7 +169,7 @@ impl<'a> Handler<'a> {
             Instruction::Else => unreachable!(),
             Instruction::End => unreachable!(),
             Instruction::Block(bt, b) => self.block(bt, b),
-            Instruction::Br(_) => todo!(),
+            Instruction::Br(index) => self.branch(index),
         }
     }
 }

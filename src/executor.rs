@@ -190,6 +190,7 @@ impl Executor {
             Control::ExecFunc(index) => self.execute_func(&index),
             Control::ExecBlock(block_type, block) => self.execute_block(block_type, block),
             Control::Return => Ok(response),
+            Control::Branch(_) => todo!(),
         }
     }
 

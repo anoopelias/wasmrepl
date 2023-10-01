@@ -951,3 +951,9 @@ fn test_block() {
         panic!("Expected Exec::Block");
     }
 }
+
+#[test]
+fn test_branch() {
+    let response = exec_instr_handler(Instruction::Br(Index::Num(0)), &mut State::new()).unwrap();
+    assert_eq!(response.control, Control::Branch(Index::Num(0)));
+}
