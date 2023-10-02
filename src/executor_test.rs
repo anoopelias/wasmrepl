@@ -782,6 +782,29 @@ fn test_branch_nested_too_many() {
     assert!(executor.execute_line(line).is_err());
 }
 
+#[test]
+fn test_branch_from_function() {
+    let mut executor = Executor::new();
+    let func = test_func!(
+        "fn",
+        ()(ValType::I32)(
+            Instruction::I32Const(1),
+            Instruction::Br(Index::Num(0)),
+            Instruction::I32Const(2)
+        )
+    );
+    executor.execute_line(func).unwrap();
+
+    let call_func = test_line![()(
+        Instruction::Call(test_index("fn")),
+        Instruction::I32Const(3)
+    )];
+    assert_eq!(
+        executor.execute_line(call_func).unwrap().message(),
+        "[1, 3]"
+    );
+}
+
 // TODO: tests:
 // - Branch too outer error
 // - Branch too outer to function
