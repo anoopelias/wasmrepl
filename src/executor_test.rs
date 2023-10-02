@@ -238,7 +238,7 @@ fn test_local_set_get_type_error() {
 }
 
 #[test]
-fn execute_func() {
+fn test_execute_func() {
     let mut executor = Executor::new();
     let func = test_func!(
         "subtract",
@@ -264,7 +264,7 @@ fn execute_func() {
 }
 
 #[test]
-fn execute_func_error_less_number_of_inputs() {
+fn test_execute_func_error_less_number_of_inputs() {
     let mut executor = Executor::new();
     let func = test_func!("fun", (test_local!(ValType::I32))()());
     executor.execute_line(func).unwrap();
@@ -274,7 +274,7 @@ fn execute_func_error_less_number_of_inputs() {
 }
 
 #[test]
-fn execute_func_error_less_number_of_outputs() {
+fn test_execute_func_error_less_number_of_outputs() {
     let mut executor = Executor::new();
     let func = test_func!("fun", ()(ValType::I32)());
     executor.execute_line(func).unwrap();
@@ -285,7 +285,7 @@ fn execute_func_error_less_number_of_outputs() {
 }
 
 #[test]
-fn execute_func_error_more_number_of_outputs() {
+fn test_execute_func_error_more_number_of_outputs() {
     let mut executor = Executor::new();
     let func = test_func!("fun", ()()(Instruction::I32Const(5)));
     executor.execute_line(func).unwrap();
@@ -296,7 +296,7 @@ fn execute_func_error_more_number_of_outputs() {
 }
 
 #[test]
-fn execute_func_input_type() {
+fn test_execute_func_input_type() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
@@ -313,7 +313,7 @@ fn execute_func_input_type() {
 }
 
 #[test]
-fn execute_func_error_input_type() {
+fn test_execute_func_error_input_type() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
@@ -330,7 +330,7 @@ fn execute_func_error_input_type() {
 }
 
 #[test]
-fn execute_func_output_type() {
+fn test_execute_func_output_type() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
@@ -343,7 +343,7 @@ fn execute_func_output_type() {
 }
 
 #[test]
-fn execute_func_output_type_error() {
+fn test_execute_func_output_type_error() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
@@ -356,7 +356,7 @@ fn execute_func_output_type_error() {
 }
 
 #[test]
-fn execute_func_no_id() {
+fn test_execute_func_no_id() {
     let mut executor = Executor::new();
     let func = Line::Func(Func {
         id: None,
@@ -421,7 +421,7 @@ fn test_func_return_too_many() {
 }
 
 #[test]
-fn execute_func_stack_overflow_error() {
+fn test_execute_func_stack_overflow_error() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
@@ -607,7 +607,7 @@ fn test_no_else() {
 }
 
 #[test]
-fn execute_nested_return() {
+fn test_execute_nested_return() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fn",
