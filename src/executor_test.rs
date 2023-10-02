@@ -36,7 +36,7 @@ macro_rules! test_func {
 }
 
 #[test]
-fn test_execute_add() {
+fn test_add() {
     let mut executor = Executor::new();
     let line = test_line![()(
         Instruction::I32Const(42),
@@ -48,7 +48,7 @@ fn test_execute_add() {
 }
 
 #[test]
-fn test_execute_error_rollback() {
+fn test_error_rollback() {
     let mut executor = Executor::new();
     let line = test_line![()(Instruction::I32Const(55))];
     executor.execute_line(line).unwrap();
@@ -238,7 +238,7 @@ fn test_local_set_get_type_error() {
 }
 
 #[test]
-fn test_execute_func() {
+fn test_func() {
     let mut executor = Executor::new();
     let func = test_func!(
         "subtract",
@@ -264,7 +264,7 @@ fn test_execute_func() {
 }
 
 #[test]
-fn test_execute_func_error_less_number_of_inputs() {
+fn test_func_error_less_number_of_inputs() {
     let mut executor = Executor::new();
     let func = test_func!("fun", (test_local!(ValType::I32))()());
     executor.execute_line(func).unwrap();
@@ -274,7 +274,7 @@ fn test_execute_func_error_less_number_of_inputs() {
 }
 
 #[test]
-fn test_execute_func_error_less_number_of_outputs() {
+fn test_func_error_less_number_of_outputs() {
     let mut executor = Executor::new();
     let func = test_func!("fun", ()(ValType::I32)());
     executor.execute_line(func).unwrap();
@@ -285,7 +285,7 @@ fn test_execute_func_error_less_number_of_outputs() {
 }
 
 #[test]
-fn test_execute_func_error_more_number_of_outputs() {
+fn test_func_error_more_number_of_outputs() {
     let mut executor = Executor::new();
     let func = test_func!("fun", ()()(Instruction::I32Const(5)));
     executor.execute_line(func).unwrap();
@@ -296,7 +296,7 @@ fn test_execute_func_error_more_number_of_outputs() {
 }
 
 #[test]
-fn test_execute_func_input_type() {
+fn test_func_input_type() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
@@ -313,7 +313,7 @@ fn test_execute_func_input_type() {
 }
 
 #[test]
-fn test_execute_func_error_input_type() {
+fn test_func_error_input_type() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
@@ -330,7 +330,7 @@ fn test_execute_func_error_input_type() {
 }
 
 #[test]
-fn test_execute_func_output_type() {
+fn test_func_output_type() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
@@ -343,7 +343,7 @@ fn test_execute_func_output_type() {
 }
 
 #[test]
-fn test_execute_func_output_type_error() {
+fn test_func_output_type_error() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
@@ -356,7 +356,7 @@ fn test_execute_func_output_type_error() {
 }
 
 #[test]
-fn test_execute_func_no_id() {
+fn test_func_no_id() {
     let mut executor = Executor::new();
     let func = Line::Func(Func {
         id: None,
@@ -421,7 +421,7 @@ fn test_func_return_too_many() {
 }
 
 #[test]
-fn test_execute_func_stack_overflow_error() {
+fn test_func_stack_overflow_error() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
@@ -607,7 +607,7 @@ fn test_no_else() {
 }
 
 #[test]
-fn test_execute_nested_return() {
+fn test_nested_return() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fn",
@@ -639,7 +639,7 @@ fn test_execute_nested_return() {
 }
 
 #[test]
-fn test_execute_block() {
+fn test_block() {
     let mut executor = Executor::new();
     let line = test_line![()(
         Instruction::I32Const(1),
@@ -654,7 +654,7 @@ fn test_execute_block() {
 }
 
 #[test]
-fn test_execute_nested_block() {
+fn test_nested_block() {
     let mut executor = Executor::new();
     let line = test_line![()(
         Instruction::I32Const(1),
@@ -671,7 +671,7 @@ fn test_execute_nested_block() {
 }
 
 #[test]
-fn test_execute_block_branch() {
+fn test_block_branch() {
     let mut executor = Executor::new();
     let line = test_line![()(
         Instruction::I32Const(1),
@@ -686,7 +686,7 @@ fn test_execute_block_branch() {
 }
 
 #[test]
-fn test_execute_nested_branch_inner_block() {
+fn test_nested_branch_inner_block() {
     let mut executor = Executor::new();
     let line = test_line![()(
         Instruction::I32Const(1),
@@ -708,7 +708,7 @@ fn test_execute_nested_branch_inner_block() {
 }
 
 #[test]
-fn test_execute_nested_branch_outer_block() {
+fn test_nested_branch_outer_block() {
     let mut executor = Executor::new();
     let line = test_line![()(
         Instruction::I32Const(1),
@@ -729,3 +729,26 @@ fn test_execute_nested_branch_outer_block() {
         "[1, 2, 4, 7]"
     );
 }
+
+#[test]
+fn test_branch_too_many() {
+    let mut executor = Executor::new();
+    let line = test_line![()(
+        Instruction::I32Const(1),
+        test_block!(()(ValType::I32)(
+            Instruction::I32Const(2),
+            Instruction::I32Const(3),
+            Instruction::Br(Index::Num(0)),
+            Instruction::I32Const(4)
+        )),
+        Instruction::I32Const(7)
+    )];
+    assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 3, 7]");
+}
+
+// TODO: tests:
+// - Branch too outer error
+// - Branch with id
+// - Branch with function (return)
+// - Branch with function id error
+// - Branch from if

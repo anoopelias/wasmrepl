@@ -104,17 +104,34 @@
   )
   (func $fname (result i32)
     (block $bname (result i32)
-      i32.const 1
-      (if $ifname (result i32)
-        (then
-          (i32.const 2)
-          (i32.const 5)
-          (i32.const 6)
-          (i64.const 8)
-          (i32.const 9)
-          (br 0)
-          (i32.const 7))
-        (else (i32.const 3))
+      (block $blname (result i32)
+        (i32.const 7)
+        (i32.const 8)
+        (i32.const 9)
+        (br 0)
+        (i32.const 7)
+      )
+    )
+  )
+  (start $main)
+)
+
+;; Throws error
+;; branch too many returns will not work with outer loops (unlike returns statement)
+(module
+  (import "console" "log" (func $log (param i32)))
+  (func $main
+    call $fname
+    call $log
+  )
+  (func $fname (result i32)
+    (block $bname (result i32)
+      (block $blname (result i32)
+        (i32.const 7)
+        (i32.const 8)
+        (i32.const 9)
+        (br 1)
+        (i32.const 7)
       )
     )
   )

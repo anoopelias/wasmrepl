@@ -200,17 +200,20 @@ impl Executor {
         self.push_group_state(&block_type.ty)?;
         let mut response = self.execute_expr(expr)?;
 
-        match response.control {
+        let requires_empty = match response.control {
             Control::Branch(Index::Num(0)) => {
                 response.control = Control::None;
+                false
             }
             Control::Branch(Index::Num(num)) => {
                 response.control = Control::Branch(Index::Num(num - 1));
+                false
             }
-            _ => {}
-        }
+            Control::Return => false,
+            _ => true,
+        };
 
-        self.pop_state(&block_type.ty, response.control != Control::Return)?;
+        self.pop_state(&block_type.ty, requires_empty)?;
         Ok(response)
     }
 
