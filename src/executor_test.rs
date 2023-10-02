@@ -797,7 +797,7 @@ fn test_branch_not_deep_enough() {
 }
 
 #[test]
-fn test_branch_from_function() {
+fn test_func_branch() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fn",
