@@ -172,10 +172,12 @@ impl Executor {
     fn execute_expr(&mut self, expr: Expression) -> Result<Response> {
         for instr in expr.instrs {
             let response = self.execute_instr(instr)?;
-            if response.control == Control::Return {
-                // Return statement break all recursive blocks
-                // returning to calling function
-                return Ok(response);
+            // Break all recursive blocks
+            // returning to calling block
+            match response.control {
+                Control::Return => return Ok(response),
+                Control::Branch(_) => return Ok(response),
+                _ => {}
             }
         }
         Ok(Response::new())
@@ -190,7 +192,7 @@ impl Executor {
             Control::ExecFunc(index) => self.execute_func(&index),
             Control::ExecBlock(block_type, block) => self.execute_block(block_type, block),
             Control::Return => Ok(response),
-            Control::Branch(_) => todo!(),
+            Control::Branch(_) => Ok(response),
         }
     }
 
