@@ -650,6 +650,23 @@ fn test_execute_block() {
 }
 
 #[test]
+fn test_execute_nested_block() {
+    let mut executor = Executor::new();
+    let line = test_line![()(
+        Instruction::I32Const(1),
+        test_block!(()(ValType::I32, ValType::I32)(
+            Instruction::I32Const(2),
+            test_block!(()(ValType::I32)(Instruction::I32Const(3)))
+        )),
+        Instruction::I32Const(4)
+    )];
+    assert_eq!(
+        executor.execute_line(line).unwrap().message(),
+        "[1, 2, 3, 4]"
+    );
+}
+
+#[test]
 fn test_execute_block_branch() {
     let mut executor = Executor::new();
     let line = test_line![()(
