@@ -819,8 +819,24 @@ fn test_func_branch() {
     );
 }
 
+#[test]
+fn test_func_branch_not_deep_enough() {
+    let mut executor = Executor::new();
+    let func = test_func!(
+        "fn",
+        ()(ValType::I32)(
+            Instruction::I32Const(1),
+            Instruction::Br(Index::Num(1)),
+            Instruction::I32Const(2)
+        )
+    );
+    executor.execute_line(func).unwrap();
+
+    let call_func = test_line![()(Instruction::Call(test_index("fn")))];
+    assert!(executor.execute_line(call_func).is_err());
+}
+
 // TODO: tests:
-// - Branch too outer to function
 // - Branch with id
 // - Branch with function (return)
 // - Branch with function id error

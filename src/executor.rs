@@ -95,6 +95,8 @@ impl Executor {
         self.push_func_state(&func.ty)?;
         let response = self.execute_line_expression(func.line_expression)?;
 
+        verify_func_response(&response)?;
+
         self.pop_state(&func.ty, response.requires_empty)?;
         Ok(Response::new())
     }
@@ -211,11 +213,19 @@ impl Executor {
     }
 }
 
+fn verify_func_response(response: &Response) -> Result<()> {
+    match response.control {
+        Control::Branch(Index::Num(0)) => Ok(()),
+        Control::Branch(Index::Num(_)) => Err(anyhow!("br leaking out")),
+        _ => Ok(()),
+    }
+}
+
 fn verify_repl_result(result: Result<Response>) -> Result<Response> {
     match result {
         Ok(response) => match response.control {
             Control::Return => Err(anyhow!("return is allowed only in func")),
-            Control::Branch(_) => Err(anyhow!("Branch not deep enough to exit")),
+            Control::Branch(_) => Err(anyhow!("br leaking out")),
             _ => Ok(response),
         },
         Err(err) => Err(err),
