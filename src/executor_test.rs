@@ -643,10 +643,14 @@ fn test_execute_block() {
     let mut executor = Executor::new();
     let line = test_line![()(
         Instruction::I32Const(1),
-        test_block!(()(ValType::I32)(Instruction::I32Const(2))),
-        Instruction::I32Const(3)
+        Instruction::I32Const(2),
+        test_block!((test_local!(ValType::I32))(ValType::I32)(
+            Instruction::I32Const(3),
+            Instruction::I32Add
+        )),
+        Instruction::I32Const(4)
     )];
-    assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 2, 3]");
+    assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 5, 4]");
 }
 
 #[test]
@@ -679,4 +683,49 @@ fn test_execute_block_branch() {
         Instruction::I32Const(4)
     )];
     assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 2, 4]");
+}
+
+#[test]
+fn test_execute_nested_branch_inner_block() {
+    let mut executor = Executor::new();
+    let line = test_line![()(
+        Instruction::I32Const(1),
+        test_block!(()(ValType::I32, ValType::I32, ValType::I32)(
+            Instruction::I32Const(2),
+            test_block!(()(ValType::I32)(
+                Instruction::I32Const(3),
+                Instruction::Br(Index::Num(0)),
+                Instruction::I32Const(4)
+            )),
+            Instruction::I32Const(5)
+        )),
+        Instruction::I32Const(6)
+    )];
+    assert_eq!(
+        executor.execute_line(line).unwrap().message(),
+        "[1, 2, 3, 5, 6]"
+    );
+}
+
+#[test]
+fn test_execute_nested_branch_outer_block() {
+    let mut executor = Executor::new();
+    let line = test_line![()(
+        Instruction::I32Const(1),
+        test_block!(()(ValType::I32, ValType::I32)(
+            Instruction::I32Const(2),
+            test_block!(()(ValType::I32)(
+                Instruction::I32Const(4),
+                Instruction::Br(Index::Num(1)),
+                Instruction::Drop,
+                Instruction::I32Const(5)
+            )),
+            Instruction::I32Const(6)
+        )),
+        Instruction::I32Const(7)
+    )];
+    assert_eq!(
+        executor.execute_line(line).unwrap().message(),
+        "[1, 2, 4, 7]"
+    );
 }

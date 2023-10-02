@@ -198,7 +198,18 @@ impl Executor {
 
     fn execute_block(&mut self, block_type: BlockType, expr: Expression) -> Result<Response> {
         self.push_group_state(&block_type.ty)?;
-        let response = self.execute_expr(expr)?;
+        let mut response = self.execute_expr(expr)?;
+
+        match response.control {
+            Control::Branch(Index::Num(0)) => {
+                response.control = Control::None;
+            }
+            Control::Branch(Index::Num(num)) => {
+                response.control = Control::Branch(Index::Num(num - 1));
+            }
+            _ => {}
+        }
+
         self.pop_state(&block_type.ty, response.control != Control::Return)?;
         Ok(response)
     }
