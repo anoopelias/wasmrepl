@@ -103,7 +103,7 @@ impl Executor {
         self.push_func_state(&func.ty)?;
         let response = self.execute_line_expression(func.line_expression)?;
 
-        self.pop_state(&func.ty, response.control != Control::Return)?;
+        self.pop_state(&func.ty, response.requires_empty)?;
         Ok(Response::new())
     }
 
@@ -188,11 +188,9 @@ impl Executor {
         let response = handler.handle(instr)?;
 
         match response.control {
-            Control::None => Ok(response),
             Control::ExecFunc(index) => self.execute_func(&index),
             Control::ExecBlock(block_type, block) => self.execute_block(block_type, block),
-            Control::Return => Ok(response),
-            Control::Branch(_) => Ok(response),
+            _ => Ok(response),
         }
     }
 
@@ -200,20 +198,14 @@ impl Executor {
         self.push_group_state(&block_type.ty)?;
         let mut response = self.execute_expr(expr)?;
 
-        let requires_empty = match response.control {
-            Control::Branch(Index::Num(0)) => {
-                response.control = Control::None;
-                false
-            }
-            Control::Branch(Index::Num(num)) => {
-                response.control = Control::Branch(Index::Num(num - 1));
-                false
-            }
-            Control::Return => false,
-            _ => true,
+        response.control = match response.control {
+            Control::Branch(Index::Num(0)) => Control::None,
+            Control::Branch(Index::Num(num)) => Control::Branch(Index::Num(num - 1)),
+            _ => response.control,
         };
 
-        self.pop_state(&block_type.ty, requires_empty)?;
+        self.pop_state(&block_type.ty, response.requires_empty)?;
+        response.requires_empty = true;
         Ok(response)
     }
 

@@ -607,7 +607,7 @@ fn test_no_else() {
 }
 
 #[test]
-fn test_nested_return() {
+fn test_func_nested_return() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fn",
@@ -636,6 +636,26 @@ fn test_nested_return() {
         Instruction::Call(test_index("fn"))
     )];
     assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[5]");
+}
+
+#[test]
+fn test_func_nested_too_many() {
+    let mut executor = Executor::new();
+    let func = test_func!(
+        "fn",
+        ()(ValType::I32)(
+            Instruction::I32Const(1),
+            test_block!(()(ValType::I32)(
+                Instruction::I32Const(2),
+                Instruction::Return,
+                Instruction::I32Const(3)
+            ))
+        )
+    );
+    executor.execute_line(func).unwrap();
+
+    let call_func = test_line![()(Instruction::Call(test_index("fn")))];
+    assert!(executor.execute_line(call_func).is_err());
 }
 
 #[test]
@@ -717,7 +737,6 @@ fn test_nested_branch_outer_block() {
             test_block!(()(ValType::I32)(
                 Instruction::I32Const(4),
                 Instruction::Br(Index::Num(1)),
-                Instruction::Drop,
                 Instruction::I32Const(5)
             )),
             Instruction::I32Const(6)
@@ -746,8 +765,26 @@ fn test_branch_too_many() {
     assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 3, 7]");
 }
 
+#[test]
+fn test_branch_nested_too_many() {
+    let mut executor = Executor::new();
+    let line = test_line![()(
+        Instruction::I32Const(1),
+        test_block!(()(ValType::I32)(
+            Instruction::I32Const(2),
+            test_block!(()(ValType::I32)(
+                Instruction::I32Const(3),
+                Instruction::Br(Index::Num(1)),
+                Instruction::I32Const(4)
+            ))
+        ))
+    )];
+    assert!(executor.execute_line(line).is_err());
+}
+
 // TODO: tests:
 // - Branch too outer error
+// - Branch too outer to function
 // - Branch with id
 // - Branch with function (return)
 // - Branch with function id error
