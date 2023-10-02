@@ -73,25 +73,17 @@ impl Executor {
         let result = self.execute_line_expression(line);
         let state = self.call_stack.last_mut().unwrap();
 
-        match result {
-            Ok(response) => {
-                if response.control == Control::Return {
-                    state.rollback();
-                    Err(anyhow!("return is allowed only in func"))
-                } else {
-                    state.commit();
-                    Ok(response)
-                }
+        match verify_repl_result(result) {
+            Ok(mut response) => {
+                state.commit();
+                response.add_message(format!("{}", self.to_state()));
+                Ok(response)
             }
             Err(err) => {
                 state.rollback();
                 Err(err)
             }
         }
-        .map(|mut resp| {
-            resp.add_message(format!("{}", self.to_state()));
-            resp
-        })
     }
 
     fn execute_func(&mut self, index: &Index) -> Result<Response> {
@@ -216,6 +208,17 @@ impl Executor {
             .locals
             .grow(lc.id.clone(), default_value(lc)?)
             .map(|i| Response::new_index("local", i, id))
+    }
+}
+
+fn verify_repl_result(result: Result<Response>) -> Result<Response> {
+    match result {
+        Ok(response) => match response.control {
+            Control::Return => Err(anyhow!("return is allowed only in func")),
+            Control::Branch(_) => Err(anyhow!("Branch not deep enough to exit")),
+            _ => Ok(response),
+        },
+        Err(err) => Err(err),
     }
 }
 

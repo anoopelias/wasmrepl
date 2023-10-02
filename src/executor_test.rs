@@ -783,6 +783,20 @@ fn test_branch_nested_too_many() {
 }
 
 #[test]
+fn test_branch_not_deep_enough() {
+    let mut executor = Executor::new();
+    let line = test_line![()(
+        Instruction::I32Const(1),
+        test_block!(()(ValType::I32)(test_block!(()(ValType::I32)(
+            Instruction::I32Const(3),
+            Instruction::Br(Index::Num(2)),
+            Instruction::I32Const(4)
+        ))))
+    )];
+    assert!(executor.execute_line(line).is_err());
+}
+
+#[test]
 fn test_branch_from_function() {
     let mut executor = Executor::new();
     let func = test_func!(
@@ -806,7 +820,6 @@ fn test_branch_from_function() {
 }
 
 // TODO: tests:
-// - Branch too outer error
 // - Branch too outer to function
 // - Branch with id
 // - Branch with function (return)
