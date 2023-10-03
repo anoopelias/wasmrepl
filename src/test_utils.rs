@@ -43,19 +43,11 @@ macro_rules! test_block_type {
 }
 
 macro_rules! test_if {
-    () => {
-        Instruction::If(test_block_type!(),
-            Some(Expression {instrs: vec![]}), Some(Expression {instrs: vec![]}))
+    (($bt:expr)) => {
+        Instruction::If($bt, Some(Expression {instrs: vec![]}), Some(Expression {instrs: vec![]}))
     };
-    (($( $param:expr ),*)($( $res:expr ),*)) => {
-        Instruction::If(test_block_type!(($( $param ),*)( $( $res ),*)),
-            Some(Expression {instrs: vec![]}), Some(Expression {instrs: vec![]}))
-    };
-    (($( $param:expr ),*)($( $res:expr ),*)($( $if_instr:expr ),*)
-        ($( $else_instr:expr ),*)) => {
-
-        Instruction::If(test_block_type!(($( $param ),*) ($( $res ),*)),
-            Some(Expression {instrs: vec![
+    (($bt:expr)($( $if_instr:expr ),*)($( $else_instr:expr ),*)) => {
+        Instruction::If($bt, Some(Expression {instrs: vec![
                 $( $if_instr ),*
             ]}), Some(Expression {instrs: vec![
                 $( $else_instr ),*

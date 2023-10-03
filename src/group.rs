@@ -79,8 +79,8 @@ fn close_end(instrs: Vec<Instruction>) -> Result<(Expression, ExprEnd)> {
 #[cfg(test)]
 mod tests {
     use crate::group::group_expr;
-    use crate::model::{Expression, Instruction, ValType};
-    use crate::test_utils::{test_block, test_block_type, test_if};
+    use crate::model::{Expression, Instruction, Local, ValType};
+    use crate::test_utils::{test_block, test_block_type, test_if, test_local};
 
     #[test]
     fn test_simple() {
@@ -94,9 +94,10 @@ mod tests {
 
     #[test]
     fn test_if_else() {
+        let block_type = test_block_type!((test_local!(ValType::I32))(ValType::I32));
         let instrs = vec![
             Instruction::I32Const(1),
-            test_if!(()(ValType::I32)),
+            test_if!((block_type)),
             Instruction::I32Const(2),
             Instruction::I32Const(3),
             Instruction::Else,
@@ -124,9 +125,10 @@ mod tests {
 
     #[test]
     fn test_only_if() {
+        let block_type = test_block_type!((test_local!(ValType::I32))(ValType::I32));
         let instrs = vec![
             Instruction::I32Const(1),
-            test_if!(()(ValType::I32, ValType::I32)),
+            test_if!((block_type)),
             Instruction::I32Const(2),
             Instruction::I32Const(3),
             Instruction::End,
@@ -173,9 +175,10 @@ mod tests {
 
     #[test]
     fn test_nested_end_error() {
+        let block_type = test_block_type!(()(ValType::I32));
         let instrs = vec![
             Instruction::I32Const(1),
-            test_if!(()(ValType::I32)),
+            test_if!((block_type)),
             Instruction::I32Const(2),
             Instruction::End,
             Instruction::I32Const(3),
@@ -190,9 +193,10 @@ mod tests {
 
     #[test]
     fn test_if_no_end_error() {
+        let block_type = test_block_type!(()(ValType::I32));
         let instrs = vec![
             Instruction::I32Const(1),
-            test_if!(()(ValType::I32)),
+            test_if!((block_type)),
             Instruction::I32Const(2),
             Instruction::I32Const(3),
             Instruction::Else,
