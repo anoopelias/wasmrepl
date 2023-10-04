@@ -876,7 +876,8 @@ fn test_if_instr() {
     let response = exec_instr_handler(
         test_if!(
             block_type,
-            (Instruction::I32Const(2))(Instruction::I32Const(3))
+            (Instruction::I32Const(2)),
+            (Instruction::I32Const(3))
         ),
         &mut state,
     )
@@ -903,7 +904,8 @@ fn test_if_else() {
     let response = exec_instr_handler(
         test_if!(
             block_type,
-            (Instruction::I32Const(2))(Instruction::I32Const(3))
+            (Instruction::I32Const(2)),
+            (Instruction::I32Const(3))
         ),
         &mut state,
     )
