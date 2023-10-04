@@ -872,7 +872,7 @@ fn test_call_func() {
 fn test_if_instr() {
     let mut state = State::new();
     state.stack.push(1.into());
-    let block_type = test_block_type!((test_local!(ValType::I64))(ValType::I32));
+    let block_type = test_block_type!((test_local!(ValType::I64)), (ValType::I32));
     let response = exec_instr_handler(
         test_if!(
             block_type,
@@ -900,7 +900,7 @@ fn test_if_instr() {
 fn test_if_else() {
     let mut state = State::new();
     state.stack.push(0.into());
-    let block_type = test_block_type!((test_local!(ValType::I64))(ValType::I32));
+    let block_type = test_block_type!((test_local!(ValType::I64)), (ValType::I32));
     let response = exec_instr_handler(
         test_if!(
             block_type,

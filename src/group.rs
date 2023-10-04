@@ -94,7 +94,7 @@ mod tests {
 
     #[test]
     fn test_if_else() {
-        let block_type = test_block_type!((test_local!(ValType::I32))(ValType::I32));
+        let block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
         let instrs = vec![
             Instruction::I32Const(1),
             test_if!((block_type)),
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_only_if() {
-        let block_type = test_block_type!((test_local!(ValType::I32))(ValType::I32));
+        let block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
         let instrs = vec![
             Instruction::I32Const(1),
             test_if!((block_type)),
@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn test_nested_end_error() {
-        let block_type = test_block_type!(()(ValType::I32));
+        let block_type = test_block_type!((), (ValType::I32));
         let instrs = vec![
             Instruction::I32Const(1),
             test_if!((block_type)),
@@ -193,7 +193,7 @@ mod tests {
 
     #[test]
     fn test_if_no_end_error() {
-        let block_type = test_block_type!(()(ValType::I32));
+        let block_type = test_block_type!((), (ValType::I32));
         let instrs = vec![
             Instruction::I32Const(1),
             test_if!((block_type)),

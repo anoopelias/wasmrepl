@@ -446,9 +446,10 @@ fn test_return_line() {
 #[test]
 fn test_if() {
     let mut executor = Executor::new();
-    let block_type = test_block_type!((test_local!(ValType::I32), test_local!(ValType::I32))(
-        ValType::I32
-    ));
+    let block_type = test_block_type!(
+        (test_local!(ValType::I32), test_local!(ValType::I32)),
+        (ValType::I32)
+    );
     let line = test_line![()(
         Instruction::I32Const(12),
         Instruction::I32Const(3),
@@ -462,9 +463,10 @@ fn test_if() {
 #[test]
 fn test_if_execution_error() {
     let mut executor = Executor::new();
-    let block_type = test_block_type!((test_local!(ValType::I32), test_local!(ValType::I32))(
-        ValType::I32
-    ));
+    let block_type = test_block_type!(
+        (test_local!(ValType::I32), test_local!(ValType::I32)),
+        (ValType::I32)
+    );
     let line = test_line![()(
         Instruction::I32Const(1),
         test_if!(block_type, (Instruction::I32Add), (Instruction::I32Sub)),
@@ -476,7 +478,7 @@ fn test_if_execution_error() {
 #[test]
 fn test_if_param_error() {
     let mut executor = Executor::new();
-    let block_type = test_block_type!((test_local!(ValType::I32))(ValType::I32));
+    let block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
         test_if!(block_type),
@@ -489,7 +491,7 @@ fn test_if_param_error() {
 #[test]
 fn test_if_param_type_error() {
     let mut executor = Executor::new();
-    let block_type = test_block_type!((test_local!(ValType::I32))(ValType::I32));
+    let block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
     let line = test_line![()(
         Instruction::F32Const(1.0),
         Instruction::I32Const(1),
@@ -505,7 +507,7 @@ fn test_if_result_error() {
     let mut executor = Executor::new();
     let line = test_line![()(
         Instruction::I32Const(1),
-        test_if!(test_block_type!(()(ValType::I32))),
+        test_if!(test_block_type!((), (ValType::I32))),
         Instruction::I32Const(4)
     )];
     assert!(executor.execute_line(line).is_err());
@@ -515,7 +517,7 @@ fn test_if_result_error() {
 #[test]
 fn test_if_result_type_error() {
     let mut executor = Executor::new();
-    let block_type = test_block_type!(()(ValType::I32));
+    let block_type = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
         test_if!(
@@ -532,7 +534,7 @@ fn test_if_result_type_error() {
 #[test]
 fn test_if_result_too_many() {
     let mut executor = Executor::new();
-    let block_type = test_block_type!(()(ValType::I32));
+    let block_type = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
         test_if!(
@@ -549,9 +551,10 @@ fn test_if_result_too_many() {
 #[test]
 fn test_else() {
     let mut executor = Executor::new();
-    let block_type = test_block_type!((test_local!(ValType::I32), test_local!(ValType::I32))(
-        ValType::I32
-    ));
+    let block_type = test_block_type!(
+        (test_local!(ValType::I32), test_local!(ValType::I32)),
+        (ValType::I32)
+    );
     let line = test_line![()(
         Instruction::I32Const(12),
         Instruction::I32Const(3),
@@ -565,8 +568,8 @@ fn test_else() {
 #[test]
 fn test_nested_if() {
     let mut executor = Executor::new();
-    let bt = test_block_type!(()(ValType::I32));
-    let bti = test_block_type!(()(ValType::I32));
+    let bt = test_block_type!((), (ValType::I32));
+    let bti = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
         test_if!(
@@ -585,8 +588,8 @@ fn test_nested_if() {
 #[test]
 fn test_skip_nested_if() {
     let mut executor = Executor::new();
-    let bt = test_block_type!(()(ValType::I32));
-    let bti = test_block_type!(()(ValType::I32));
+    let bt = test_block_type!((), (ValType::I32));
+    let bti = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(-1),
         test_if!(
@@ -635,7 +638,7 @@ fn test_no_else() {
 #[test]
 fn test_func_nested_return() {
     let mut executor = Executor::new();
-    let block_type = test_block_type!(()(ValType::I32));
+    let block_type = test_block_type!((), (ValType::I32));
     let func = test_func!(
         "fn",
         (test_local!(ValType::I32))(ValType::I32)(
