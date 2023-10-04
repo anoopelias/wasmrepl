@@ -874,9 +874,10 @@ fn test_if_instr() {
     state.stack.push(1.into());
     let block_type = test_block_type!((test_local!(ValType::I64))(ValType::I32));
     let response = exec_instr_handler(
-        test_if!((block_type)(Instruction::I32Const(2))(
-            Instruction::I32Const(3)
-        )),
+        test_if!(
+            block_type,
+            (Instruction::I32Const(2))(Instruction::I32Const(3))
+        ),
         &mut state,
     )
     .unwrap();
@@ -900,9 +901,10 @@ fn test_if_else() {
     state.stack.push(0.into());
     let block_type = test_block_type!((test_local!(ValType::I64))(ValType::I32));
     let response = exec_instr_handler(
-        test_if!((block_type)(Instruction::I32Const(2))(
-            Instruction::I32Const(3)
-        )),
+        test_if!(
+            block_type,
+            (Instruction::I32Const(2))(Instruction::I32Const(3))
+        ),
         &mut state,
     )
     .unwrap();
@@ -916,7 +918,7 @@ fn test_if_else() {
 
 #[test]
 fn test_if_error() {
-    assert!(exec_instr_handler(test_if!((test_block_type!())), &mut State::new()).is_err());
+    assert!(exec_instr_handler(test_if!(test_block_type!()), &mut State::new()).is_err());
 }
 
 #[test]
