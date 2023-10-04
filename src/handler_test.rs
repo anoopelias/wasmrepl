@@ -937,10 +937,9 @@ fn test_end() {
 
 #[test]
 fn test_block() {
+    let block_type = test_block_type!((test_local!(ValType::I64)), (ValType::I32));
     let response = exec_instr_handler(
-        test_block!((test_local!(ValType::I64))(ValType::I32)(
-            Instruction::I32Const(2)
-        )),
+        test_block!(block_type, (Instruction::I32Const(2))),
         &mut State::new(),
     )
     .unwrap();

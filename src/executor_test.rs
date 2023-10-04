@@ -568,15 +568,19 @@ fn test_else() {
 #[test]
 fn test_nested_if() {
     let mut executor = Executor::new();
-    let bt = test_block_type!((), (ValType::I32));
-    let bti = test_block_type!((), (ValType::I32));
+    let block_type = test_block_type!((), (ValType::I32));
+    let block_type_inner = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
         test_if!(
-            bt,
+            block_type,
             (
                 Instruction::I32Const(2),
-                test_if!(bti, (Instruction::I32Const(3)), (Instruction::I32Const(5)))
+                test_if!(
+                    block_type_inner,
+                    (Instruction::I32Const(3)),
+                    (Instruction::I32Const(5))
+                )
             ),
             (Instruction::I32Const(4))
         ),
@@ -588,15 +592,19 @@ fn test_nested_if() {
 #[test]
 fn test_skip_nested_if() {
     let mut executor = Executor::new();
-    let bt = test_block_type!((), (ValType::I32));
-    let bti = test_block_type!((), (ValType::I32));
+    let block_type = test_block_type!((), (ValType::I32));
+    let block_type_inner = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(-1),
         test_if!(
-            bt,
+            block_type,
             (
                 Instruction::I32Const(2),
-                test_if!(bti, (Instruction::I32Const(3)), (Instruction::I32Const(5)))
+                test_if!(
+                    block_type_inner,
+                    (Instruction::I32Const(3)),
+                    (Instruction::I32Const(5))
+                )
             ),
             (Instruction::I32Const(4))
         ),
@@ -675,15 +683,19 @@ fn test_func_nested_return() {
 #[test]
 fn test_func_nested_too_many() {
     let mut executor = Executor::new();
+    let block_type = test_block_type!((), (ValType::I32));
     let func = test_func!(
         "fn",
         ()(ValType::I32)(
             Instruction::I32Const(1),
-            test_block!(()(ValType::I32)(
-                Instruction::I32Const(2),
-                Instruction::Return,
-                Instruction::I32Const(3)
-            ))
+            test_block!(
+                block_type,
+                (
+                    Instruction::I32Const(2),
+                    Instruction::Return,
+                    Instruction::I32Const(3)
+                )
+            )
         )
     );
     executor.execute_line(func).unwrap();
@@ -695,13 +707,11 @@ fn test_func_nested_too_many() {
 #[test]
 fn test_block() {
     let mut executor = Executor::new();
+    let block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
         Instruction::I32Const(2),
-        test_block!((test_local!(ValType::I32))(ValType::I32)(
-            Instruction::I32Const(3),
-            Instruction::I32Add
-        )),
+        test_block!(block_type, (Instruction::I32Const(3), Instruction::I32Add)),
         Instruction::I32Const(4)
     )];
     assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 5, 4]");
@@ -710,12 +720,17 @@ fn test_block() {
 #[test]
 fn test_nested_block() {
     let mut executor = Executor::new();
+    let block_type = test_block_type!((), (ValType::I32, ValType::I32));
+    let block_type_inner = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
-        test_block!(()(ValType::I32, ValType::I32)(
-            Instruction::I32Const(2),
-            test_block!(()(ValType::I32)(Instruction::I32Const(3)))
-        )),
+        test_block!(
+            block_type,
+            (
+                Instruction::I32Const(2),
+                test_block!(block_type_inner, (Instruction::I32Const(3)))
+            )
+        ),
         Instruction::I32Const(4)
     )];
     assert_eq!(
@@ -727,13 +742,17 @@ fn test_nested_block() {
 #[test]
 fn test_block_branch() {
     let mut executor = Executor::new();
+    let block_type = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
-        test_block!(()(ValType::I32)(
-            Instruction::I32Const(2),
-            Instruction::Br(Index::Num(0)),
-            Instruction::I32Const(3)
-        )),
+        test_block!(
+            block_type,
+            (
+                Instruction::I32Const(2),
+                Instruction::Br(Index::Num(0)),
+                Instruction::I32Const(3)
+            )
+        ),
         Instruction::I32Const(4)
     )];
     assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 2, 4]");
@@ -742,13 +761,17 @@ fn test_block_branch() {
 #[test]
 fn test_block_branch_by_id() {
     let mut executor = Executor::new();
+    let block_type = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
-        test_block!(()(ValType::I32)(
-            Instruction::I32Const(2),
-            Instruction::Br(Index::Num(0)),
-            Instruction::I32Const(3)
-        )),
+        test_block!(
+            block_type,
+            (
+                Instruction::I32Const(2),
+                Instruction::Br(Index::Num(0)),
+                Instruction::I32Const(3)
+            )
+        ),
         Instruction::I32Const(4)
     )];
     assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 2, 4]");
@@ -757,17 +780,25 @@ fn test_block_branch_by_id() {
 #[test]
 fn test_nested_branch_inner_block() {
     let mut executor = Executor::new();
+    let block_type = test_block_type!((), (ValType::I32, ValType::I32, ValType::I32));
+    let block_type_inner = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
-        test_block!(()(ValType::I32, ValType::I32, ValType::I32)(
-            Instruction::I32Const(2),
-            test_block!(()(ValType::I32)(
-                Instruction::I32Const(3),
-                Instruction::Br(Index::Num(0)),
-                Instruction::I32Const(4)
-            )),
-            Instruction::I32Const(5)
-        )),
+        test_block!(
+            block_type,
+            (
+                Instruction::I32Const(2),
+                test_block!(
+                    block_type_inner,
+                    (
+                        Instruction::I32Const(3),
+                        Instruction::Br(Index::Num(0)),
+                        Instruction::I32Const(4)
+                    )
+                ),
+                Instruction::I32Const(5)
+            )
+        ),
         Instruction::I32Const(6)
     )];
     assert_eq!(
@@ -779,17 +810,25 @@ fn test_nested_branch_inner_block() {
 #[test]
 fn test_nested_branch_outer_block() {
     let mut executor = Executor::new();
+    let block_type = test_block_type!((), (ValType::I32, ValType::I32));
+    let block_type_inner = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
-        test_block!(()(ValType::I32, ValType::I32)(
-            Instruction::I32Const(2),
-            test_block!(()(ValType::I32)(
-                Instruction::I32Const(4),
-                Instruction::Br(Index::Num(1)),
-                Instruction::I32Const(5)
-            )),
-            Instruction::I32Const(6)
-        )),
+        test_block!(
+            block_type,
+            (
+                Instruction::I32Const(2),
+                test_block!(
+                    block_type_inner,
+                    (
+                        Instruction::I32Const(4),
+                        Instruction::Br(Index::Num(1)),
+                        Instruction::I32Const(5)
+                    )
+                ),
+                Instruction::I32Const(6)
+            )
+        ),
         Instruction::I32Const(7)
     )];
     assert_eq!(
@@ -801,14 +840,18 @@ fn test_nested_branch_outer_block() {
 #[test]
 fn test_branch_too_many() {
     let mut executor = Executor::new();
+    let block_type = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
-        test_block!(()(ValType::I32)(
-            Instruction::I32Const(2),
-            Instruction::I32Const(3),
-            Instruction::Br(Index::Num(0)),
-            Instruction::I32Const(4)
-        )),
+        test_block!(
+            block_type,
+            (
+                Instruction::I32Const(2),
+                Instruction::I32Const(3),
+                Instruction::Br(Index::Num(0)),
+                Instruction::I32Const(4)
+            )
+        ),
         Instruction::I32Const(7)
     )];
     assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 3, 7]");
@@ -817,16 +860,24 @@ fn test_branch_too_many() {
 #[test]
 fn test_branch_nested_too_many() {
     let mut executor = Executor::new();
+    let block_type = test_block_type!((), (ValType::I32));
+    let block_type_inner = test_block_type!((), (ValType::I32));
     let line = test_line![()(
         Instruction::I32Const(1),
-        test_block!(()(ValType::I32)(
-            Instruction::I32Const(2),
-            test_block!(()(ValType::I32)(
-                Instruction::I32Const(3),
-                Instruction::Br(Index::Num(1)),
-                Instruction::I32Const(4)
-            ))
-        ))
+        test_block!(
+            block_type,
+            (
+                Instruction::I32Const(2),
+                test_block!(
+                    block_type_inner,
+                    (
+                        Instruction::I32Const(3),
+                        Instruction::Br(Index::Num(1)),
+                        Instruction::I32Const(4)
+                    )
+                )
+            )
+        )
     )];
     assert!(executor.execute_line(line).is_err());
 }
@@ -834,13 +885,22 @@ fn test_branch_nested_too_many() {
 #[test]
 fn test_branch_not_deep_enough() {
     let mut executor = Executor::new();
+    let block_type = test_block_type!((), (ValType::I32));
+    let block_type_inner = test_block_type!((), (ValType::I32));
+
     let line = test_line![()(
         Instruction::I32Const(1),
-        test_block!(()(ValType::I32)(test_block!(()(ValType::I32)(
-            Instruction::I32Const(3),
-            Instruction::Br(Index::Num(2)),
-            Instruction::I32Const(4)
-        ))))
+        test_block!(
+            block_type,
+            (test_block!(
+                block_type_inner,
+                (
+                    Instruction::I32Const(3),
+                    Instruction::Br(Index::Num(2)),
+                    Instruction::I32Const(4)
+                )
+            ))
+        )
     )];
     assert!(executor.execute_line(line).is_err());
 }

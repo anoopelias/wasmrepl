@@ -209,9 +209,10 @@ mod tests {
 
     #[test]
     fn test_block() {
+        let block_type = test_block_type!((), (ValType::I32));
         let instrs = vec![
             Instruction::I32Const(1),
-            test_block!(()(ValType::I32)),
+            test_block!(block_type),
             Instruction::I32Const(2),
             Instruction::End,
             Instruction::I32Const(3),
@@ -232,9 +233,10 @@ mod tests {
 
     #[test]
     fn test_block_else_error() {
+        let block_type = test_block_type!((), (ValType::I32));
         let instrs = vec![
             Instruction::I32Const(1),
-            test_block!(()(ValType::I32)),
+            test_block!(block_type),
             Instruction::I32Const(2),
             Instruction::Else,
             Instruction::I32Const(3),

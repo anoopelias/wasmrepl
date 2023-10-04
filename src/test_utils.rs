@@ -56,15 +56,13 @@ macro_rules! test_if {
 }
 
 macro_rules! test_block {
-    (($( $param:expr ),*)($( $res:expr ),*)) => {
-        Instruction::Block(test_block_type!(($( $param ),*), ($( $res ),*)),
-            Some(Expression {instrs: vec![]}))
+    ($bt:expr) => {
+        Instruction::Block($bt, Some(Expression {instrs: vec![]}))
     };
-    (($( $param:expr ),*)($( $res:expr ),*)($( $block_instr:expr ),*)) => {
-        Instruction::Block(test_block_type!(($( $param ),*), ($( $res ),*)),
-            Some(Expression {instrs: vec![
-                $( $block_instr ),*
-            ]}))
+    ($bt:expr, ($( $block_instr:expr ),*)) => {
+        Instruction::Block($bt, Some(Expression {instrs: vec![
+            $( $block_instr ),*
+        ]}))
     };
 }
 
