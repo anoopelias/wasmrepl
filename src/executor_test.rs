@@ -759,26 +759,6 @@ fn test_block_branch() {
 }
 
 #[test]
-fn test_block_branch_by_id() {
-    let mut executor = Executor::new();
-    let mut block_type = test_block_type!((), (ValType::I32));
-    block_type.label = Some("block_id".to_string());
-    let line = test_line![()(
-        Instruction::I32Const(1),
-        test_block!(
-            block_type,
-            (
-                Instruction::I32Const(2),
-                Instruction::Br(Index::Id("block_id".to_string())),
-                Instruction::I32Const(3)
-            )
-        ),
-        Instruction::I32Const(4)
-    )];
-    assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 2, 4]");
-}
-
-#[test]
 fn test_nested_branch_inner_block() {
     let mut executor = Executor::new();
     let block_type = test_block_type!((), (ValType::I32, ValType::I32, ValType::I32));
@@ -946,8 +926,47 @@ fn test_func_branch_not_deep_enough_error() {
     assert!(executor.execute_line(call_func).is_err());
 }
 
+#[test]
+fn test_block_branch_by_id() {
+    let mut executor = Executor::new();
+    let mut block_type = test_block_type!((), (ValType::I32));
+    block_type.label = Some("block_id".to_string());
+    let line = test_line![()(
+        Instruction::I32Const(1),
+        test_block!(
+            block_type,
+            (
+                Instruction::I32Const(2),
+                Instruction::Br(Index::Id("block_id".to_string())),
+                Instruction::I32Const(3)
+            )
+        ),
+        Instruction::I32Const(4)
+    )];
+    assert_eq!(executor.execute_line(line).unwrap().message(), "[1, 2, 4]");
+}
+
+#[test]
+fn test_block_branch_by_unknown_id_error() {
+    let mut executor = Executor::new();
+    let mut block_type = test_block_type!((), (ValType::I32));
+    block_type.label = Some("block_id".to_string());
+    let line = test_line![()(
+        Instruction::I32Const(1),
+        test_block!(
+            block_type,
+            (
+                Instruction::I32Const(2),
+                Instruction::Br(Index::Id("block_id_uk".to_string())),
+                Instruction::I32Const(3)
+            )
+        ),
+        Instruction::I32Const(4)
+    )];
+    assert!(executor.execute_line(line).is_err());
+}
+
 // TODO: tests:
-// - Branch with unknown id
 // - Branch with function (return)
 // - Branch with function id error
 // - Branch from if
