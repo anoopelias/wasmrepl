@@ -305,6 +305,7 @@ pub enum Instruction {
     End,
     Block(BlockType, Option<Expression>),
     Br(Index),
+    Loop(BlockType, Option<Expression>),
 }
 
 impl TryFrom<&WastInstruction<'_>> for Instruction {
@@ -391,6 +392,7 @@ impl TryFrom<&WastInstruction<'_>> for Instruction {
             WastInstruction::End(_) => Ok(Instruction::End),
             WastInstruction::Block(ty) => Ok(Instruction::Block(ty.try_into()?, None)),
             WastInstruction::Br(index) => Ok(Instruction::Br(index.try_into()?)),
+            WastInstruction::Loop(ty) => Ok(Instruction::Loop(ty.try_into()?, None)),
             _ => Err(Error::msg("Unsupported instruction")),
         }
     }
@@ -804,5 +806,34 @@ mod tests {
         test_index!(index, "$id1");
         let instr = Instruction::try_from(&WastInstruction::Br(index)).unwrap();
         assert_eq!(instr, Instruction::Br(test_index("id1")));
+    }
+
+    #[test]
+    fn test_from_wast_loop_instruction() {
+        let instr = Instruction::try_from(&WastInstruction::Loop(Box::new(WastBlockType {
+            label: None,
+            label_name: None,
+            ty: TypeUse {
+                index: None,
+                inline: Some(FunctionType {
+                    params: Box::new([]),
+                    results: Box::new([WastValType::I32]),
+                }),
+            },
+        })))
+        .unwrap();
+        assert_eq!(
+            instr,
+            Instruction::Loop(
+                BlockType {
+                    label: None,
+                    ty: FuncType {
+                        params: vec![],
+                        results: vec![ValType::I32],
+                    }
+                },
+                None
+            )
+        );
     }
 }

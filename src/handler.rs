@@ -170,6 +170,7 @@ impl<'a> Handler<'a> {
             Instruction::End => unreachable!(),
             Instruction::Block(bt, b) => self.block(bt, b),
             Instruction::Br(index) => self.branch(index),
+            Instruction::Loop(_, _) => todo!(),
         }
     }
 }
