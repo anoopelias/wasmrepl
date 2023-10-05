@@ -859,7 +859,7 @@ fn test_branch_too_many() {
 }
 
 #[test]
-fn test_branch_nested_too_many() {
+fn test_branch_nested_too_many_error() {
     let mut executor = Executor::new();
     let block_type = test_block_type!((), (ValType::I32));
     let block_type_inner = test_block_type!((), (ValType::I32));
@@ -884,7 +884,7 @@ fn test_branch_nested_too_many() {
 }
 
 #[test]
-fn test_branch_not_deep_enough() {
+fn test_branch_not_deep_enough_error() {
     let mut executor = Executor::new();
     let block_type = test_block_type!((), (ValType::I32));
     let block_type_inner = test_block_type!((), (ValType::I32));
@@ -930,7 +930,7 @@ fn test_func_branch() {
 }
 
 #[test]
-fn test_func_branch_not_deep_enough() {
+fn test_func_branch_not_deep_enough_error() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fn",
