@@ -761,14 +761,15 @@ fn test_block_branch() {
 #[test]
 fn test_block_branch_by_id() {
     let mut executor = Executor::new();
-    let block_type = test_block_type!((), (ValType::I32));
+    let mut block_type = test_block_type!((), (ValType::I32));
+    block_type.label = Some("block_id".to_string());
     let line = test_line![()(
         Instruction::I32Const(1),
         test_block!(
             block_type,
             (
                 Instruction::I32Const(2),
-                Instruction::Br(Index::Num(0)),
+                Instruction::Br(Index::Id("block_id".to_string())),
                 Instruction::I32Const(3)
             )
         ),
@@ -946,7 +947,7 @@ fn test_func_branch_not_deep_enough() {
 }
 
 // TODO: tests:
-// - Branch with id
+// - Branch with unknown id
 // - Branch with function (return)
 // - Branch with function id error
 // - Branch from if

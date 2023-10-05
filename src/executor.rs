@@ -195,6 +195,10 @@ impl Executor {
         response.control = match response.control {
             Control::Branch(Index::Num(0)) => Control::None,
             Control::Branch(Index::Num(num)) => Control::Branch(Index::Num(num - 1)),
+            Control::Branch(Index::Id(ref id)) => match block_type.label {
+                Some(ref block_id) if id == block_id => Control::None,
+                _ => response.control,
+            },
             _ => response.control,
         };
 
