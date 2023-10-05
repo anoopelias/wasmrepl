@@ -966,7 +966,29 @@ fn test_block_branch_by_unknown_id_error() {
     assert!(executor.execute_line(line).is_err());
 }
 
+#[test]
+fn test_func_branch_too_many() {
+    let mut executor = Executor::new();
+    let func = test_func!(
+        "fn",
+        ()(ValType::I32)(
+            Instruction::I32Const(0),
+            Instruction::I32Const(1),
+            Instruction::Br(Index::Num(0)),
+            Instruction::I32Const(2)
+        )
+    );
+    executor.execute_line(func).unwrap();
+
+    let call_func = test_line![()(
+        Instruction::Call(test_index("fn")),
+        Instruction::I32Const(3)
+    )];
+    assert_eq!(
+        executor.execute_line(call_func).unwrap().message(),
+        "[1, 3]"
+    );
+}
 // TODO: tests:
-// - Branch with function (return)
 // - Branch with function id error
 // - Branch from if
