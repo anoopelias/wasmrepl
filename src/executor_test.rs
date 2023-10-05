@@ -989,6 +989,23 @@ fn test_func_branch_too_many() {
         "[1, 3]"
     );
 }
+
+#[test]
+fn test_func_branch_id_error() {
+    let mut executor = Executor::new();
+    let func = test_func!(
+        "fname",
+        ()(ValType::I32)(
+            Instruction::I32Const(0),
+            Instruction::I32Const(1),
+            Instruction::Br(Index::Id("fname".to_string())),
+            Instruction::I32Const(2)
+        )
+    );
+    executor.execute_line(func).unwrap();
+
+    let call_func = test_line![()(Instruction::Call(test_index("fname")))];
+    assert!(executor.execute_line(call_func).is_err());
+}
 // TODO: tests:
-// - Branch with function id error
 // - Branch from if

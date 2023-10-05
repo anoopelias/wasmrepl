@@ -221,6 +221,7 @@ fn verify_func_response(response: &Response) -> Result<()> {
     match response.control {
         Control::Branch(Index::Num(0)) => Ok(()),
         Control::Branch(Index::Num(_)) => Err(anyhow!("br leaking out")),
+        Control::Branch(_) => Err(anyhow!("br leaking out")),
         _ => Ok(()),
     }
 }
