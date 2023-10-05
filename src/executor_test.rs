@@ -1007,5 +1007,24 @@ fn test_func_branch_id_error() {
     let call_func = test_line![()(Instruction::Call(test_index("fname")))];
     assert!(executor.execute_line(call_func).is_err());
 }
-// TODO: tests:
-// - Branch from if
+
+#[test]
+fn test_if_branch() {
+    let mut executor = Executor::new();
+    let block_type = test_block_type!((), (ValType::I32));
+    let line = test_line![()(
+        Instruction::I32Const(1),
+        test_if!(
+            block_type,
+            (
+                Instruction::I32Const(2),
+                Instruction::I32Const(3),
+                Instruction::Br(Index::Num(0)),
+                Instruction::I32Const(4)
+            ),
+            (Instruction::I32Const(5))
+        ),
+        Instruction::I32Const(6)
+    )];
+    assert_eq!(executor.execute_line(line).unwrap().message(), "[3, 6]");
+}
