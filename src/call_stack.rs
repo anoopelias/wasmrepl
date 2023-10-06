@@ -106,10 +106,6 @@ impl FuncStack {
         self.get_latest_block()?.push(value);
         Ok(())
     }
-
-    fn grow_local(&mut self, id: Option<String>, val: Value) -> Result<usize> {
-        self.locals.grow(id, val)
-    }
 }
 
 #[cfg(test)]
