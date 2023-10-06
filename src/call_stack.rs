@@ -33,23 +33,15 @@ impl CallStack {
         self.funcs.last_mut().unwrap().rollback();
     }
 
-    fn get_func(&mut self) -> Result<&mut FuncStack> {
+    pub fn get_func(&mut self) -> Result<&mut FuncStack> {
         self.funcs.last_mut().ok_or(anyhow!("No function in stack"))
-    }
-
-    pub fn pop(&mut self) -> Result<Value> {
-        self.get_func()?.pop_value()
-    }
-
-    pub fn push(&mut self, value: Value) -> Result<()> {
-        self.get_func()?.push_value(value);
-        Ok(())
     }
 
     pub fn add_func(&mut self, ty: &FuncType) -> Result<()> {
         let mut func_state = FuncStack::new();
+        let func_stack = self.get_func()?;
         for param in ty.params.iter().rev() {
-            let val = self.pop()?;
+            let val = func_stack.pop()?;
             val.is_same_type(&param.val_type)?;
             func_state.locals.grow(param.id.clone(), val)?;
         }
@@ -62,7 +54,7 @@ impl CallStack {
         let mut func_stack = self.funcs.pop().ok_or(anyhow!("No function in stack"))?;
         let mut values = vec![];
         for result in ty.results.iter().rev() {
-            let value = func_stack.pop_value()?;
+            let value = func_stack.pop()?;
             value.is_same_type(&result)?;
             values.push(value);
         }
@@ -73,7 +65,7 @@ impl CallStack {
 
         let func_stack = self.get_func()?;
         while values.len() > 0 {
-            func_stack.push_value(values.pop().unwrap());
+            func_stack.push(values.pop().unwrap());
         }
 
         Ok(())
@@ -102,7 +94,7 @@ impl FuncStack {
         self.blocks.last_mut().ok_or(anyhow!("No block in stack"))
     }
 
-    fn pop_value(&mut self) -> Result<Value> {
+    fn pop(&mut self) -> Result<Value> {
         self.get_latest_block()?.pop()
     }
 
@@ -110,7 +102,7 @@ impl FuncStack {
         Ok(self.get_latest_block()?.is_empty())
     }
 
-    fn push_value(&mut self, value: Value) -> Result<()> {
+    fn push(&mut self, value: Value) -> Result<()> {
         self.get_latest_block()?.push(value);
         Ok(())
     }
