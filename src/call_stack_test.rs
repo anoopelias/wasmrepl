@@ -235,3 +235,12 @@ fn test_to_string() {
     call_stack.commit();
     assert_eq!(call_stack.to_string(), "[1, 2]");
 }
+
+#[test]
+fn test_len() {
+    let mut call_stack = CallStack::new();
+    let func_type = test_func_type!((), ());
+
+    call_stack.add_func_stack(&func_type).unwrap();
+    assert_eq!(call_stack.len(), 2);
+}

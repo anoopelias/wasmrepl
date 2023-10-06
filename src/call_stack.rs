@@ -98,6 +98,10 @@ impl CallStack {
     pub fn to_string(&self) -> String {
         self.funcs.last().unwrap().to_string()
     }
+
+    pub fn len(&self) -> usize {
+        self.funcs.len()
+    }
 }
 
 struct FuncStack {
