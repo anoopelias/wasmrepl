@@ -10,13 +10,21 @@ fn test_func_add_remove() {
     let mut call_stack = CallStack::new();
     let func_type = test_func_type!((test_local!(ValType::I64)), (ValType::I32));
 
-    call_stack.get_func().unwrap().push(Value::I64(1)).unwrap();
-    call_stack.add_func(&func_type).unwrap();
+    call_stack
+        .get_func_stack()
+        .unwrap()
+        .push(Value::I64(1))
+        .unwrap();
+    call_stack.add_func_stack(&func_type).unwrap();
 
-    call_stack.get_func().unwrap().push(Value::I32(2)).unwrap();
-    call_stack.remove_func(&func_type, true).unwrap();
+    call_stack
+        .get_func_stack()
+        .unwrap()
+        .push(Value::I32(2))
+        .unwrap();
+    call_stack.remove_func_stack(&func_type, true).unwrap();
 
-    let value = call_stack.get_func().unwrap().pop().unwrap();
+    let value = call_stack.get_func_stack().unwrap().pop().unwrap();
     assert_eq!(value, Value::I32(2));
 }
 
@@ -25,7 +33,7 @@ fn test_func_add_not_enough_inputs_error() {
     let mut call_stack = CallStack::new();
     let func_type = test_func_type!((test_local!(ValType::I64)), ());
 
-    assert!(call_stack.add_func(&func_type).is_err());
+    assert!(call_stack.add_func_stack(&func_type).is_err());
 }
 
 #[test]
@@ -33,8 +41,8 @@ fn test_func_add_invalid_input_error() {
     let mut call_stack = CallStack::new();
     let func_type = test_func_type!((test_local!(ValType::I64)), ());
 
-    call_stack.get_func().unwrap().push(Value::I32(1));
-    assert!(call_stack.add_func(&func_type).is_err());
+    call_stack.get_func_stack().unwrap().push(Value::I32(1));
+    assert!(call_stack.add_func_stack(&func_type).is_err());
 }
 
 #[test]
@@ -48,8 +56,8 @@ fn test_func_add_local_id_already_exists() {
         ()
     );
 
-    call_stack.get_func().unwrap().push(Value::I32(1));
-    assert!(call_stack.add_func(&func_type).is_err());
+    call_stack.get_func_stack().unwrap().push(Value::I32(1));
+    assert!(call_stack.add_func_stack(&func_type).is_err());
 }
 
 #[test]
@@ -57,8 +65,8 @@ fn test_func_remove_not_enough_outputs_error() {
     let mut call_stack = CallStack::new();
     let func_type = test_func_type!((), (ValType::I32));
 
-    call_stack.add_func(&func_type).unwrap();
-    assert!(call_stack.remove_func(&func_type, true).is_err());
+    call_stack.add_func_stack(&func_type).unwrap();
+    assert!(call_stack.remove_func_stack(&func_type, true).is_err());
 }
 
 #[test]
@@ -66,10 +74,14 @@ fn test_func_remove_incorrect_type() {
     let mut call_stack = CallStack::new();
     let func_type = test_func_type!((), (ValType::I32));
 
-    call_stack.add_func(&func_type).unwrap();
+    call_stack.add_func_stack(&func_type).unwrap();
 
-    call_stack.get_func().unwrap().push(Value::I64(2)).unwrap();
-    assert!(call_stack.remove_func(&func_type, true).is_err());
+    call_stack
+        .get_func_stack()
+        .unwrap()
+        .push(Value::I64(2))
+        .unwrap();
+    assert!(call_stack.remove_func_stack(&func_type, true).is_err());
 }
 
 #[test]
@@ -77,14 +89,14 @@ fn test_func_remove_too_many_outputs() {
     let mut call_stack = CallStack::new();
     let func_type = test_func_type!((), (ValType::I32));
 
-    call_stack.add_func(&func_type).unwrap();
+    call_stack.add_func_stack(&func_type).unwrap();
 
-    let func_stack = call_stack.get_func().unwrap();
+    let func_stack = call_stack.get_func_stack().unwrap();
     func_stack.push(Value::I64(2)).unwrap();
     func_stack.push(Value::I32(3)).unwrap();
-    call_stack.remove_func(&func_type, false).unwrap();
+    call_stack.remove_func_stack(&func_type, false).unwrap();
 
-    let value = call_stack.get_func().unwrap().pop().unwrap();
+    let value = call_stack.get_func_stack().unwrap().pop().unwrap();
     assert_eq!(value, Value::I32(3));
 }
 
@@ -93,27 +105,27 @@ fn test_func_remove_too_many_outputs_error() {
     let mut call_stack = CallStack::new();
     let func_type = test_func_type!((), (ValType::I32));
 
-    call_stack.add_func(&func_type).unwrap();
+    call_stack.add_func_stack(&func_type).unwrap();
 
-    let func_stack = call_stack.get_func().unwrap();
+    let func_stack = call_stack.get_func_stack().unwrap();
     func_stack.push(Value::I64(2)).unwrap();
     func_stack.push(Value::I32(2)).unwrap();
-    assert!(call_stack.remove_func(&func_type, true).is_err());
+    assert!(call_stack.remove_func_stack(&func_type, true).is_err());
 }
 
 #[test]
 fn test_commit_block_rollback() {
     let mut call_stack = CallStack::new();
 
-    call_stack.get_func().unwrap().push(Value::I32(1));
+    call_stack.get_func_stack().unwrap().push(Value::I32(1));
     call_stack.commit();
 
-    call_stack.get_func().unwrap().push(Value::I32(2));
+    call_stack.get_func_stack().unwrap().push(Value::I32(2));
     call_stack.rollback();
 
-    call_stack.get_func().unwrap().push(Value::I32(3));
+    call_stack.get_func_stack().unwrap().push(Value::I32(3));
 
-    let func_stack = call_stack.get_func().unwrap();
+    let func_stack = call_stack.get_func_stack().unwrap();
     assert_eq!(func_stack.pop().unwrap(), Value::I32(3));
     assert_eq!(func_stack.pop().unwrap(), Value::I32(1));
     assert!(func_stack.pop().is_err());

@@ -28,13 +28,13 @@ impl CallStack {
         self.funcs.last_mut().unwrap().rollback();
     }
 
-    pub fn get_func(&mut self) -> Result<&mut FuncStack> {
+    pub fn get_func_stack(&mut self) -> Result<&mut FuncStack> {
         self.funcs.last_mut().ok_or(anyhow!("No function in stack"))
     }
 
-    pub fn add_func(&mut self, ty: &FuncType) -> Result<()> {
+    pub fn add_func_stack(&mut self, ty: &FuncType) -> Result<()> {
         let mut func_state = FuncStack::new();
-        let func_stack = self.get_func()?;
+        let func_stack = self.get_func_stack()?;
         for param in ty.params.iter().rev() {
             let val = func_stack.pop()?;
             val.is_same_type(&param.val_type)?;
@@ -45,7 +45,7 @@ impl CallStack {
         Ok(())
     }
 
-    pub fn remove_func(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
+    pub fn remove_func_stack(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
         let mut func_stack = self.funcs.pop().ok_or(anyhow!("No function in stack"))?;
         let mut values = vec![];
         for result in ty.results.iter().rev() {
@@ -58,7 +58,7 @@ impl CallStack {
             return Err(anyhow!("Too many returns"));
         }
 
-        let func_stack = self.get_func()?;
+        let func_stack = self.get_func_stack()?;
         while values.len() > 0 {
             func_stack.push(values.pop().unwrap());
         }
