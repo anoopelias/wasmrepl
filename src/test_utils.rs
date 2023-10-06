@@ -17,15 +17,28 @@ pub fn test_index(id: &str) -> Index {
     Index::Id(String::from(id))
 }
 
+macro_rules! test_func_type {
+    () => {
+        FuncType {
+            params: vec![],
+            results: vec![],
+        }
+    };
+    (($( $param:expr ),*), ($( $res:expr ),*)) => {
+        FuncType {
+            params: vec![
+                $( $param ),*
+            ],
+            results: vec![$( $res ),*]
+        }
+    };
+}
+
 macro_rules! test_block_type {
     () => {
         crate::model::BlockType {
             label: None,
-            ty: crate::model::FuncType {
-                params: vec![],
-                results: vec![]
-
-            }
+            ty: test_func_type!()
         }
     };
     (($( $param:expr ),*), ($( $res:expr ),*)) => {
@@ -86,6 +99,7 @@ macro_rules! test_local {
 
 pub(crate) use test_block;
 pub(crate) use test_block_type;
+pub(crate) use test_func_type;
 pub(crate) use test_if;
 pub(crate) use test_local;
 pub(crate) use test_local_id;
