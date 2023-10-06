@@ -1,7 +1,7 @@
 use crate::{
     call_stack::CallStack,
-    model::{FuncType, Local, ValType},
-    test_utils::{test_func_type, test_local, test_local_id},
+    model::{FuncType, Index, Local, ValType},
+    test_utils::{test_func_type, test_index, test_local, test_local_id},
     value::Value,
 };
 
@@ -114,7 +114,7 @@ fn test_func_remove_too_many_outputs_error() {
 }
 
 #[test]
-fn test_commit_block_rollback() {
+fn test_block_commit_rollback() {
     let mut call_stack = CallStack::new();
 
     call_stack.get_func_stack().unwrap().push(Value::I32(1));
@@ -129,4 +129,24 @@ fn test_commit_block_rollback() {
     assert_eq!(func_stack.pop().unwrap(), Value::I32(3));
     assert_eq!(func_stack.pop().unwrap(), Value::I32(1));
     assert!(func_stack.pop().is_err());
+}
+
+#[test]
+fn test_locals_commit_rollback() {
+    let mut call_stack = CallStack::new();
+
+    let locals = &mut call_stack.get_func_stack().unwrap().locals;
+    locals.grow(Some("id".to_string()), Value::I32(1));
+    locals.set(&Index::Id("id".to_string()), Value::I32(2));
+    call_stack.commit();
+
+    let locals = &mut call_stack.get_func_stack().unwrap().locals;
+    locals.set(&Index::Id("id".to_string()), Value::I32(3));
+    call_stack.rollback();
+
+    let locals = &mut call_stack.get_func_stack().unwrap().locals;
+    assert_eq!(
+        locals.get(&Index::Id("id".to_string())).unwrap(),
+        &Value::I32(2)
+    );
 }
