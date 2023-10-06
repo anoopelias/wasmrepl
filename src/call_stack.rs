@@ -37,11 +37,11 @@ impl CallStack {
         self.funcs.last_mut().ok_or(anyhow!("No function in stack"))
     }
 
-    pub fn pop_value(&mut self) -> Result<Value> {
+    pub fn pop(&mut self) -> Result<Value> {
         self.get_func()?.pop_value()
     }
 
-    pub fn push_value(&mut self, value: Value) -> Result<()> {
+    pub fn push(&mut self, value: Value) -> Result<()> {
         self.get_func()?.push_value(value);
         Ok(())
     }
@@ -49,7 +49,7 @@ impl CallStack {
     pub fn add_func(&mut self, ty: &FuncType) -> Result<()> {
         let mut func_state = FuncStack::new();
         for param in ty.params.iter().rev() {
-            let val = self.pop_value()?;
+            let val = self.pop()?;
             val.is_same_type(&param.val_type)?;
             func_state.locals.grow(param.id.clone(), val)?;
         }
