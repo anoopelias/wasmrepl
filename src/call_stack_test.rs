@@ -1,5 +1,5 @@
 use crate::{
-    call_stack::CallStack,
+    call_stack::{CallStack, FuncStack},
     model::{FuncType, Index, Local, ValType},
     test_utils::{test_func_type, test_index, test_local, test_local_id},
     value::Value,
@@ -149,4 +149,79 @@ fn test_locals_commit_rollback() {
         locals.get(&Index::Id("id".to_string())).unwrap(),
         &Value::I32(2)
     );
+}
+
+#[test]
+fn test_block_add_remove() {
+    let mut call_stack = CallStack::new();
+    let func_type = test_func_type!((test_local!(ValType::I64)), (ValType::I32));
+
+    call_stack.get_func_stack().unwrap().push(Value::I64(1));
+    call_stack.add_block_stack(&func_type).unwrap();
+
+    let func_stack = call_stack.get_func_stack().unwrap();
+    assert_eq!(func_stack.pop().unwrap(), Value::I64(1));
+    func_stack.push(Value::I32(2));
+}
+
+#[test]
+fn test_block_add_not_enough_inputs_error() {
+    let mut func_stack = FuncStack::new();
+    let func_type = test_func_type!((test_local!(ValType::I64)), ());
+    assert!(func_stack.add_block_stack(&func_type).is_err());
+}
+
+#[test]
+fn test_block_add_invalid_inputs_error() {
+    let mut func_stack = FuncStack::new();
+    let func_type = test_func_type!((test_local!(ValType::I64)), ());
+
+    func_stack.push(Value::I32(1));
+    assert!(func_stack.add_block_stack(&func_type).is_err());
+}
+
+#[test]
+fn test_block_remove_not_enough_outputs_error() {
+    let mut func_stack = FuncStack::new();
+    let func_type = test_func_type!((), (ValType::I32));
+
+    func_stack.add_block_stack(&func_type).unwrap();
+    assert!(func_stack.remove_block_stack(&func_type, true).is_err());
+}
+
+#[test]
+fn test_block_remove_incorrect_type() {
+    let mut func_stack = FuncStack::new();
+    let func_type = test_func_type!((), (ValType::I32));
+
+    func_stack.add_block_stack(&func_type).unwrap();
+
+    func_stack.push(Value::I64(2)).unwrap();
+    assert!(func_stack.remove_block_stack(&func_type, true).is_err());
+}
+
+#[test]
+fn test_block_remove_too_many_outputs() {
+    let mut func_stack = FuncStack::new();
+    let func_type = test_func_type!((), (ValType::I32));
+
+    func_stack.add_block_stack(&func_type).unwrap();
+
+    func_stack.push(Value::I64(2)).unwrap();
+    func_stack.push(Value::I32(3)).unwrap();
+    func_stack.remove_block_stack(&func_type, false).unwrap();
+
+    assert_eq!(func_stack.pop().unwrap(), Value::I32(3));
+}
+
+#[test]
+fn test_block_remove_too_many_outputs_error() {
+    let mut func_stack = FuncStack::new();
+    let func_type = test_func_type!((), (ValType::I32));
+
+    func_stack.add_block_stack(&func_type).unwrap();
+
+    func_stack.push(Value::I64(2)).unwrap();
+    func_stack.push(Value::I32(2)).unwrap();
+    assert!(func_stack.remove_block_stack(&func_type, true).is_err());
 }

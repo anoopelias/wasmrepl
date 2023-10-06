@@ -65,6 +65,35 @@ impl CallStack {
 
         Ok(())
     }
+
+    pub fn add_block_stack(&mut self, ty: &FuncType) -> Result<()> {
+        self.get_func_stack()?.add_block_stack(ty)
+    }
+
+    pub fn remove_block_stack(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
+        let mut block_stack = self
+            .get_func_stack()?
+            .blocks
+            .pop()
+            .ok_or(anyhow!("No block in stack"))?;
+        let mut values = vec![];
+        for result in ty.results.iter().rev() {
+            let value = block_stack.pop()?;
+            value.is_same_type(&result)?;
+            values.push(value);
+        }
+
+        if requires_empty && !block_stack.is_empty() {
+            return Err(anyhow!("Too many returns"));
+        }
+
+        let func_stack = self.get_func_stack()?;
+        while values.len() > 0 {
+            func_stack.push(values.pop().unwrap());
+        }
+
+        Ok(())
+    }
 }
 
 struct FuncStack {
@@ -104,6 +133,38 @@ impl FuncStack {
 
     fn push(&mut self, value: Value) -> Result<()> {
         self.get_latest_block()?.push(value);
+        Ok(())
+    }
+
+    fn add_block_stack(&mut self, ty: &FuncType) -> Result<()> {
+        let mut block_state = Stack::new();
+        for param in ty.params.iter().rev() {
+            let val = self.pop()?;
+            val.is_same_type(&param.val_type)?;
+            block_state.push(val);
+        }
+        self.blocks.push(block_state);
+
+        Ok(())
+    }
+
+    pub fn remove_block_stack(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
+        let mut block_stack = self.blocks.pop().ok_or(anyhow!("No block in stack"))?;
+        let mut values = vec![];
+        for result in ty.results.iter().rev() {
+            let value = block_stack.pop()?;
+            value.is_same_type(&result)?;
+            values.push(value);
+        }
+
+        if requires_empty && !block_stack.is_empty() {
+            return Err(anyhow!("Too many returns"));
+        }
+
+        while values.len() > 0 {
+            self.push(values.pop().unwrap());
+        }
+
         Ok(())
     }
 }
