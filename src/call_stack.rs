@@ -94,6 +94,10 @@ impl CallStack {
 
         Ok(())
     }
+
+    pub fn to_string(&self) -> String {
+        self.funcs.last().unwrap().to_string()
+    }
 }
 
 struct FuncStack {
@@ -166,6 +170,10 @@ impl FuncStack {
         }
 
         Ok(())
+    }
+
+    fn to_string(&self) -> String {
+        self.blocks.last().unwrap().to_string()
     }
 }
 

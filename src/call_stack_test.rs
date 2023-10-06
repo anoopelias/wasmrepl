@@ -225,3 +225,13 @@ fn test_block_remove_too_many_outputs_error() {
     func_stack.push(Value::I32(2)).unwrap();
     assert!(func_stack.remove_block_stack(&func_type, true).is_err());
 }
+
+#[test]
+fn test_to_string() {
+    let mut call_stack = CallStack::new();
+    let func_stack = call_stack.get_func_stack().unwrap();
+    func_stack.push(Value::I64(1));
+    func_stack.push(Value::I32(2));
+    call_stack.commit();
+    assert_eq!(call_stack.to_string(), "[1, 2]");
+}
