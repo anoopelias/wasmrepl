@@ -88,6 +88,17 @@ impl<'a> Handler<'a> {
         Ok(Response::new_ctrl(Control::Branch(index)))
     }
 
+    fn handle_loop(
+        &mut self,
+        block_type: BlockType,
+        block: Option<Expression>,
+    ) -> Result<Response> {
+        Ok(Response::new_ctrl(Control::ExecLoop(
+            block_type,
+            block.unwrap(),
+        )))
+    }
+
     pub fn handle(&mut self, instr: Instruction) -> Result<Response> {
         match instr {
             Instruction::I32Const(value) => self.i32_const(value),
@@ -170,7 +181,7 @@ impl<'a> Handler<'a> {
             Instruction::End => unreachable!(),
             Instruction::Block(bt, b) => self.block(bt, b),
             Instruction::Br(index) => self.branch(index),
-            Instruction::Loop(_, _) => todo!(),
+            Instruction::Loop(bt, b) => self.handle_loop(bt, b),
         }
     }
 }

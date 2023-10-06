@@ -109,6 +109,7 @@ impl Executor {
         match response.control {
             Control::ExecFunc(index) => self.execute_func(&index),
             Control::ExecBlock(block_type, block) => self.execute_block(block_type, block),
+            Control::ExecLoop(block_type, block) => self.execute_loop(block_type, block),
             _ => Ok(response),
         }
     }
@@ -116,6 +117,8 @@ impl Executor {
     fn execute_block(&mut self, block_type: BlockType, expr: Expression) -> Result<Response> {
         self.call_stack.add_block_stack(&block_type.ty)?;
         let mut response = self.execute_expr(expr)?;
+        self.call_stack
+            .remove_block_stack(&block_type.ty, response.requires_empty)?;
 
         response.control = match response.control {
             Control::Branch(Index::Num(0)) => Control::None,
@@ -127,10 +130,29 @@ impl Executor {
             _ => response.control,
         };
 
-        self.call_stack
-            .remove_block_stack(&block_type.ty, response.requires_empty)?;
         response.requires_empty = true;
         Ok(response)
+    }
+
+    fn execute_loop(&mut self, block_type: BlockType, expr: Expression) -> Result<Response> {
+        loop {
+            self.call_stack.add_block_stack(&block_type.ty)?;
+            let mut response = self.execute_expr(expr.clone())?;
+            self.call_stack
+                .remove_block_stack(&block_type.ty, response.requires_empty)?;
+
+            response.control = match response.control {
+                Control::Branch(Index::Num(0)) => continue,
+                Control::Branch(Index::Num(num)) => Control::Branch(Index::Num(num - 1)),
+                Control::Branch(Index::Id(ref id)) => match block_type.label {
+                    Some(ref block_id) if id == block_id => continue,
+                    _ => response.control,
+                },
+                _ => response.control,
+            };
+            response.requires_empty = true;
+            break Ok(response);
+        }
     }
 
     fn execute_local(&mut self, lc: &Local) -> Result<Response> {

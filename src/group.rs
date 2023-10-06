@@ -34,6 +34,9 @@ fn expr(instrs: &mut Vec<Instruction>) -> Result<(Expression, ExprEnd)> {
             Instruction::Block(block_type, mut expr) => {
                 Instruction::Block(block_type, Some(expr_block(instrs)?))
             }
+            Instruction::Loop(block_type, mut expr) => {
+                Instruction::Loop(block_type, Some(expr_block(instrs)?))
+            }
             Instruction::Else => return close_else(new_instrs),
             Instruction::End => return close_end(new_instrs),
             _ => instr,
@@ -80,7 +83,9 @@ fn close_end(instrs: Vec<Instruction>) -> Result<(Expression, ExprEnd)> {
 mod tests {
     use crate::group::group_expr;
     use crate::model::{Expression, FuncType, Instruction, Local, ValType};
-    use crate::test_utils::{test_block, test_block_type, test_func_type, test_if, test_local};
+    use crate::test_utils::{
+        test_block, test_block_type, test_func_type, test_if, test_local, test_loop,
+    };
 
     #[test]
     fn test_simple() {
@@ -243,5 +248,28 @@ mod tests {
         ];
 
         assert!(group_expr(instrs).is_err());
+    }
+
+    #[test]
+    fn test_loop() {
+        let block_type = test_block_type!((), (ValType::I32));
+        let instrs = vec![
+            Instruction::I32Const(1),
+            test_loop!(block_type),
+            Instruction::I32Const(2),
+            Instruction::End,
+            Instruction::I32Const(3),
+        ];
+
+        let expr = group_expr(instrs).unwrap();
+        assert_eq!(expr.instrs.len(), 3);
+        assert_eq!(expr.instrs[0], Instruction::I32Const(1));
+
+        let block = match &expr.instrs[1] {
+            Instruction::Loop(_, Some(block)) => block,
+            _ => panic!("Expected Instruction::Loop"),
+        };
+
+        assert_eq!(block.instrs.len(), 1);
     }
 }

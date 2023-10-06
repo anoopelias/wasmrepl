@@ -5,7 +5,7 @@ use anyhow::Result;
 
 use crate::model::{Expression, FuncType, Index, Instruction, Local, ValType};
 use crate::test_utils::{
-    test_block, test_block_type, test_func_type, test_if, test_index, test_local,
+    test_block, test_block_type, test_func_type, test_if, test_index, test_local, test_loop,
 };
 
 use super::Handler;
@@ -965,4 +965,23 @@ fn test_branch() {
     let response =
         exec_instr_handler(Instruction::Br(Index::Num(0)), &mut FuncStack::new()).unwrap();
     assert_eq!(response.control, Control::Branch(Index::Num(0)));
+}
+
+#[test]
+fn test_loop() {
+    let block_type = test_block_type!((test_local!(ValType::I64)), (ValType::I32));
+    let response = exec_instr_handler(
+        test_loop!(block_type, (Instruction::I32Const(2))),
+        &mut FuncStack::new(),
+    )
+    .unwrap();
+
+    if let Control::ExecLoop(block_type, block) = response.control {
+        assert_eq!(block_type.ty.params[0].val_type, ValType::I64);
+        assert_eq!(block_type.ty.results[0], ValType::I32);
+
+        assert_eq!(block.instrs[0], Instruction::I32Const(2));
+    } else {
+        panic!("Expected Exec::Loop");
+    }
 }

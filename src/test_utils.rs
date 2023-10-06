@@ -79,6 +79,17 @@ macro_rules! test_block {
     };
 }
 
+macro_rules! test_loop {
+    ($bt:expr) => {
+        Instruction::Loop($bt, Some(Expression {instrs: vec![]}))
+    };
+    ($bt:expr, ($( $loop_instr:expr ),*)) => {
+        Instruction::Loop($bt, Some(Expression {instrs: vec![
+            $( $loop_instr ),*
+        ]}))
+    };
+}
+
 macro_rules! test_local_id {
     ($id:expr, $type:expr) => {
         Local {
@@ -103,3 +114,4 @@ pub(crate) use test_func_type;
 pub(crate) use test_if;
 pub(crate) use test_local;
 pub(crate) use test_local_id;
+pub(crate) use test_loop;

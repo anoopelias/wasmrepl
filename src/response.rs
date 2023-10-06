@@ -10,6 +10,7 @@ pub struct Response {
 pub enum Control {
     ExecFunc(Index),
     ExecBlock(BlockType, Expression),
+    ExecLoop(BlockType, Expression),
     Branch(Index),
     Return,
     None,

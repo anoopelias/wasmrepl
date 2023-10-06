@@ -5,6 +5,7 @@ use crate::model::{
 use crate::executor::Executor;
 use crate::test_utils::{
     test_block, test_block_type, test_func_type, test_if, test_index, test_local, test_local_id,
+    test_loop,
 };
 
 macro_rules! test_line {
@@ -1080,4 +1081,28 @@ fn test_if_branch() {
         Instruction::I32Const(6)
     )];
     assert_eq!(executor.execute_line(line).unwrap().message(), "[3, 6]");
+}
+
+#[test]
+fn test_loop() {
+    let mut executor = Executor::new();
+    let loop_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let if_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let line = test_line![(test_local!(ValType::I32))(
+        Instruction::I32Const(10),
+        test_loop!(
+            loop_block_type,
+            (
+                Instruction::I32Const(1),
+                Instruction::I32Sub,
+                Instruction::LocalTee(Index::Num(0)),
+                Instruction::LocalGet(Index::Num(0)),
+                test_if!(if_block_type, (Instruction::Br(Index::Num(1))), ())
+            )
+        )
+    )];
+    assert_eq!(
+        executor.execute_line(line).unwrap().message(),
+        "local ;0;\n[0]"
+    );
 }
