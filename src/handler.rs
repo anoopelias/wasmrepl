@@ -3,7 +3,7 @@ use std::ops::BitAnd;
 use std::ops::BitOr;
 use std::ops::{BitXor, Shl};
 
-use crate::executor::State;
+use crate::call_stack::FuncStack;
 use crate::model::BlockType;
 use crate::model::Expression;
 use crate::model::{Index, Instruction};
@@ -14,34 +14,34 @@ use crate::response::Control;
 use crate::response::Response;
 
 pub struct Handler<'a> {
-    state: &'a mut State,
+    stack: &'a mut FuncStack,
 }
 
 impl<'a> Handler<'a> {
-    pub fn new(state: &'a mut State) -> Self {
-        Handler { state }
+    pub fn new(state: &'a mut FuncStack) -> Self {
+        Handler { stack: state }
     }
 
     fn drop(&mut self) -> Result<Response> {
-        self.state.stack.pop()?;
+        self.stack.pop()?;
         Ok(Response::new())
     }
 
     fn local_get(&mut self, index: &Index) -> Result<Response> {
-        let value = self.state.locals.get(index)?;
-        self.state.stack.push(value.clone());
+        let value = self.stack.locals.get(index)?;
+        self.stack.push(value.clone())?;
         Ok(Response::new())
     }
 
     fn local_set(&mut self, index: &Index) -> Result<Response> {
-        let value = self.state.stack.pop()?;
-        self.state.locals.set(index, value)?;
+        let value = self.stack.pop()?;
+        self.stack.locals.set(index, value)?;
         Ok(Response::new())
     }
 
     fn local_tee(&mut self, index: &Index) -> Result<Response> {
-        let value = self.state.stack.peek()?;
-        self.state.locals.set(index, value)?;
+        let value = self.stack.peek()?;
+        self.stack.locals.set(index, value)?;
         Ok(Response::new())
     }
 
@@ -63,7 +63,7 @@ impl<'a> Handler<'a> {
         if_block: Option<Expression>,
         else_block: Option<Expression>,
     ) -> Result<Response> {
-        let value = self.state.stack.pop()?;
+        let value = self.stack.pop()?;
         if value.is_true() {
             Ok(Response::new_ctrl(Control::ExecBlock(
                 block_type,
@@ -178,7 +178,7 @@ macro_rules! pop {
     ($fname:ident, $ty:ty) => {
         impl<'a> Handler<'a> {
             fn $fname(&mut self) -> Result<$ty> {
-                let val: $ty = self.state.stack.pop()?.try_into()?;
+                let val: $ty = self.stack.pop()?.try_into()?;
                 Ok(val)
             }
         }
@@ -194,7 +194,7 @@ macro_rules! constant {
     ($fname:ident, $ty:ty) => {
         impl<'a> Handler<'a> {
             fn $fname(&mut self, value: $ty) -> Result<Response> {
-                self.state.stack.push(value.into());
+                self.stack.push(value.into())?;
                 Ok(Response::new())
             }
         }
@@ -212,7 +212,7 @@ macro_rules! impl_binary_op {
             fn $fname(&mut self) -> Result<Response> {
                 let a = self.$pop()?;
                 let b = self.$pop()?;
-                self.state.stack.push(b.$op(a).into());
+                self.stack.push(b.$op(a).into())?;
                 Ok(Response::new())
             }
         }
@@ -265,7 +265,7 @@ macro_rules! impl_binary_res_op {
             fn $fname(&mut self) -> Result<Response> {
                 let a = self.$popper()?;
                 let b = self.$popper()?;
-                self.state.stack.push(b.$op(a)?.into());
+                self.stack.push(b.$op(a)?.into())?;
                 Ok(Response::new())
             }
         }
@@ -287,7 +287,7 @@ macro_rules! impl_unary_op {
         impl<'a> Handler<'a> {
             fn $fname(&mut self) -> Result<Response> {
                 let a = self.$popper()?;
-                self.state.stack.push(a.$op().into());
+                self.stack.push(a.$op().into())?;
                 Ok(Response::new())
             }
         }

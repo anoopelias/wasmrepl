@@ -1,52 +1,24 @@
 use anyhow::{anyhow, Result};
 
+use crate::call_stack::CallStack;
 use crate::elements::Elements;
 use crate::handler::Handler;
-use crate::locals::Locals;
-use crate::model::{BlockType, Expression, Func, FuncType, Index, Instruction, Local, ValType};
+use crate::model::{BlockType, Expression, Func, Index, Instruction, Local, ValType};
+use crate::model::{Line, LineExpression};
 use crate::response::{Control, Response};
 use crate::value::Value;
-use crate::{
-    model::{Line, LineExpression},
-    stack::Stack,
-};
 
 const MAX_STACK_SIZE: i32 = 100;
 
-pub struct State {
-    pub stack: Stack,
-    pub locals: Locals,
-}
-
-impl State {
-    pub fn new() -> State {
-        State {
-            stack: Stack::new(),
-            locals: Locals::new(),
-        }
-    }
-
-    fn commit(&mut self) {
-        self.stack.commit();
-        self.locals.commit();
-    }
-
-    fn rollback(&mut self) {
-        self.stack.rollback();
-        self.locals.rollback();
-    }
-}
-
 pub struct Executor {
-    call_stack: Vec<State>,
+    call_stack: CallStack,
     funcs: Elements<Func>,
 }
 
 impl Executor {
     pub fn new() -> Executor {
         Executor {
-            // Initialize with REPL's root state
-            call_stack: vec![State::new()],
+            call_stack: CallStack::new(),
             funcs: Elements::new(),
         }
     }
@@ -59,7 +31,7 @@ impl Executor {
     }
 
     fn to_state(&self) -> String {
-        self.call_stack[0].stack.to_string()
+        self.call_stack.to_string()
     }
 
     fn execute_add_func(&mut self, func: Func) -> Result<Response> {
@@ -71,16 +43,15 @@ impl Executor {
 
     fn execute_repl_line(&mut self, line: LineExpression) -> Result<Response> {
         let result = self.execute_line_expression(line);
-        let state = self.call_stack.last_mut().unwrap();
 
         match verify_repl_result(result) {
             Ok(mut response) => {
-                state.commit();
+                self.call_stack.commit();
                 response.add_message(format!("{}", self.to_state()));
                 Ok(response)
             }
             Err(err) => {
-                state.rollback();
+                self.call_stack.rollback();
                 Err(err)
             }
         }
@@ -92,60 +63,14 @@ impl Executor {
         }
 
         let func = self.funcs.get(index)?.clone();
-        self.push_func_state(&func.ty)?;
+        self.call_stack.add_func_stack(&func.ty)?;
         let response = self.execute_line_expression(func.line_expression)?;
 
         verify_func_response(&response)?;
 
-        self.pop_state(&func.ty, response.requires_empty)?;
+        self.call_stack
+            .remove_func_stack(&func.ty, response.requires_empty)?;
         Ok(Response::new())
-    }
-
-    fn push_func_state(&mut self, ty: &FuncType) -> Result<()> {
-        let mut func_state = State::new();
-        for param in ty.params.iter().rev() {
-            let val = self.call_stack.last_mut().unwrap().stack.pop()?;
-            val.is_same_type(&param.val_type)?;
-            func_state.locals.grow(param.id.clone(), val)?;
-        }
-        self.call_stack.push(func_state);
-        Ok(())
-    }
-
-    fn push_group_state(&mut self, ty: &FuncType) -> Result<()> {
-        let mut group_state = State::new();
-        let mut values = vec![];
-        for param in ty.params.iter().rev() {
-            let val = self.call_stack.last_mut().unwrap().stack.pop()?;
-            val.is_same_type(&param.val_type)?;
-            values.push(val);
-        }
-        while values.len() > 0 {
-            group_state.stack.push(values.pop().unwrap());
-        }
-        self.call_stack.push(group_state);
-        Ok(())
-    }
-
-    fn pop_state(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
-        let mut state = self.call_stack.pop().unwrap();
-        let mut values = vec![];
-        for result in ty.results.iter().rev() {
-            let value = state.stack.pop()?;
-            value.is_same_type(&result)?;
-            values.push(value);
-        }
-
-        let prev_stack = &mut self.call_stack.last_mut().unwrap().stack;
-        while values.len() > 0 {
-            prev_stack.push(values.pop().unwrap());
-        }
-
-        if requires_empty && !state.stack.is_empty() {
-            return Err(anyhow!("Too many returns"));
-        }
-
-        Ok(())
     }
 
     fn execute_line_expression(&mut self, line: LineExpression) -> Result<Response> {
@@ -178,7 +103,7 @@ impl Executor {
     }
 
     fn execute_instr(&mut self, instr: Instruction) -> Result<Response> {
-        let mut handler = Handler::new(self.call_stack.last_mut().unwrap());
+        let mut handler = Handler::new(self.call_stack.get_func_stack()?);
         let response = handler.handle(instr)?;
 
         match response.control {
@@ -189,7 +114,7 @@ impl Executor {
     }
 
     fn execute_block(&mut self, block_type: BlockType, expr: Expression) -> Result<Response> {
-        self.push_group_state(&block_type.ty)?;
+        self.call_stack.add_block_stack(&block_type.ty)?;
         let mut response = self.execute_expr(expr)?;
 
         response.control = match response.control {
@@ -202,15 +127,16 @@ impl Executor {
             _ => response.control,
         };
 
-        self.pop_state(&block_type.ty, response.requires_empty)?;
+        self.call_stack
+            .remove_block_stack(&block_type.ty, response.requires_empty)?;
         response.requires_empty = true;
         Ok(response)
     }
 
     fn execute_local(&mut self, lc: &Local) -> Result<Response> {
         let id = lc.id.clone();
-        let state = self.call_stack.last_mut().unwrap();
-        state
+        let func_stack = self.call_stack.get_func_stack()?;
+        func_stack
             .locals
             .grow(lc.id.clone(), default_value(lc)?)
             .map(|i| Response::new_index("local", i, id))

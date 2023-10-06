@@ -57,7 +57,12 @@ fn test_error_rollback() {
     assert!(executor.execute_line(line).is_err());
     // Ensure rollback
     assert_eq!(
-        executor.call_stack[0].stack.to_soft_string().unwrap(),
+        executor
+            .call_stack
+            .get_func_stack()
+            .unwrap()
+            .to_soft_string()
+            .unwrap(),
         "[55]"
     );
 }
@@ -440,7 +445,15 @@ fn test_return_line() {
     assert!(executor.execute_line(line).is_err());
 
     // Ensure rollback
-    assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    assert_eq!(
+        executor
+            .call_stack
+            .get_func_stack()
+            .unwrap()
+            .to_soft_string()
+            .unwrap(),
+        "[]"
+    );
 }
 
 #[test]
@@ -485,7 +498,15 @@ fn test_if_param_error() {
         Instruction::I32Const(4)
     )];
     assert!(executor.execute_line(line).is_err());
-    assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    assert_eq!(
+        executor
+            .call_stack
+            .get_func_stack()
+            .unwrap()
+            .to_soft_string()
+            .unwrap(),
+        "[]"
+    );
 }
 
 #[test]
@@ -499,7 +520,15 @@ fn test_if_param_type_error() {
         Instruction::I32Const(4)
     )];
     assert!(executor.execute_line(line).is_err());
-    assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    assert_eq!(
+        executor
+            .call_stack
+            .get_func_stack()
+            .unwrap()
+            .to_soft_string()
+            .unwrap(),
+        "[]"
+    );
 }
 
 #[test]
@@ -511,7 +540,15 @@ fn test_if_result_error() {
         Instruction::I32Const(4)
     )];
     assert!(executor.execute_line(line).is_err());
-    assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    assert_eq!(
+        executor
+            .call_stack
+            .get_func_stack()
+            .unwrap()
+            .to_soft_string()
+            .unwrap(),
+        "[]"
+    );
 }
 
 #[test]
@@ -528,7 +565,15 @@ fn test_if_result_type_error() {
         Instruction::I32Const(4)
     )];
     assert!(executor.execute_line(line).is_err());
-    assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    assert_eq!(
+        executor
+            .call_stack
+            .get_func_stack()
+            .unwrap()
+            .to_soft_string()
+            .unwrap(),
+        "[]"
+    );
 }
 
 #[test]
@@ -545,7 +590,15 @@ fn test_if_result_too_many() {
         Instruction::I32Const(4)
     )];
     assert!(executor.execute_line(line).is_err());
-    assert_eq!(executor.call_stack[0].stack.to_soft_string().unwrap(), "[]");
+    assert_eq!(
+        executor
+            .call_stack
+            .get_func_stack()
+            .unwrap()
+            .to_soft_string()
+            .unwrap(),
+        "[]"
+    );
 }
 
 #[test]

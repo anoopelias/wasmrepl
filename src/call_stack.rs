@@ -1,15 +1,7 @@
-#![allow(unused)]
-use std::io::SeekFrom;
-
-use crate::{
-    locals::Locals,
-    model::FuncType,
-    stack::Stack,
-    value::{self, Value},
-};
+use crate::{locals::Locals, model::FuncType, stack::Stack, value::Value};
 use anyhow::{anyhow, Result};
 
-struct CallStack {
+pub struct CallStack {
     funcs: Vec<FuncStack>,
 }
 
@@ -60,7 +52,7 @@ impl CallStack {
 
         let func_stack = self.get_func_stack()?;
         while values.len() > 0 {
-            func_stack.push(values.pop().unwrap());
+            func_stack.push(values.pop().unwrap())?;
         }
 
         Ok(())
@@ -71,28 +63,8 @@ impl CallStack {
     }
 
     pub fn remove_block_stack(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
-        let mut block_stack = self
-            .get_func_stack()?
-            .blocks
-            .pop()
-            .ok_or(anyhow!("No block in stack"))?;
-        let mut values = vec![];
-        for result in ty.results.iter().rev() {
-            let value = block_stack.pop()?;
-            value.is_same_type(&result)?;
-            values.push(value);
-        }
-
-        if requires_empty && !block_stack.is_empty() {
-            return Err(anyhow!("Too many returns"));
-        }
-
-        let func_stack = self.get_func_stack()?;
-        while values.len() > 0 {
-            func_stack.push(values.pop().unwrap());
-        }
-
-        Ok(())
+        self.get_func_stack()?
+            .remove_block_stack(ty, requires_empty)
     }
 
     pub fn to_string(&self) -> String {
@@ -104,13 +76,13 @@ impl CallStack {
     }
 }
 
-struct FuncStack {
+pub struct FuncStack {
     blocks: Vec<Stack>,
     pub locals: Locals,
 }
 
 impl FuncStack {
-    fn new() -> FuncStack {
+    pub fn new() -> FuncStack {
         FuncStack {
             blocks: vec![Stack::new()],
             locals: Locals::new(),
@@ -131,7 +103,7 @@ impl FuncStack {
         self.blocks.last_mut().ok_or(anyhow!("No block in stack"))
     }
 
-    fn pop(&mut self) -> Result<Value> {
+    pub fn pop(&mut self) -> Result<Value> {
         self.get_latest_block()?.pop()
     }
 
@@ -139,24 +111,29 @@ impl FuncStack {
         Ok(self.get_latest_block()?.is_empty())
     }
 
-    fn push(&mut self, value: Value) -> Result<()> {
+    pub fn push(&mut self, value: Value) -> Result<()> {
         self.get_latest_block()?.push(value);
         Ok(())
     }
 
     fn add_block_stack(&mut self, ty: &FuncType) -> Result<()> {
         let mut block_state = Stack::new();
+        let mut values = vec![];
         for param in ty.params.iter().rev() {
             let val = self.pop()?;
             val.is_same_type(&param.val_type)?;
-            block_state.push(val);
+            values.push(val);
+        }
+
+        while values.len() > 0 {
+            block_state.push(values.pop().unwrap());
         }
         self.blocks.push(block_state);
 
         Ok(())
     }
 
-    pub fn remove_block_stack(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
+    fn remove_block_stack(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
         let mut block_stack = self.blocks.pop().ok_or(anyhow!("No block in stack"))?;
         let mut values = vec![];
         for result in ty.results.iter().rev() {
@@ -170,14 +147,23 @@ impl FuncStack {
         }
 
         while values.len() > 0 {
-            self.push(values.pop().unwrap());
+            self.push(values.pop().unwrap())?;
         }
 
         Ok(())
     }
 
-    fn to_string(&self) -> String {
+    pub fn peek(&mut self) -> Result<Value> {
+        self.get_latest_block()?.peek()
+    }
+
+    pub fn to_string(&self) -> String {
         self.blocks.last().unwrap().to_string()
+    }
+
+    #[allow(unused)]
+    pub fn to_soft_string(&self) -> Result<String> {
+        self.blocks.last().unwrap().to_soft_string()
     }
 }
 
