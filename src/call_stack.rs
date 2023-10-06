@@ -13,11 +13,6 @@ struct CallStack {
     funcs: Vec<FuncStack>,
 }
 
-struct FuncStack {
-    blocks: Vec<Stack>,
-    locals: Locals,
-}
-
 impl CallStack {
     pub fn new() -> CallStack {
         CallStack {
@@ -70,6 +65,11 @@ impl CallStack {
 
         Ok(())
     }
+}
+
+struct FuncStack {
+    blocks: Vec<Stack>,
+    pub locals: Locals,
 }
 
 impl FuncStack {
