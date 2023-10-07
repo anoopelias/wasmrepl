@@ -75,8 +75,8 @@ impl Executor {
 
     fn execute_line_expression(&mut self, line: LineExpression) -> Result<Response> {
         let mut response = Response::new();
-        for lc in line.locals.iter() {
-            match self.execute_local(&lc) {
+        for lc in line.locals.into_iter() {
+            match self.execute_local(lc) {
                 Ok(resp) => response.extend(resp),
                 Err(err) => {
                     return Err(err);
@@ -155,13 +155,14 @@ impl Executor {
         }
     }
 
-    fn execute_local(&mut self, lc: &Local) -> Result<Response> {
-        let id = lc.id.clone();
+    fn execute_local(&mut self, lc: Local) -> Result<Response> {
         let func_stack = self.call_stack.get_func_stack()?;
+        let (id, val_type) = (lc.id, lc.val_type);
+        let print_id = id.clone();
         func_stack
             .locals
-            .grow(lc.id.clone(), default_value(lc)?)
-            .map(|i| Response::new_index("local", i, id))
+            .grow(id, default_value(&val_type)?)
+            .map(|i| Response::new_index("local", i, print_id))
     }
 }
 
@@ -185,8 +186,8 @@ fn verify_repl_result(result: Result<Response>) -> Result<Response> {
     }
 }
 
-fn default_value(local: &Local) -> Result<Value> {
-    match local.val_type {
+fn default_value(val_type: &ValType) -> Result<Value> {
+    match val_type {
         ValType::I32 => Ok(Value::default_i32()),
         ValType::I64 => Ok(Value::default_i64()),
         ValType::F32 => Ok(Value::default_f32()),
