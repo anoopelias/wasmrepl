@@ -1106,3 +1106,189 @@ fn test_loop() {
         "local ;0;\n[0]"
     );
 }
+
+#[test]
+fn test_loop_by_id() {
+    let mut executor = Executor::new();
+    let mut loop_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    loop_block_type.label = Some("lname".to_string());
+    let if_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let line = test_line![(test_local!(ValType::I32))(
+        Instruction::I32Const(10),
+        test_loop!(
+            loop_block_type,
+            (
+                Instruction::I32Const(1),
+                Instruction::I32Sub,
+                Instruction::LocalTee(Index::Num(0)),
+                Instruction::LocalGet(Index::Num(0)),
+                test_if!(
+                    if_block_type,
+                    (Instruction::Br(Index::Id("lname".to_string()))),
+                    ()
+                )
+            )
+        )
+    )];
+    assert_eq!(
+        executor.execute_line(line).unwrap().message(),
+        "local ;0;\n[0]"
+    );
+}
+
+#[test]
+fn test_loop_not_enough_inputs_error() {
+    let mut executor = Executor::new();
+    let loop_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let line = test_line![()(test_loop!(
+        loop_block_type,
+        (Instruction::I32Const(1), Instruction::I32Sub)
+    ))];
+    assert!(executor.execute_line(line).is_err(),);
+}
+
+#[test]
+fn test_loop_execution_error() {
+    let mut executor = Executor::new();
+    let loop_block_type = test_block_type!((), (ValType::I32));
+    let line = test_line![()(test_loop!(loop_block_type, (Instruction::I32Add)))];
+    assert!(executor.execute_line(line).is_err(),);
+}
+
+#[test]
+fn test_loop_output_type_error() {
+    let mut executor = Executor::new();
+    let loop_block_type = test_block_type!((), (ValType::I32));
+    let line = test_line![()(test_loop!(loop_block_type, (Instruction::I64Const(2))))];
+    assert!(executor.execute_line(line).is_err(),);
+}
+
+#[test]
+fn test_loop_branch_out() {
+    let mut executor = Executor::new();
+    let outer_block_type = test_block_type!((), (ValType::I32));
+    let loop_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let if_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let line = test_line![(test_local!(ValType::I32))(test_block!(
+        outer_block_type,
+        (
+            Instruction::I32Const(10),
+            test_loop!(
+                loop_block_type,
+                (
+                    Instruction::I32Const(1),
+                    Instruction::I32Sub,
+                    Instruction::LocalTee(Index::Num(0)),
+                    Instruction::LocalGet(Index::Num(0)),
+                    test_if!(if_block_type, (Instruction::Br(Index::Num(2))), ())
+                )
+            )
+        )
+    ))];
+    assert_eq!(
+        executor.execute_line(line).unwrap().message(),
+        "local ;0;\n[9]"
+    );
+}
+
+#[test]
+fn test_loop_branch_out_by_id() {
+    let mut executor = Executor::new();
+    let mut outer_block_type = test_block_type!((), (ValType::I32));
+    outer_block_type.label = Some("outer".to_string());
+    let loop_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let if_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let line = test_line![(test_local!(ValType::I32))(test_block!(
+        outer_block_type,
+        (
+            Instruction::I32Const(10),
+            test_loop!(
+                loop_block_type,
+                (
+                    Instruction::I32Const(1),
+                    Instruction::I32Sub,
+                    Instruction::LocalTee(Index::Num(0)),
+                    Instruction::LocalGet(Index::Num(0)),
+                    test_if!(
+                        if_block_type,
+                        (Instruction::Br(Index::Id("outer".to_string()))),
+                        ()
+                    )
+                )
+            )
+        )
+    ))];
+    assert_eq!(
+        executor.execute_line(line).unwrap().message(),
+        "local ;0;\n[9]"
+    );
+}
+
+#[test]
+fn test_loop_func_return() {
+    let mut executor = Executor::new();
+    let loop_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let if_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let test_loop = test_loop!(
+        loop_block_type,
+        (
+            Instruction::I32Const(1),
+            Instruction::I32Sub,
+            Instruction::LocalTee(Index::Num(0)),
+            Instruction::LocalGet(Index::Num(0)),
+            test_if!(if_block_type, (Instruction::Return), ())
+        )
+    );
+
+    let func = test_func!(
+        "fname",
+        (test_local!(ValType::I32))(ValType::I32)(Instruction::LocalGet(Index::Num(0)), test_loop)
+    );
+    let response = executor.execute_line(func).unwrap();
+    assert_eq!(response.message(), "func ;0; fname");
+
+    let line = test_line![()(
+        Instruction::I32Const(10),
+        Instruction::Call(test_index("fname"))
+    )];
+    assert_eq!(executor.execute_line(line).unwrap().message(), "[9]");
+}
+
+#[test]
+fn test_loop_too_may_returns_error() {
+    let mut executor = Executor::new();
+    let loop_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let if_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let test_loop = test_loop!(
+        loop_block_type,
+        (
+            Instruction::I32Const(2),
+            Instruction::I32Const(1),
+            Instruction::I32Sub,
+            Instruction::LocalTee(Index::Num(0)),
+            Instruction::LocalGet(Index::Num(0)),
+            test_if!(
+                if_block_type,
+                (Instruction::I32Const(5), Instruction::Br(Index::Num(1))),
+                ()
+            )
+        )
+    );
+    let line = test_line![(test_local!(ValType::I32))(
+        Instruction::I32Const(10),
+        test_loop
+    )];
+    assert!(executor.execute_line(line).is_err());
+}
+
+#[test]
+fn test_loop_as_normal_block() {
+    let mut executor = Executor::new();
+    let loop_block_type = test_block_type!((test_local!(ValType::I32)), (ValType::I32));
+    let test_loop = test_loop!(
+        loop_block_type,
+        (Instruction::I32Const(1), Instruction::I32Sub)
+    );
+    let line = test_line![()(Instruction::I32Const(10), test_loop)];
+    assert_eq!(executor.execute_line(line).unwrap().message(), "[9]");
+}
