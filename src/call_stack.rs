@@ -2,26 +2,28 @@ use crate::{locals::Locals, model::FuncType, stack::Stack, value::Value};
 use anyhow::{anyhow, Result};
 
 pub struct CallStack {
-    funcs: Vec<FuncStack>,
+    func_stacks: Vec<FuncStack>,
 }
 
 impl CallStack {
     pub fn new() -> CallStack {
         CallStack {
-            funcs: vec![FuncStack::new()],
+            func_stacks: vec![FuncStack::new()],
         }
     }
 
     pub fn commit(&mut self) {
-        self.funcs.last_mut().unwrap().commit();
+        self.func_stacks.last_mut().unwrap().commit();
     }
 
     pub fn rollback(&mut self) {
-        self.funcs.last_mut().unwrap().rollback();
+        self.func_stacks.last_mut().unwrap().rollback();
     }
 
     pub fn get_func_stack(&mut self) -> Result<&mut FuncStack> {
-        self.funcs.last_mut().ok_or(anyhow!("No function in stack"))
+        self.func_stacks
+            .last_mut()
+            .ok_or(anyhow!("No function in stack"))
     }
 
     pub fn add_func_stack(&mut self, ty: &FuncType) -> Result<()> {
@@ -32,13 +34,16 @@ impl CallStack {
             val.is_same_type(&param.val_type)?;
             func_state.locals.grow(param.id.clone(), val)?;
         }
-        self.funcs.push(func_state);
+        self.func_stacks.push(func_state);
 
         Ok(())
     }
 
     pub fn remove_func_stack(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
-        let mut func_stack = self.funcs.pop().ok_or(anyhow!("No function in stack"))?;
+        let mut func_stack = self
+            .func_stacks
+            .pop()
+            .ok_or(anyhow!("No function in stack"))?;
         let mut values = vec![];
         for result in ty.results.iter().rev() {
             let value = func_stack.pop()?;
@@ -68,39 +73,41 @@ impl CallStack {
     }
 
     pub fn to_string(&self) -> String {
-        self.funcs.last().unwrap().to_string()
+        self.func_stacks.last().unwrap().to_string()
     }
 
     pub fn len(&self) -> usize {
-        self.funcs.len()
+        self.func_stacks.len()
     }
 }
 
 pub struct FuncStack {
-    blocks: Vec<Stack>,
+    block_stacks: Vec<Stack>,
     pub locals: Locals,
 }
 
 impl FuncStack {
     pub fn new() -> FuncStack {
         FuncStack {
-            blocks: vec![Stack::new()],
+            block_stacks: vec![Stack::new()],
             locals: Locals::new(),
         }
     }
 
     fn commit(&mut self) {
-        self.blocks.last_mut().unwrap().commit();
+        self.block_stacks.last_mut().unwrap().commit();
         self.locals.commit();
     }
 
     fn rollback(&mut self) {
-        self.blocks.last_mut().unwrap().rollback();
+        self.block_stacks.last_mut().unwrap().rollback();
         self.locals.rollback();
     }
 
     fn get_latest_block(&mut self) -> Result<&mut Stack> {
-        self.blocks.last_mut().ok_or(anyhow!("No block in stack"))
+        self.block_stacks
+            .last_mut()
+            .ok_or(anyhow!("No block in stack"))
     }
 
     pub fn pop(&mut self) -> Result<Value> {
@@ -128,13 +135,16 @@ impl FuncStack {
         while values.len() > 0 {
             block_state.push(values.pop().unwrap());
         }
-        self.blocks.push(block_state);
+        self.block_stacks.push(block_state);
 
         Ok(())
     }
 
     fn remove_block_stack(&mut self, ty: &FuncType, requires_empty: bool) -> Result<()> {
-        let mut block_stack = self.blocks.pop().ok_or(anyhow!("No block in stack"))?;
+        let mut block_stack = self
+            .block_stacks
+            .pop()
+            .ok_or(anyhow!("No block in stack"))?;
         let mut values = vec![];
         for result in ty.results.iter().rev() {
             let value = block_stack.pop()?;
@@ -158,12 +168,12 @@ impl FuncStack {
     }
 
     pub fn to_string(&self) -> String {
-        self.blocks.last().unwrap().to_string()
+        self.block_stacks.last().unwrap().to_string()
     }
 
     #[allow(unused)]
     pub fn to_soft_string(&self) -> Result<String> {
-        self.blocks.last().unwrap().to_soft_string()
+        self.block_stacks.last().unwrap().to_soft_string()
     }
 }
 
