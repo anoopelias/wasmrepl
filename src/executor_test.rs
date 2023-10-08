@@ -649,7 +649,7 @@ fn test_skip_nested_if() {
     let block_type = test_block_type!((), (ValType::I32));
     let block_type_inner = test_block_type!((), (ValType::I32));
     let line = test_line![()(
-        Instruction::I32Const(-1),
+        Instruction::I32Const(0),
         test_if!(
             block_type,
             (
@@ -728,7 +728,7 @@ fn test_func_nested_return() {
 
     let call_sub = test_line![()(
         Instruction::Drop,
-        Instruction::I32Const(-1),
+        Instruction::I32Const(0),
         Instruction::Call(test_index("fn"))
     )];
     assert_eq!(executor.execute_line(call_sub).unwrap().message(), "[5]");
