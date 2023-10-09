@@ -141,6 +141,7 @@ impl<'a> Handler<'a> {
             Instruction::I64ShrU => self.i64_shr_u(),
             Instruction::I64Rotl => self.i64_rotl(),
             Instruction::I64Rotr => self.i64_rotr(),
+            Instruction::I64Eq => self.i64_eq(),
             Instruction::F32Const(value) => self.f32_const(value),
             Instruction::F32Abs => self.f32_abs(),
             Instruction::F32Neg => self.f32_neg(),
@@ -156,6 +157,7 @@ impl<'a> Handler<'a> {
             Instruction::F32Min => self.f32_min(),
             Instruction::F32Max => self.f32_max(),
             Instruction::F32Copysign => self.f32_copysign(),
+            Instruction::F32Eq => self.f32_eq(),
             Instruction::F64Const(value) => self.f64_const(value),
             Instruction::F64Abs => self.f64_abs(),
             Instruction::F64Neg => self.f64_neg(),
@@ -171,6 +173,7 @@ impl<'a> Handler<'a> {
             Instruction::F64Min => self.f64_min(),
             Instruction::F64Max => self.f64_max(),
             Instruction::F64Copysign => self.f64_copysign(),
+            Instruction::F64Eq => self.f64_eq(),
             Instruction::LocalGet(index) => self.local_get(&index),
             Instruction::LocalSet(index) => self.local_set(&index),
             Instruction::LocalTee(index) => self.local_tee(&index),
@@ -256,6 +259,7 @@ impl_binary_op!(i64_shr_s, i64_pop, shr_s);
 impl_binary_op!(i64_shr_u, i64_pop, shr_u);
 impl_binary_op!(i64_rotl, i64_pop, rotl);
 impl_binary_op!(i64_rotr, i64_pop, rotr);
+impl_binary_op!(i64_eq, i64_pop, eq);
 
 impl_binary_op!(f32_add, f32_pop, add);
 impl_binary_op!(f32_sub, f32_pop, sub);
@@ -264,14 +268,16 @@ impl_binary_op!(f32_div, f32_pop, div);
 impl_binary_op!(f32_min, f32_pop, min);
 impl_binary_op!(f32_max, f32_pop, max);
 impl_binary_op!(f32_copysign, f32_pop, copysign);
+impl_binary_op!(f32_eq, f32_pop, eq);
 
 impl_binary_op!(f64_add, f64_pop, add);
 impl_binary_op!(f64_sub, f64_pop, sub);
 impl_binary_op!(f64_mul, f64_pop, mul);
-impl_binary_op!(f64_div, f64_pop, div);
 impl_binary_op!(f64_min, f64_pop, min);
+impl_binary_op!(f64_div, f64_pop, div);
 impl_binary_op!(f64_max, f64_pop, max);
 impl_binary_op!(f64_copysign, f64_pop, copysign);
+impl_binary_op!(f64_eq, f64_pop, eq);
 
 macro_rules! impl_binary_res_op {
     ($fname:ident, $popper:ident, $op:ident) => {

@@ -457,6 +457,20 @@ fn test_i64_rotr() {
 }
 
 #[test]
+fn test_i64_eq() {
+    let mut stack = FuncStack::new();
+    stack.push(1i64.into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64Eq, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+
+    stack.push(1i64.into()).unwrap();
+    stack.push((-1i64).into()).unwrap();
+    exec_instr_handler(Instruction::I64Eq, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+}
+
+#[test]
 fn test_f32_const() {
     let mut stack = FuncStack::new();
     exec_instr_handler(Instruction::F32Const(3.14), &mut stack).unwrap();
@@ -583,6 +597,20 @@ fn test_f32_copysign() {
 }
 
 #[test]
+fn test_f32_eq() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f32.into()).unwrap();
+    stack.push(1.0f32.into()).unwrap();
+    exec_instr_handler(Instruction::F32Eq, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f32).into());
+
+    stack.push(1.0f32.into()).unwrap();
+    stack.push((-1.0f32).into()).unwrap();
+    exec_instr_handler(Instruction::F32Eq, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f32).into());
+}
+
+#[test]
 fn test_f64_const() {
     let mut stack = FuncStack::new();
     exec_instr_handler(Instruction::F64Const(3.14), &mut stack).unwrap();
@@ -706,6 +734,20 @@ fn test_f64_copysign() {
     stack.push((-3.0f64).into()).unwrap();
     exec_instr_handler(Instruction::F64Copysign, &mut stack).unwrap();
     assert_eq!(stack.pop().unwrap(), (-2.0f64).into());
+}
+
+#[test]
+fn test_f64_eq() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f64.into()).unwrap();
+    stack.push(1.0f64.into()).unwrap();
+    exec_instr_handler(Instruction::F64Eq, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f64).into());
+
+    stack.push(1.0f64.into()).unwrap();
+    stack.push((-1.0f64).into()).unwrap();
+    exec_instr_handler(Instruction::F64Eq, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f64).into());
 }
 
 #[test]

@@ -174,6 +174,9 @@ pub trait FloatOps: NumOps {
     fn div(self, rhs: Self) -> Self
     where
         Self: Sized;
+    fn eq(self, rhs: Self) -> Self
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_float_ops {
@@ -184,6 +187,13 @@ macro_rules! impl_float_ops {
             }
             fn div(self, rhs: Self) -> Self {
                 self / rhs
+            }
+            fn eq(self, rhs: Self) -> Self {
+                if self == rhs {
+                    1.0
+                } else {
+                    0.0
+                }
             }
         }
     };
@@ -437,5 +447,22 @@ mod tests {
     fn test_i32_eq() {
         assert_eq!(1i32.eq(1), 1);
         assert_eq!(1i32.eq(2), 0);
+    }
+    #[test]
+    fn test_i64_eq() {
+        assert_eq!(1i64.eq(1), 1);
+        assert_eq!(1i64.eq(2), 0);
+    }
+
+    #[test]
+    fn test_f32_eq() {
+        assert_eq!(1.0f32.eq(1.0), 1.0);
+        assert_eq!(1.0f32.eq(2.0), 0.0);
+    }
+
+    #[test]
+    fn test_f64_eq() {
+        assert_eq!(1.0f64.eq(1.0), 1.0);
+        assert_eq!(1.0f64.eq(2.0), 0.0);
     }
 }
