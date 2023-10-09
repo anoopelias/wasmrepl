@@ -18,7 +18,7 @@ macro_rules! test_line {
 }
 
 macro_rules! test_func {
-    ($fname:expr, ($( $param:expr ),*)($( $res:expr ),*)($( $instr:expr ),*)) => {
+    ($fname:expr, ($( $param:expr ),*), ($( $res:expr ),*), ($( $instr:expr ),*)) => {
         Line::Func(Func {
             id: Some(String::from($fname)),
             ty: FuncType {
@@ -251,7 +251,9 @@ fn test_func() {
         (
             test_local_id!("first", ValType::I32),
             test_local_id!("second", ValType::I32)
-        )(ValType::I32, ValType::I32)(
+        ),
+        (ValType::I32, ValType::I32),
+        (
             Instruction::LocalGet(test_index("first")),
             Instruction::LocalGet(test_index("first")),
             Instruction::LocalGet(test_index("second")),
@@ -272,7 +274,7 @@ fn test_func() {
 #[test]
 fn test_func_error_less_number_of_inputs() {
     let mut executor = Executor::new();
-    let func = test_func!("fun", (test_local!(ValType::I32))()());
+    let func = test_func!("fun", (test_local!(ValType::I32)), (), ());
     executor.execute_line(func).unwrap();
 
     let call_fun = test_line![()(Instruction::Call(test_index("fun")))];
@@ -282,7 +284,7 @@ fn test_func_error_less_number_of_inputs() {
 #[test]
 fn test_func_error_less_number_of_outputs() {
     let mut executor = Executor::new();
-    let func = test_func!("fun", ()(ValType::I32)());
+    let func = test_func!("fun", (), (ValType::I32), ());
     executor.execute_line(func).unwrap();
 
     let call = test_line![()(Instruction::Call(test_index("fun")))];
@@ -293,7 +295,7 @@ fn test_func_error_less_number_of_outputs() {
 #[test]
 fn test_func_error_more_number_of_outputs() {
     let mut executor = Executor::new();
-    let func = test_func!("fun", ()()(Instruction::I32Const(5)));
+    let func = test_func!("fun", (), (), (Instruction::I32Const(5)));
     executor.execute_line(func).unwrap();
 
     let call = test_line![()(Instruction::Call(test_index("fun")))];
@@ -306,7 +308,9 @@ fn test_func_input_type() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
-        (test_local!(ValType::I32), test_local!(ValType::I64))()()
+        (test_local!(ValType::I32), test_local!(ValType::I64)),
+        (),
+        ()
     );
     executor.execute_line(func).unwrap();
 
@@ -323,7 +327,9 @@ fn test_func_error_input_type() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
-        (test_local!(ValType::I32), test_local!(ValType::I64))()()
+        (test_local!(ValType::I32), test_local!(ValType::I64)),
+        (),
+        ()
     );
     executor.execute_line(func).unwrap();
 
@@ -340,7 +346,9 @@ fn test_func_output_type() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
-        ()(ValType::I32, ValType::I64)(Instruction::I32Const(5), Instruction::I64Const(10))
+        (),
+        (ValType::I32, ValType::I64),
+        (Instruction::I32Const(5), Instruction::I64Const(10))
     );
     executor.execute_line(func).unwrap();
 
@@ -353,7 +361,9 @@ fn test_func_output_type_error() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
-        ()(ValType::I32, ValType::I64)(Instruction::I64Const(10), Instruction::I32Const(5))
+        (),
+        (ValType::I32, ValType::I64),
+        (Instruction::I64Const(10), Instruction::I32Const(5))
     );
     executor.execute_line(func).unwrap();
 
@@ -393,7 +403,9 @@ fn test_func_return() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
-        ()(ValType::I32)(
+        (),
+        (ValType::I32),
+        (
             Instruction::I32Const(5),
             Instruction::Return,
             Instruction::Drop,
@@ -412,7 +424,9 @@ fn test_func_return_too_many() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
-        ()(ValType::I32, ValType::I64)(
+        (),
+        (ValType::I32, ValType::I64),
+        (
             Instruction::I32Const(10),
             Instruction::I32Const(20),
             Instruction::I64Const(30),
@@ -431,7 +445,9 @@ fn test_func_stack_overflow_error() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fun",
-        ()()(Instruction::Call(Index::Id(String::from("fun"))))
+        (),
+        (),
+        (Instruction::Call(Index::Id(String::from("fun"))))
     );
     executor.execute_line(func).unwrap();
 
@@ -703,7 +719,9 @@ fn test_func_nested_return() {
     let block_type = test_block_type!((), (ValType::I32));
     let func = test_func!(
         "fn",
-        (test_local!(ValType::I32))(ValType::I32)(
+        (test_local!(ValType::I32)),
+        (ValType::I32),
+        (
             Instruction::LocalGet(Index::Num(0)),
             test_if!(
                 block_type,
@@ -740,7 +758,9 @@ fn test_func_nested_too_many() {
     let block_type = test_block_type!((), (ValType::I32));
     let func = test_func!(
         "fn",
-        ()(ValType::I32)(
+        (),
+        (ValType::I32),
+        (
             Instruction::I32Const(1),
             test_block!(
                 block_type,
@@ -945,7 +965,9 @@ fn test_func_branch() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fn",
-        ()(ValType::I32)(
+        (),
+        (ValType::I32),
+        (
             Instruction::I32Const(1),
             Instruction::Br(Index::Num(0)),
             Instruction::I32Const(2)
@@ -968,7 +990,9 @@ fn test_func_branch_not_deep_enough_error() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fn",
-        ()(ValType::I32)(
+        (),
+        (ValType::I32),
+        (
             Instruction::I32Const(1),
             Instruction::Br(Index::Num(1)),
             Instruction::I32Const(2)
@@ -1025,7 +1049,9 @@ fn test_func_branch_too_many() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fn",
-        ()(ValType::I32)(
+        (),
+        (ValType::I32),
+        (
             Instruction::I32Const(0),
             Instruction::I32Const(1),
             Instruction::Br(Index::Num(0)),
@@ -1049,7 +1075,9 @@ fn test_func_branch_id_error() {
     let mut executor = Executor::new();
     let func = test_func!(
         "fname",
-        ()(ValType::I32)(
+        (),
+        (ValType::I32),
+        (
             Instruction::I32Const(0),
             Instruction::I32Const(1),
             Instruction::Br(Index::Id("fname".to_string())),
@@ -1242,7 +1270,9 @@ fn test_loop_func_return() {
 
     let func = test_func!(
         "fname",
-        (test_local!(ValType::I32))(ValType::I32)(Instruction::LocalGet(Index::Num(0)), test_loop)
+        (test_local!(ValType::I32)),
+        (ValType::I32),
+        (Instruction::LocalGet(Index::Num(0)), test_loop)
     );
     let response = executor.execute_line(func).unwrap();
     assert_eq!(response.message(), "func ;0; fname");
