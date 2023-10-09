@@ -111,6 +111,12 @@ pub trait IntOps: NumOps {
     fn le_u(self, rhs: Self) -> Self
     where
         Self: Sized;
+    fn ge_s(self, rhs: Self) -> Self
+    where
+        Self: Sized;
+    fn ge_u(self, rhs: Self) -> Self
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_int_ops {
@@ -246,6 +252,22 @@ macro_rules! impl_int_ops {
                     0
                 }
             }
+            fn ge_s(self, rhs: Self) -> Self {
+                if self >= rhs {
+                    1
+                } else {
+                    0
+                }
+            }
+            fn ge_u(self, rhs: Self) -> Self {
+                let a = self as $ut;
+                let b = rhs as $ut;
+                if a >= b {
+                    1
+                } else {
+                    0
+                }
+            }
         }
     };
 }
@@ -273,6 +295,9 @@ pub trait FloatOps: NumOps {
     where
         Self: Sized;
     fn le(self, rhs: Self) -> Self
+    where
+        Self: Sized;
+    fn ge(self, rhs: Self) -> Self
     where
         Self: Sized;
 }
@@ -316,6 +341,13 @@ macro_rules! impl_float_ops {
             }
             fn le(self, rhs: Self) -> Self {
                 if self <= rhs {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
+            fn ge(self, rhs: Self) -> Self {
+                if self >= rhs {
                     1.0
                 } else {
                     0.0
@@ -769,5 +801,45 @@ mod tests {
         assert_eq!(1.0f64.le(1.0), 1.0);
         assert_eq!(2.0f64.le(1.0), 0.0);
         assert_eq!((-1.0f64).le(1.0), 1.0);
+    }
+
+    #[test]
+    fn test_i32_ge_s() {
+        assert_eq!(1i32.ge_s(2), 0);
+        assert_eq!(1i32.ge_s(1), 1);
+        assert_eq!(2i32.ge_s(1), 1);
+        assert_eq!((-1i32).ge_s(1), 0);
+    }
+
+    #[test]
+    fn test_i64_ge_s() {
+        assert_eq!(1i64.ge_s(2), 0);
+        assert_eq!(1i64.ge_s(1), 1);
+        assert_eq!(2i64.ge_s(1), 1);
+        assert_eq!((-1i64).ge_s(1), 0);
+    }
+
+    #[test]
+    fn test_i32_ge_u() {
+        assert_eq!(1i32.ge_u(2), 0);
+        assert_eq!(1i32.ge_u(1), 1);
+        assert_eq!(2i32.ge_u(1), 1);
+        assert_eq!((-1i32).ge_u(1), 1);
+    }
+
+    #[test]
+    fn test_i64_ge_u() {
+        assert_eq!(1i64.ge_u(2), 0);
+        assert_eq!(1i64.ge_u(1), 1);
+        assert_eq!(2i64.ge_u(1), 1);
+        assert_eq!((-1i64).ge_u(1), 1);
+    }
+
+    #[test]
+    fn test_f32_ge() {
+        assert_eq!(1.0f32.ge(2.0), 0.0);
+        assert_eq!(1.0f32.ge(1.0), 1.0);
+        assert_eq!(2.0f32.ge(1.0), 1.0);
+        assert_eq!((-1.0f32).ge(1.0), 0.0);
     }
 }
