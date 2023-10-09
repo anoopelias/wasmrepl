@@ -284,6 +284,20 @@ fn test_i32_rotr() {
 }
 
 #[test]
+fn test_i32_eq() {
+    let mut stack = FuncStack::new();
+    stack.push(1.into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32Eq, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+
+    stack.push(1.into()).unwrap();
+    stack.push((-1).into()).unwrap();
+    exec_instr_handler(Instruction::I32Eq, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+}
+
+#[test]
 fn test_i64_clz() {
     let mut stack = FuncStack::new();
     stack.push(1023i64.into()).unwrap();

@@ -121,6 +121,7 @@ impl<'a> Handler<'a> {
             Instruction::I32ShrU => self.i32_shr_u(),
             Instruction::I32Rotl => self.i32_rotl(),
             Instruction::I32Rotr => self.i32_rotr(),
+            Instruction::I32Eq => self.i32_eq(),
             Instruction::I64Const(value) => self.i64_const(value),
             Instruction::I64Clz => self.i64_clz(),
             Instruction::I64Ctz => self.i64_ctz(),
@@ -242,6 +243,7 @@ impl_binary_op!(i32_shr_s, i32_pop, shr_s);
 impl_binary_op!(i32_shr_u, i32_pop, shr_u);
 impl_binary_op!(i32_rotl, i32_pop, rotl);
 impl_binary_op!(i32_rotr, i32_pop, rotr);
+impl_binary_op!(i32_eq, i32_pop, eq);
 
 impl_binary_op!(i64_add, i64_pop, add);
 impl_binary_op!(i64_sub, i64_pop, sub);

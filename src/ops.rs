@@ -84,6 +84,9 @@ pub trait IntOps: NumOps {
     fn rotr(self, rhs: Self) -> Self
     where
         Self: Sized;
+    fn eq(self, rhs: Self) -> Self
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_int_ops {
@@ -149,6 +152,13 @@ macro_rules! impl_int_ops {
             }
             fn rotr(self, rhs: Self) -> Self {
                 self.rotate_right(rhs as u32)
+            }
+            fn eq(self, rhs: Self) -> Self {
+                if self == rhs {
+                    1
+                } else {
+                    0
+                }
             }
         }
     };
@@ -421,5 +431,11 @@ mod tests {
     #[test]
     fn test_f64_abs() {
         assert_eq!((-2.5f64).abs(), 2.5f64);
+    }
+
+    #[test]
+    fn test_i32_eq() {
+        assert_eq!(1i32.eq(1), 1);
+        assert_eq!(1i32.eq(2), 0);
     }
 }
