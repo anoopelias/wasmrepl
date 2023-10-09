@@ -31,7 +31,8 @@
 - [x] Early grouping for improving functions.
 - [x] if block with result
 - [x] if block with param
-- [ ] Control statements
+- [x] Control statements
+- [ ] Comparison operations
 - [ ] Setup coverage measurement
 - [ ] Typecheck
 - [ ] Github Actions / Pipelines
