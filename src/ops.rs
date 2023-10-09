@@ -90,6 +90,9 @@ pub trait IntOps: NumOps {
     fn eq(self, rhs: Self) -> Self
     where
         Self: Sized;
+    fn ne(self, rhs: Self) -> Self
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_int_ops {
@@ -170,6 +173,13 @@ macro_rules! impl_int_ops {
                     0
                 }
             }
+            fn ne(self, rhs: Self) -> Self {
+                if self == rhs {
+                    0
+                } else {
+                    1
+                }
+            }
         }
     };
 }
@@ -185,6 +195,9 @@ pub trait FloatOps: NumOps {
     where
         Self: Sized;
     fn eq(self, rhs: Self) -> Self
+    where
+        Self: Sized;
+    fn ne(self, rhs: Self) -> Self
     where
         Self: Sized;
 }
@@ -203,6 +216,13 @@ macro_rules! impl_float_ops {
                     1.0
                 } else {
                     0.0
+                }
+            }
+            fn ne(self, rhs: Self) -> Self {
+                if self == rhs {
+                    0.0
+                } else {
+                    1.0
                 }
             }
         }
@@ -485,5 +505,29 @@ mod tests {
     fn test_f64_eq() {
         assert_eq!(1.0f64.eq(1.0), 1.0);
         assert_eq!(1.0f64.eq(2.0), 0.0);
+    }
+
+    #[test]
+    fn test_i32_ne() {
+        assert_eq!(1i32.ne(1), 0);
+        assert_eq!(1i32.ne(2), 1);
+    }
+
+    #[test]
+    fn test_i64_ne() {
+        assert_eq!(1i64.ne(1), 0);
+        assert_eq!(1i64.ne(2), 1);
+    }
+
+    #[test]
+    fn test_f32_ne() {
+        assert_eq!(1.0f32.ne(1.0), 0.0);
+        assert_eq!(1.0f32.ne(2.0), 1.0);
+    }
+
+    #[test]
+    fn test_f64_ne() {
+        assert_eq!(1.0f64.ne(1.0), 0.0);
+        assert_eq!(1.0f64.ne(2.0), 1.0);
     }
 }
