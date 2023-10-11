@@ -284,6 +284,18 @@ fn test_i32_rotr() {
 }
 
 #[test]
+fn test_i32_eqz() {
+    let mut stack = FuncStack::new();
+    stack.push(0.into()).unwrap();
+    exec_instr_handler(Instruction::I32Eqz, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32Eqz, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+}
+
+#[test]
 fn test_i32_eq() {
     let mut stack = FuncStack::new();
     stack.push(1.into()).unwrap();
@@ -295,6 +307,172 @@ fn test_i32_eq() {
     stack.push((-1).into()).unwrap();
     exec_instr_handler(Instruction::I32Eq, &mut stack).unwrap();
     assert_eq!(stack.pop().unwrap(), 0.into());
+}
+
+#[test]
+fn test_i32_ne() {
+    let mut stack = FuncStack::new();
+    stack.push(1.into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32Ne, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+
+    stack.push(1.into()).unwrap();
+    stack.push((-1).into()).unwrap();
+    exec_instr_handler(Instruction::I32Ne, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+}
+
+#[test]
+fn test_i32_lt_s() {
+    let mut stack = FuncStack::new();
+    stack.push(1.into()).unwrap();
+    stack.push(2.into()).unwrap();
+    exec_instr_handler(Instruction::I32LtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+
+    stack.push(2.into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32LtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+
+    stack.push((-1).into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32LtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+}
+
+#[test]
+fn test_i32_lt_u() {
+    let mut stack = FuncStack::new();
+    stack.push(1.into()).unwrap();
+    stack.push(2.into()).unwrap();
+    exec_instr_handler(Instruction::I32LtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+
+    stack.push(2.into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32LtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+
+    stack.push((-1).into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32LtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+}
+
+#[test]
+fn test_i32_gt_s() {
+    let mut stack = FuncStack::new();
+    stack.push(1.into()).unwrap();
+    stack.push(2.into()).unwrap();
+    exec_instr_handler(Instruction::I32GtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+
+    stack.push(2.into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32GtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+
+    stack.push((-1).into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32GtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+}
+
+#[test]
+fn test_i32_gt_u() {
+    let mut stack = FuncStack::new();
+    stack.push(1.into()).unwrap();
+    stack.push(2.into()).unwrap();
+    exec_instr_handler(Instruction::I32GtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+
+    stack.push(2.into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32GtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+
+    stack.push((-1).into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32GtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+}
+
+#[test]
+fn test_i32_le_s() {
+    let mut stack = FuncStack::new();
+    stack.push(1.into()).unwrap();
+    stack.push(2.into()).unwrap();
+    exec_instr_handler(Instruction::I32LeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+
+    stack.push(2.into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32LeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+
+    stack.push((-1).into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32LeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+}
+
+#[test]
+fn test_i32_le_u() {
+    let mut stack = FuncStack::new();
+    stack.push(1.into()).unwrap();
+    stack.push(2.into()).unwrap();
+    exec_instr_handler(Instruction::I32LeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+
+    stack.push(2.into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32LeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+
+    stack.push((-1).into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32LeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+}
+
+#[test]
+fn test_i32_ge_s() {
+    let mut stack = FuncStack::new();
+    stack.push(1.into()).unwrap();
+    stack.push(2.into()).unwrap();
+    exec_instr_handler(Instruction::I32GeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+
+    stack.push(2.into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32GeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+
+    stack.push((-1).into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32GeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+}
+
+#[test]
+fn test_i32_ge_u() {
+    let mut stack = FuncStack::new();
+    stack.push(1.into()).unwrap();
+    stack.push(2.into()).unwrap();
+    exec_instr_handler(Instruction::I32GeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0.into());
+
+    stack.push(2.into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32GeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
+
+    stack.push((-1).into()).unwrap();
+    stack.push(1.into()).unwrap();
+    exec_instr_handler(Instruction::I32GeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1.into());
 }
 
 #[test]
@@ -457,6 +635,18 @@ fn test_i64_rotr() {
 }
 
 #[test]
+fn test_i64_eqz() {
+    let mut stack = FuncStack::new();
+    stack.push(0i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64Eqz, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64Eqz, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+}
+
+#[test]
 fn test_i64_eq() {
     let mut stack = FuncStack::new();
     stack.push(1i64.into()).unwrap();
@@ -468,6 +658,172 @@ fn test_i64_eq() {
     stack.push((-1i64).into()).unwrap();
     exec_instr_handler(Instruction::I64Eq, &mut stack).unwrap();
     assert_eq!(stack.pop().unwrap(), 0i64.into());
+}
+
+#[test]
+fn test_i64_ne() {
+    let mut stack = FuncStack::new();
+    stack.push(1i64.into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64Ne, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+
+    stack.push(1i64.into()).unwrap();
+    stack.push((-1i64).into()).unwrap();
+    exec_instr_handler(Instruction::I64Ne, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+}
+
+#[test]
+fn test_i64_lt_s() {
+    let mut stack = FuncStack::new();
+    stack.push(1i64.into()).unwrap();
+    stack.push(2i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+
+    stack.push(2i64.into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+
+    stack.push((-1i64).into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+}
+
+#[test]
+fn test_i64_lt_u() {
+    let mut stack = FuncStack::new();
+    stack.push(1i64.into()).unwrap();
+    stack.push(2i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+
+    stack.push(2i64.into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+
+    stack.push((-1i64).into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+}
+
+#[test]
+fn test_i64_gt_s() {
+    let mut stack = FuncStack::new();
+    stack.push(1i64.into()).unwrap();
+    stack.push(2i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+
+    stack.push(2i64.into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+
+    stack.push((-1i64).into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GtS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+}
+
+#[test]
+fn test_i64_gt_u() {
+    let mut stack = FuncStack::new();
+    stack.push(1i64.into()).unwrap();
+    stack.push(2i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+
+    stack.push(2i64.into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+
+    stack.push((-1i64).into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GtU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+}
+
+#[test]
+fn test_i64_le_s() {
+    let mut stack = FuncStack::new();
+    stack.push(1i64.into()).unwrap();
+    stack.push(2i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+
+    stack.push(2i64.into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+
+    stack.push((-1i64).into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+}
+
+#[test]
+fn test_i64_le_u() {
+    let mut stack = FuncStack::new();
+    stack.push(1i64.into()).unwrap();
+    stack.push(2i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+
+    stack.push(2i64.into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+
+    stack.push((-1i64).into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64LeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+}
+
+#[test]
+fn test_i64_ge_s() {
+    let mut stack = FuncStack::new();
+    stack.push(1i64.into()).unwrap();
+    stack.push(2i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+
+    stack.push(2i64.into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+
+    stack.push((-1i64).into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GeS, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+}
+
+#[test]
+fn test_i64_ge_u() {
+    let mut stack = FuncStack::new();
+    stack.push(1i64.into()).unwrap();
+    stack.push(2i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 0i64.into());
+
+    stack.push(2i64.into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
+
+    stack.push((-1i64).into()).unwrap();
+    stack.push(1i64.into()).unwrap();
+    exec_instr_handler(Instruction::I64GeU, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), 1i64.into());
 }
 
 #[test]
@@ -611,6 +967,76 @@ fn test_f32_eq() {
 }
 
 #[test]
+fn test_f32_ne() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f32.into()).unwrap();
+    stack.push(1.0f32.into()).unwrap();
+    exec_instr_handler(Instruction::F32Ne, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f32).into());
+
+    stack.push(1.0f32.into()).unwrap();
+    stack.push((-1.0f32).into()).unwrap();
+    exec_instr_handler(Instruction::F32Ne, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f32).into());
+}
+
+#[test]
+fn test_f32_lt() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f32.into()).unwrap();
+    stack.push(2.0f32.into()).unwrap();
+    exec_instr_handler(Instruction::F32Lt, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f32).into());
+
+    stack.push(2.0f32.into()).unwrap();
+    stack.push(1.0f32.into()).unwrap();
+    exec_instr_handler(Instruction::F32Lt, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f32).into());
+}
+
+#[test]
+fn test_f32_gt() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f32.into()).unwrap();
+    stack.push(2.0f32.into()).unwrap();
+    exec_instr_handler(Instruction::F32Gt, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f32).into());
+
+    stack.push(2.0f32.into()).unwrap();
+    stack.push(1.0f32.into()).unwrap();
+    exec_instr_handler(Instruction::F32Gt, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f32).into());
+}
+
+#[test]
+fn test_f32_le() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f32.into()).unwrap();
+    stack.push(2.0f32.into()).unwrap();
+    exec_instr_handler(Instruction::F32Le, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f32).into());
+
+    stack.push(2.0f32.into()).unwrap();
+    stack.push(1.0f32.into()).unwrap();
+    exec_instr_handler(Instruction::F32Le, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f32).into());
+}
+
+#[test]
+fn test_f32_ge() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f32.into()).unwrap();
+    stack.push(2.0f32.into()).unwrap();
+    exec_instr_handler(Instruction::F32Ge, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f32).into());
+
+    stack.push(2.0f32.into()).unwrap();
+    stack.push(1.0f32.into()).unwrap();
+    exec_instr_handler(Instruction::F32Ge, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f32).into());
+}
+
+#[test]
 fn test_f64_const() {
     let mut stack = FuncStack::new();
     exec_instr_handler(Instruction::F64Const(3.14), &mut stack).unwrap();
@@ -748,6 +1174,76 @@ fn test_f64_eq() {
     stack.push((-1.0f64).into()).unwrap();
     exec_instr_handler(Instruction::F64Eq, &mut stack).unwrap();
     assert_eq!(stack.pop().unwrap(), (0.0f64).into());
+}
+
+#[test]
+fn test_f64_ne() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f64.into()).unwrap();
+    stack.push(1.0f64.into()).unwrap();
+    exec_instr_handler(Instruction::F64Ne, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f64).into());
+
+    stack.push(1.0f64.into()).unwrap();
+    stack.push((-1.0f64).into()).unwrap();
+    exec_instr_handler(Instruction::F64Ne, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f64).into());
+}
+
+#[test]
+fn test_f64_lt() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f64.into()).unwrap();
+    stack.push(2.0f64.into()).unwrap();
+    exec_instr_handler(Instruction::F64Lt, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f64).into());
+
+    stack.push(2.0f64.into()).unwrap();
+    stack.push(1.0f64.into()).unwrap();
+    exec_instr_handler(Instruction::F64Lt, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f64).into());
+}
+
+#[test]
+fn test_f64_gt() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f64.into()).unwrap();
+    stack.push(2.0f64.into()).unwrap();
+    exec_instr_handler(Instruction::F64Gt, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f64).into());
+
+    stack.push(2.0f64.into()).unwrap();
+    stack.push(1.0f64.into()).unwrap();
+    exec_instr_handler(Instruction::F64Gt, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f64).into());
+}
+
+#[test]
+fn test_f64_le() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f64.into()).unwrap();
+    stack.push(2.0f64.into()).unwrap();
+    exec_instr_handler(Instruction::F64Le, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f64).into());
+
+    stack.push(2.0f64.into()).unwrap();
+    stack.push(1.0f64.into()).unwrap();
+    exec_instr_handler(Instruction::F64Le, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f64).into());
+}
+
+#[test]
+fn test_f64_ge() {
+    let mut stack = FuncStack::new();
+    stack.push(1.0f64.into()).unwrap();
+    stack.push(2.0f64.into()).unwrap();
+    exec_instr_handler(Instruction::F64Ge, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (0.0f64).into());
+
+    stack.push(2.0f64.into()).unwrap();
+    stack.push(1.0f64.into()).unwrap();
+    exec_instr_handler(Instruction::F64Ge, &mut stack).unwrap();
+    assert_eq!(stack.pop().unwrap(), (1.0f64).into());
 }
 
 #[test]

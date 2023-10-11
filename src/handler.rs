@@ -121,7 +121,17 @@ impl<'a> Handler<'a> {
             Instruction::I32ShrU => self.i32_shr_u(),
             Instruction::I32Rotl => self.i32_rotl(),
             Instruction::I32Rotr => self.i32_rotr(),
+            Instruction::I32Eqz => self.i32_eqz(),
             Instruction::I32Eq => self.i32_eq(),
+            Instruction::I32Ne => self.i32_ne(),
+            Instruction::I32LtS => self.i32_lt_s(),
+            Instruction::I32LtU => self.i32_lt_u(),
+            Instruction::I32GtS => self.i32_gt_s(),
+            Instruction::I32GtU => self.i32_gt_u(),
+            Instruction::I32LeS => self.i32_le_s(),
+            Instruction::I32LeU => self.i32_le_u(),
+            Instruction::I32GeS => self.i32_ge_s(),
+            Instruction::I32GeU => self.i32_ge_u(),
             Instruction::I64Const(value) => self.i64_const(value),
             Instruction::I64Clz => self.i64_clz(),
             Instruction::I64Ctz => self.i64_ctz(),
@@ -141,7 +151,17 @@ impl<'a> Handler<'a> {
             Instruction::I64ShrU => self.i64_shr_u(),
             Instruction::I64Rotl => self.i64_rotl(),
             Instruction::I64Rotr => self.i64_rotr(),
+            Instruction::I64Eqz => self.i64_eqz(),
             Instruction::I64Eq => self.i64_eq(),
+            Instruction::I64Ne => self.i64_ne(),
+            Instruction::I64LtS => self.i64_lt_s(),
+            Instruction::I64LtU => self.i64_lt_u(),
+            Instruction::I64GtS => self.i64_gt_s(),
+            Instruction::I64GtU => self.i64_gt_u(),
+            Instruction::I64LeS => self.i64_le_s(),
+            Instruction::I64LeU => self.i64_le_u(),
+            Instruction::I64GeS => self.i64_ge_s(),
+            Instruction::I64GeU => self.i64_ge_u(),
             Instruction::F32Const(value) => self.f32_const(value),
             Instruction::F32Abs => self.f32_abs(),
             Instruction::F32Neg => self.f32_neg(),
@@ -158,6 +178,11 @@ impl<'a> Handler<'a> {
             Instruction::F32Max => self.f32_max(),
             Instruction::F32Copysign => self.f32_copysign(),
             Instruction::F32Eq => self.f32_eq(),
+            Instruction::F32Ne => self.f32_ne(),
+            Instruction::F32Lt => self.f32_lt(),
+            Instruction::F32Gt => self.f32_gt(),
+            Instruction::F32Le => self.f32_le(),
+            Instruction::F32Ge => self.f32_ge(),
             Instruction::F64Const(value) => self.f64_const(value),
             Instruction::F64Abs => self.f64_abs(),
             Instruction::F64Neg => self.f64_neg(),
@@ -174,6 +199,11 @@ impl<'a> Handler<'a> {
             Instruction::F64Max => self.f64_max(),
             Instruction::F64Copysign => self.f64_copysign(),
             Instruction::F64Eq => self.f64_eq(),
+            Instruction::F64Ne => self.f64_ne(),
+            Instruction::F64Lt => self.f64_lt(),
+            Instruction::F64Gt => self.f64_gt(),
+            Instruction::F64Le => self.f64_le(),
+            Instruction::F64Ge => self.f64_ge(),
             Instruction::LocalGet(index) => self.local_get(&index),
             Instruction::LocalSet(index) => self.local_set(&index),
             Instruction::LocalTee(index) => self.local_tee(&index),
@@ -247,6 +277,15 @@ impl_binary_op!(i32_shr_u, i32_pop, shr_u);
 impl_binary_op!(i32_rotl, i32_pop, rotl);
 impl_binary_op!(i32_rotr, i32_pop, rotr);
 impl_binary_op!(i32_eq, i32_pop, eq);
+impl_binary_op!(i32_ne, i32_pop, ne);
+impl_binary_op!(i32_lt_s, i32_pop, lt_s);
+impl_binary_op!(i32_lt_u, i32_pop, lt_u);
+impl_binary_op!(i32_gt_s, i32_pop, gt_s);
+impl_binary_op!(i32_gt_u, i32_pop, gt_u);
+impl_binary_op!(i32_le_s, i32_pop, le_s);
+impl_binary_op!(i32_le_u, i32_pop, le_u);
+impl_binary_op!(i32_ge_s, i32_pop, ge_s);
+impl_binary_op!(i32_ge_u, i32_pop, ge_u);
 
 impl_binary_op!(i64_add, i64_pop, add);
 impl_binary_op!(i64_sub, i64_pop, sub);
@@ -260,6 +299,15 @@ impl_binary_op!(i64_shr_u, i64_pop, shr_u);
 impl_binary_op!(i64_rotl, i64_pop, rotl);
 impl_binary_op!(i64_rotr, i64_pop, rotr);
 impl_binary_op!(i64_eq, i64_pop, eq);
+impl_binary_op!(i64_ne, i64_pop, ne);
+impl_binary_op!(i64_lt_s, i64_pop, lt_s);
+impl_binary_op!(i64_lt_u, i64_pop, lt_u);
+impl_binary_op!(i64_gt_s, i64_pop, gt_s);
+impl_binary_op!(i64_gt_u, i64_pop, gt_u);
+impl_binary_op!(i64_le_s, i64_pop, le_s);
+impl_binary_op!(i64_le_u, i64_pop, le_u);
+impl_binary_op!(i64_ge_s, i64_pop, ge_s);
+impl_binary_op!(i64_ge_u, i64_pop, ge_u);
 
 impl_binary_op!(f32_add, f32_pop, add);
 impl_binary_op!(f32_sub, f32_pop, sub);
@@ -269,6 +317,11 @@ impl_binary_op!(f32_min, f32_pop, min);
 impl_binary_op!(f32_max, f32_pop, max);
 impl_binary_op!(f32_copysign, f32_pop, copysign);
 impl_binary_op!(f32_eq, f32_pop, eq);
+impl_binary_op!(f32_ne, f32_pop, ne);
+impl_binary_op!(f32_lt, f32_pop, lt);
+impl_binary_op!(f32_gt, f32_pop, gt);
+impl_binary_op!(f32_le, f32_pop, le);
+impl_binary_op!(f32_ge, f32_pop, ge);
 
 impl_binary_op!(f64_add, f64_pop, add);
 impl_binary_op!(f64_sub, f64_pop, sub);
@@ -278,6 +331,11 @@ impl_binary_op!(f64_div, f64_pop, div);
 impl_binary_op!(f64_max, f64_pop, max);
 impl_binary_op!(f64_copysign, f64_pop, copysign);
 impl_binary_op!(f64_eq, f64_pop, eq);
+impl_binary_op!(f64_ne, f64_pop, ne);
+impl_binary_op!(f64_lt, f64_pop, lt);
+impl_binary_op!(f64_gt, f64_pop, gt);
+impl_binary_op!(f64_le, f64_pop, le);
+impl_binary_op!(f64_ge, f64_pop, ge);
 
 macro_rules! impl_binary_res_op {
     ($fname:ident, $popper:ident, $op:ident) => {
@@ -317,10 +375,12 @@ macro_rules! impl_unary_op {
 impl_unary_op!(i32_clz, i32_pop, clz);
 impl_unary_op!(i32_ctz, i32_pop, ctz);
 impl_unary_op!(i32_popcnt, i32_pop, popcnt);
+impl_unary_op!(i32_eqz, i32_pop, eqz);
 
 impl_unary_op!(i64_clz, i64_pop, clz);
 impl_unary_op!(i64_ctz, i64_pop, ctz);
 impl_unary_op!(i64_popcnt, i64_pop, popcnt);
+impl_unary_op!(i64_eqz, i64_pop, eqz);
 
 impl_unary_op!(f32_abs, f32_pop, abs);
 impl_unary_op!(f32_neg, f32_pop, neg);

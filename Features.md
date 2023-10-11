@@ -18,8 +18,8 @@ Supported features from [Wasm spec](https://webassembly.github.io/spec/core/synt
         - [x] Integer Binary ops (`add`, `sub` ...)
         - [x] Float Unary ops (`abs`, `neg` ...)
         - [x] Float Binary ops (`add`, `sub` ...)
-        - [ ] Tests (`eqz`)
-        - [ ] Comparisons (`eq`, `ne`..)
+        - [x] Tests (`eqz`)
+        - [x] Comparisons (`eq`, `ne`..)
         - [ ] Conversions (`extend8_s`, `extend16_s` ...)
     - [ ] Vector Instructions
     - [ ] Reference Instructions

@@ -32,7 +32,7 @@
 - [x] if block with result
 - [x] if block with param
 - [x] Control statements
-- [ ] Comparison operations
+- [x] Comparison operations
 - [ ] Setup coverage measurement
 - [ ] Typecheck
 - [ ] Github Actions / Pipelines
