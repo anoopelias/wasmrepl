@@ -39,7 +39,6 @@
 - [ ] Improve speed of asciinema demo
 - [ ] Pop should return option instead of result
 - [ ] Print locals
-- [ ] Eq instructions
 - [ ] R/W memory
 - [ ] Types for functions
 - [ ] V128 instructions
