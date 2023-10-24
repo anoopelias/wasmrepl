@@ -33,8 +33,11 @@
 - [x] if block with param
 - [x] Control statements
 - [x] Comparison operations
-- [ ] Setup coverage measurement
+- [ ] Create blog post
+- [ ] Update Readme with blog post
+- [ ] Update asciinema content
 - [ ] Typecheck
+- [ ] Setup coverage measurement
 - [ ] Github Actions / Pipelines
 - [ ] Improve speed of asciinema demo
 - [ ] Pop should return option instead of result
