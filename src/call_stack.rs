@@ -13,11 +13,11 @@ impl CallStack {
     }
 
     pub fn commit(&mut self) {
-        self.func_stacks.last_mut().unwrap().commit();
+        self.get_func_stack().unwrap().commit();
     }
 
     pub fn rollback(&mut self) {
-        self.func_stacks.last_mut().unwrap().rollback();
+        self.get_func_stack().unwrap().rollback();
     }
 
     pub fn get_func_stack(&mut self) -> Result<&mut FuncStack> {
