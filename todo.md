@@ -33,9 +33,11 @@
 - [x] if block with param
 - [x] Control statements
 - [x] Comparison operations
-- [ ] Create blog post
-- [ ] Update Readme with blog post
-- [ ] Update asciinema content
+- [x] Create blog post
+- [x] Update Readme with blog post
+- [x] Update asciinema content
+- [ ] Add warning for `Ctrl+C` as exit.
+- [ ] Publish blog / github
 - [ ] Typecheck
 - [ ] Setup coverage measurement
 - [ ] Github Actions / Pipelines
