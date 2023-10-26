@@ -36,7 +36,7 @@
 - [x] Create blog post
 - [x] Update Readme with blog post
 - [x] Update asciinema content
-- [ ] Add warning for `Ctrl+C` as exit.
+- [x] No exit on Ctrl+C.
 - [ ] Publish blog / github
 - [ ] Typecheck
 - [ ] Setup coverage measurement

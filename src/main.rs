@@ -37,7 +37,7 @@ fn main() -> rustyline::Result<()> {
                 println!("{}", parse_and_execute(&mut executor, line.as_str()));
             }
             Err(ReadlineError::Interrupted) => {
-                break;
+                continue;
             }
             Err(ReadlineError::Eof) => {
                 break;
