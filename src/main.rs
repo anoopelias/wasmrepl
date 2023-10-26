@@ -28,15 +28,21 @@ use rustyline_derive::{Completer, Helper, Highlighter, Hinter, Validator};
 fn main() -> rustyline::Result<()> {
     let mut rl = new_editor()?;
     let mut executor = Executor::new();
+    let mut ctrlc_cnt = 0;
 
     loop {
         let readline = rl.readline(">> ");
         match readline {
             Ok(line) => {
+                ctrlc_cnt = 0;
                 rl.add_history_entry(line.as_str())?;
                 println!("{}", parse_and_execute(&mut executor, line.as_str()));
             }
             Err(ReadlineError::Interrupted) => {
+                ctrlc_cnt += 1;
+                if ctrlc_cnt % 3 == 0 {
+                    println!("Use Ctrl-D to exit!");
+                }
                 continue;
             }
             Err(ReadlineError::Eof) => {
