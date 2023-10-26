@@ -1,7 +1,7 @@
 
 # wasmrepl
 
-Since Web Assembly's text format is close to Lisp, it is well suited for a REPL as well!
+Since Web Assembly's text format is close to Lisp, maybe an attempt to a REPL prompt is in order!
 
 Demo:
 
