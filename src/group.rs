@@ -23,7 +23,7 @@ pub fn group_expr(mut instrs: Vec<Instruction>) -> Result<Expression> {
 
 fn expr(instrs: &mut Vec<Instruction>) -> Result<(Expression, ExprEnd)> {
     let mut new_instrs = Vec::new();
-    while instrs.len() > 0 {
+    while !instrs.is_empty() {
         let instr = instrs.pop().unwrap();
         new_instrs.push(match instr {
             Instruction::If(block_type, if_expr, else_expr) => {

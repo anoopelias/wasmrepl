@@ -16,15 +16,11 @@ impl<T> Elements<T> {
 
     pub fn grow(&mut self, id: Option<String>, value: T) -> Result<usize> {
         let index = self.values.grow(value);
-        match id {
-            Some(id) => {
-                match self.ids.get(&id) {
-                    Ok(_) => return Err(anyhow::anyhow!("Id already exists")),
-                    Err(_) => {}
-                }
-                self.ids.set(id, index)
+        if let Some(id) = id {
+            if self.ids.get(&id).is_ok() {
+                return Err(anyhow::anyhow!("Id already exists"));
             }
-            None => {}
+            self.ids.set(id, index)
         }
         Ok(index)
     }

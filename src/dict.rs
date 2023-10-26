@@ -18,7 +18,7 @@ impl<T: Copy> Dict<T> {
     }
 
     pub fn set(&mut self, key: String, value: T) {
-        self.soft_values.insert(key.to_string(), value);
+        self.soft_values.insert(key, value);
     }
 
     pub fn get(&self, key: &str) -> Result<T> {

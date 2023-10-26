@@ -209,7 +209,7 @@ impl<'a> Handler<'a> {
             Instruction::LocalTee(index) => self.local_tee(&index),
             Instruction::Return => self.return_instr(),
             Instruction::Nop => self.nop(),
-            Instruction::Call(index) => self.call_func(index.clone()),
+            Instruction::Call(index) => self.call_func(index),
             Instruction::If(bt, ib, eb) => self.if_instr(bt, ib, eb),
             Instruction::Else => unreachable!(),
             Instruction::End => unreachable!(),

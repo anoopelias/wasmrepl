@@ -43,7 +43,7 @@ impl<'a> Parse<'a> for Line<'a> {
 }
 
 pub fn parse_line<'a>(buf: &'a ParseBuffer) -> AnyhowResult<Line<'a>> {
-    match wast::parser::parse::<Line>(&buf) {
+    match wast::parser::parse::<Line>(buf) {
         Ok(line) => Ok(line),
         Err(err) => Err(anyhow::anyhow!(err.to_string())),
     }

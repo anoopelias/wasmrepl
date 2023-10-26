@@ -47,7 +47,7 @@ impl TryFrom<&WastFunc<'_>> for Func {
         let id = from_id(func.id);
         let ty = FuncType::try_from(&func.ty)?;
 
-        if func.exports.names.len() > 0 {
+        if !func.exports.names.is_empty() {
             return Err(Error::msg("Unsupported export"));
         }
 
@@ -89,7 +89,7 @@ impl TryFrom<&TypeUse<'_, FunctionType<'_>>> for FuncType {
         let mut params = Vec::new();
         let mut results = Vec::new();
 
-        if let Some(_) = type_use.index {
+        if type_use.index.is_some() {
             return Err(Error::msg("Unsupported type index"));
         }
 
@@ -183,7 +183,7 @@ impl TryFrom<&WastExpression<'_>> for Expression {
         for instr in expr.instrs.iter() {
             instrs.push(instr.try_into()?);
         }
-        Ok(group_expr(instrs)?)
+        group_expr(instrs)
     }
 }
 

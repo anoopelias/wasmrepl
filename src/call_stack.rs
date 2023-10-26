@@ -47,7 +47,7 @@ impl CallStack {
         let mut values = vec![];
         for result in ty.results.iter().rev() {
             let value = func_stack.pop()?;
-            value.is_same_type(&result)?;
+            value.is_same_type(result)?;
             values.push(value);
         }
 
@@ -56,7 +56,7 @@ impl CallStack {
         }
 
         let func_stack = self.get_func_stack()?;
-        while values.len() > 0 {
+        while !values.is_empty() {
             func_stack.push(values.pop().unwrap())?;
         }
 
@@ -132,7 +132,7 @@ impl FuncStack {
             values.push(val);
         }
 
-        while values.len() > 0 {
+        while !values.is_empty() {
             block_state.push(values.pop().unwrap());
         }
         self.block_stacks.push(block_state);
@@ -148,7 +148,7 @@ impl FuncStack {
         let mut values = vec![];
         for result in ty.results.iter().rev() {
             let value = block_stack.pop()?;
-            value.is_same_type(&result)?;
+            value.is_same_type(result)?;
             values.push(value);
         }
 
@@ -156,7 +156,7 @@ impl FuncStack {
             return Err(anyhow!("Too many returns"));
         }
 
-        while values.len() > 0 {
+        while !values.is_empty() {
             self.push(values.pop().unwrap())?;
         }
 

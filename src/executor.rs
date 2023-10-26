@@ -47,7 +47,7 @@ impl Executor {
         match verify_repl_result(result) {
             Ok(mut response) => {
                 self.call_stack.commit();
-                response.add_message(format!("{}", self.to_state()));
+                response.add_message(self.to_state());
                 Ok(response)
             }
             Err(err) => {

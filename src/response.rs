@@ -18,11 +18,7 @@ pub enum Control {
 
 impl Control {
     fn requires_empty(&self) -> bool {
-        match self {
-            Control::Return => false,
-            Control::Branch(_) => false,
-            _ => true,
-        }
+        !matches!(self, Control::Return | Control::Branch(_))
     }
 }
 

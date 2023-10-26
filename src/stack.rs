@@ -23,7 +23,7 @@ impl Stack {
     }
 
     pub fn pop(&mut self) -> Result<Value> {
-        if self.soft_values.len() == 0 {
+        if self.soft_values.is_empty() {
             self.check_underflow()?;
             self.shrink_by += 1;
             let idx = self.values.len() - self.shrink_by;
@@ -38,7 +38,7 @@ impl Stack {
     }
 
     pub fn peek(&self) -> Result<Value> {
-        if self.soft_values.len() == 0 {
+        if self.soft_values.is_empty() {
             self.check_underflow()?;
             let idx = self.values.len() - 1;
             Ok(self.values.get(idx).unwrap().clone())
