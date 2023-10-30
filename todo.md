@@ -37,8 +37,8 @@
 - [x] Update Readme with blog post
 - [x] Update asciinema content
 - [x] No exit on Ctrl+C.
-- [ ] Publish 0.3.0 version
-- [ ] Publish blog / github
+- [x] Publish 0.3.0 version
+- [x] Publish blog / github
 - [ ] Typecheck
 - [ ] Setup coverage measurement
 - [ ] Github Actions / Pipelines
